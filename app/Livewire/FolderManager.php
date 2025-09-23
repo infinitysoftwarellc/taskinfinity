@@ -12,9 +12,6 @@ class FolderManager extends Component
     use AuthorizesRequests;
     use WithPagination;
 
-    // 1. Remova a propriedade $showModal, não a usaremos para controlar a visibilidade.
-    // public bool $showModal = false;
-
     public ?Folder $editingFolder = null;
     public string $name = '';
     public ?int $folderIdToDelete = null;
@@ -26,23 +23,26 @@ class FolderManager extends Component
         ];
     }
 
-    public function showCreateModal()
+    public function showCreateModal(): void
     {
+        $this->closeModal(); // evita modal duplicado
         $this->reset(['editingFolder', 'name']);
-        // 2. Despache o evento para o Alpine.js abrir o modal
         $this->dispatch('open-modal', name: 'folder-modal');
     }
 
-    public function showEditModal(Folder $folder)
+    public function showEditModal(int $folderId): void
     {
+        $this->closeModal(); // evita modal duplicado
+        $folder = Folder::findOrFail($folderId);
         $this->authorize('update', $folder);
+
         $this->editingFolder = $folder;
         $this->name = $folder->name;
-        // 3. Despache o evento para o Alpine.js abrir o modal
+
         $this->dispatch('open-modal', name: 'folder-modal');
     }
 
-    public function save()
+    public function save(): void
     {
         $this->validate();
 
@@ -53,38 +53,35 @@ class FolderManager extends Component
             auth()->user()->folders()->create(['name' => $this->name]);
         }
 
-        // 4. Chame o closeModal, que agora despachará um evento
         $this->closeModal();
     }
-    
-    public function closeModal()
+
+    public function closeModal(): void
     {
-        // 5. Despache o evento para o Alpine.js fechar o modal
         $this->dispatch('close-modal', name: 'folder-modal');
-        $this->reset(['editingFolder', 'name']);
+        $this->dispatch('close-modal', name: 'confirm-folder-deletion');
+        $this->reset(['editingFolder', 'name', 'folderIdToDelete']);
     }
 
-    public function confirmDelete(int $folderId)
+    public function confirmDelete(int $folderId): void
     {
         $this->folderIdToDelete = $folderId;
-        // 6. Despache o evento para abrir o modal de confirmação
         $this->dispatch('open-modal', name: 'confirm-folder-deletion');
     }
 
-    public function delete()
+    public function delete(): void
     {
         $folder = Folder::findOrFail($this->folderIdToDelete);
         $this->authorize('delete', $folder);
         $folder->delete();
-        
-        // 7. Despache o evento para fechar o modal e resete a propriedade
-        $this->dispatch('close-modal', name: 'confirm-folder-deletion');
-        $this->folderIdToDelete = null;
+
+        $this->closeModal();
     }
 
     public function render()
     {
         $folders = auth()->user()->folders()->latest()->paginate(10);
+
         return view('livewire.folder-manager', [
             'folders' => $folders,
         ]);

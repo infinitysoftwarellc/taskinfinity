@@ -12,10 +12,12 @@
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <ul class="divide-y divide-gray-200">
             @forelse ($folders as $folder)
-                <li class="p-4 flex justify-between items-center hover:bg-gray-50" wire:key="{{ $folder->id }}">
+                <li class="p-4 flex justify-between items-center hover:bg-gray-50" wire:key="folder-{{ $folder->id }}">
                     <div>
                         <a href="{{ route('webapp.folders.show', $folder) }}" class="text-lg font-semibold text-indigo-600 hover:text-indigo-800">{{ $folder->name }}</a>
-                        <p class="text-sm text-gray-500">Contém {{ $folder->taskLists()->count() }} lista(s) de tarefas</p>
+                        <p class="text-sm text-gray-500">
+                            Contém {{ $folder->taskLists()->count() }} lista(s) de tarefas
+                        </p>
                     </div>
                     <div class="space-x-2">
                         <button wire:click="showEditModal({{ $folder->id }})" class="text-blue-500 hover:text-blue-700 font-medium">Renomear</button>
@@ -34,7 +36,7 @@
         {{ $folders->links() }}
     </div>
 
-    {{-- MUDANÇA AQUI: Removido o atributo :show --}}
+    {{-- Modal de criação/edição --}}
     <x-modal name="folder-modal" maxWidth="2xl" focusable>
         <div class="p-6">
             <h2 class="text-lg font-medium text-gray-900">
@@ -48,11 +50,9 @@
             </div>
 
             <div class="mt-6 flex justify-end">
-                {{-- O wire:click para closeModal agora funciona porque o método despacha o evento correto --}}
                 <x-secondary-button wire:click="closeModal">
                     Cancelar
                 </x-secondary-button>
-
                 <x-primary-button class="ml-3" wire:click="save">
                     Salvar
                 </x-primary-button>
@@ -60,7 +60,7 @@
         </div>
     </x-modal>
 
-    {{-- MUDANÇA AQUI: Removido o atributo :show e ajustado o botão de cancelar --}}
+    {{-- Modal de confirmação de exclusão --}}
     <x-modal name="confirm-folder-deletion" maxWidth="lg" focusable>
         <div class="p-6">
             <h2 class="text-lg font-medium text-gray-900">
@@ -70,8 +70,7 @@
                 Você realmente deseja deletar esta pasta? Todas as listas e tarefas dentro dela serão perdidas.
             </p>
             <div class="mt-6 flex justify-end">
-                {{-- Este botão agora usa Alpine para fechar o modal, é mais direto --}}
-                <x-secondary-button x-on:click="$dispatch('close')">
+                <x-secondary-button wire:click="closeModal">
                     Cancelar
                 </x-secondary-button>
                 <x-danger-button class="ml-3" wire:click="delete">
