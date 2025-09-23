@@ -17,11 +17,11 @@ class TaskList extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'folder_id',
-        'user_id',
-        'parent_id',
-        'name',
-    ];
+    'folder_id',
+    'user_id', // <-- ADICIONE ESTA LINHA
+    'parent_id',
+    'name',
+];
 
     /**
      * Get the user that owns the task list.
