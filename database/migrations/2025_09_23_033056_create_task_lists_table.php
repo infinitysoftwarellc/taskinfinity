@@ -11,11 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('folders', function (Blueprint $table) {
+        Schema::create('task_lists', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('folder_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            
+            // Para permitir sub-listas (hierarquia)
+            $table->foreignId('parent_id')->nullable()->constrained('task_lists')->onDelete('cascade');
+            
             $table->string('name');
-            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('folders');
+        Schema::dropIfExists('task_lists');
     }
 };
