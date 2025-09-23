@@ -34,8 +34,8 @@
         {{ $folders->links() }}
     </div>
 
-    {{-- MUDANÇA AQUI: Adicionado name e :show --}}
-    <x-modal name="folder-modal" :show="$showModal" maxWidth="2xl">
+    {{-- MUDANÇA AQUI: Removido o atributo :show --}}
+    <x-modal name="folder-modal" maxWidth="2xl" focusable>
         <div class="p-6">
             <h2 class="text-lg font-medium text-gray-900">
                 {{ $editingFolder ? 'Renomear Pasta' : 'Criar Nova Pasta' }}
@@ -48,6 +48,7 @@
             </div>
 
             <div class="mt-6 flex justify-end">
+                {{-- O wire:click para closeModal agora funciona porque o método despacha o evento correto --}}
                 <x-secondary-button wire:click="closeModal">
                     Cancelar
                 </x-secondary-button>
@@ -59,8 +60,8 @@
         </div>
     </x-modal>
 
-    {{-- MUDANÇA AQUI: Adicionado name e :show --}}
-    <x-modal name="confirm-folder-deletion" :show="$folderIdToDelete" maxWidth="lg">
+    {{-- MUDANÇA AQUI: Removido o atributo :show e ajustado o botão de cancelar --}}
+    <x-modal name="confirm-folder-deletion" maxWidth="lg" focusable>
         <div class="p-6">
             <h2 class="text-lg font-medium text-gray-900">
                 Tem certeza?
@@ -69,7 +70,8 @@
                 Você realmente deseja deletar esta pasta? Todas as listas e tarefas dentro dela serão perdidas.
             </p>
             <div class="mt-6 flex justify-end">
-                <x-secondary-button wire:click="$set('folderIdToDelete', null)">
+                {{-- Este botão agora usa Alpine para fechar o modal, é mais direto --}}
+                <x-secondary-button x-on:click="$dispatch('close')">
                     Cancelar
                 </x-secondary-button>
                 <x-danger-button class="ml-3" wire:click="delete">

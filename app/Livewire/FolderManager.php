@@ -12,7 +12,9 @@ class FolderManager extends Component
     use AuthorizesRequests;
     use WithPagination;
 
-    public bool $showModal = false;
+    // 1. Remova a propriedade $showModal, não a usaremos para controlar a visibilidade.
+    // public bool $showModal = false;
+
     public ?Folder $editingFolder = null;
     public string $name = '';
     public ?int $folderIdToDelete = null;
@@ -27,7 +29,8 @@ class FolderManager extends Component
     public function showCreateModal()
     {
         $this->reset(['editingFolder', 'name']);
-        $this->showModal = true;
+        // 2. Despache o evento para o Alpine.js abrir o modal
+        $this->dispatch('open-modal', name: 'folder-modal');
     }
 
     public function showEditModal(Folder $folder)
@@ -35,7 +38,8 @@ class FolderManager extends Component
         $this->authorize('update', $folder);
         $this->editingFolder = $folder;
         $this->name = $folder->name;
-        $this->showModal = true;
+        // 3. Despache o evento para o Alpine.js abrir o modal
+        $this->dispatch('open-modal', name: 'folder-modal');
     }
 
     public function save()
@@ -49,18 +53,22 @@ class FolderManager extends Component
             auth()->user()->folders()->create(['name' => $this->name]);
         }
 
+        // 4. Chame o closeModal, que agora despachará um evento
         $this->closeModal();
     }
     
     public function closeModal()
     {
-        $this->showModal = false;
+        // 5. Despache o evento para o Alpine.js fechar o modal
+        $this->dispatch('close-modal', name: 'folder-modal');
         $this->reset(['editingFolder', 'name']);
     }
 
     public function confirmDelete(int $folderId)
     {
         $this->folderIdToDelete = $folderId;
+        // 6. Despache o evento para abrir o modal de confirmação
+        $this->dispatch('open-modal', name: 'confirm-folder-deletion');
     }
 
     public function delete()
@@ -68,6 +76,9 @@ class FolderManager extends Component
         $folder = Folder::findOrFail($this->folderIdToDelete);
         $this->authorize('delete', $folder);
         $folder->delete();
+        
+        // 7. Despache o evento para fechar o modal e resete a propriedade
+        $this->dispatch('close-modal', name: 'confirm-folder-deletion');
         $this->folderIdToDelete = null;
     }
 
