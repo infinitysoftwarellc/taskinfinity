@@ -41,34 +41,47 @@ class TaskListController extends Controller
     /**
      * Store a newly created task list in storage.
      */
-    public function store(Request $request)
+     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'folder_id' => 'required|exists:folders,id',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'due_date' => 'nullable|date',
+            'priority' => 'required|in:low,medium,high',
+            'task_list_id' => 'required|exists:task_lists,id',
         ]);
 
-        $folder = Folder::findOrFail($validated['folder_id']);
-        $this->authorize('update', $folder);
+        // 1. Encontra a lista de tarefas pai
+        $taskList = TaskList::findOrFail($validated['task_list_id']);
+        
+        // 2. Autoriza se o usuário pode adicionar tarefas a esta lista
+        $this->authorize('update', $taskList);
 
-        auth()->user()->taskLists()->create([
-            'name' => $validated['name'],
-            'folder_id' => $folder->id,
+        // 3. CORREÇÃO: Cria a tarefa através do relacionamento com a TaskList
+        // Isso garante que o 'task_list_id' seja preenchido corretamente.
+        $taskList->tasks()->create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'due_date' => $validated['due_date'],
+            'priority' => $validated['priority'],
+            'user_id' => auth()->id(), // Garante que o dono da tarefa seja o usuário logado
         ]);
 
-        return redirect()->route('webapp.folders.show', $folder)->with('success', 'Lista de tarefas criada com sucesso!');
+        // Redireciona de volta para a página da lista de tarefas
+        return redirect()->route('tasklists.show', $taskList)->with('success', 'Tarefa criada com sucesso!');
     }
-
     /**
      * Display the specified task list.
      */
-    public function show(TaskList $tasklist) // <-- CORRIGIDO AQUI
+     public function show(TaskList $tasklist)
     {
-        $this->authorize('view', $tasklist); // <-- CORRIGIDO AQUI
+        $this->authorize('view', $tasklist);
 
-        $tasklist->load('tasks'); // <-- CORRIGIDO AQUI
-
-        return view('tasklists.show', compact('tasklist')); // <-- CORRIGIDO AQUI
+        // Carrega as tarefas associadas para evitar múltiplas queries
+        $tasklist->load('tasks');
+        
+        // CORREÇÃO: Apontando para a view correta
+        return view('tasklists.show', compact('tasklist'));
     }
 
     /**

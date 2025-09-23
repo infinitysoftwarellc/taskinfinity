@@ -22,9 +22,14 @@ Route::middleware(['auth'])->prefix('webapp')->name('webapp.')->group(function (
 
     // Adicione esta nova linha para as listas de tarefas
     Route::resource('tasklists', TaskListController::class)->except(['index']);
+    Route::resource('tasks', TaskController::class)->except(['index']);
         
 
     
 });
 
 require __DIR__.'/auth.php';
+ // Adicione no topo
+
+// ...
+

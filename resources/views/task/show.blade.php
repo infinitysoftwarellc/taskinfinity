@@ -36,10 +36,16 @@
                                 <div>
                                     <span class="text-lg font-semibold">{{ $task->title }}</span>
                                     <p class="text-sm text-gray-500">{{ $task->description }}</p>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <span>Prioridade: {{ $task->priority }}</span> | <span>Status: {{ $task->status }}</span>
+                                        @if($task->due_date)
+                                        | <span>Vencimento: {{ $task->due_date->format('d/m/Y') }}</span>
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="flex space-x-2">
                                     <a href="{{ route('webapp.tasks.edit', $task) }}" class="text-sm text-gray-600 hover:text-gray-900">Editar</a>
-                                    <form action="{{ route('webapp.tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Tem certeza?');">
+                                    <form action="{{ route('webapp.tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja deletar esta tarefa?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-sm text-red-600 hover:text-red-900">Deletar</button>
