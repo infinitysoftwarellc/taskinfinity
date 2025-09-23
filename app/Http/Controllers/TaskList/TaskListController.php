@@ -11,116 +11,88 @@ use Illuminate\Support\Facades\Auth;
 class TaskListController extends Controller
 {
     /**
-     * Display a listing of the resource. 
-     * NOTE: Usually, task lists are shown within the context of a folder.
-     * This method can be used for an "all lists" view if needed.
-     */
-    public function index()
-    {
-        $taskLists = Auth::user()->taskLists()->with('folder')->latest()->get();
-
-        // View: resources/views/tasklists/index.blade.php
-        return view('tasklists.index', compact('taskLists'));
-    }
-
-    /**
      * Show the form for creating a new task list within a specific folder.
      */
     public function create(Request $request)
     {
-        // We need to know which folder this list will belong to.
         $folder = Folder::findOrFail($request->query('folder_id'));
-
-        // Authorize that the user can update the folder (which implies they can add lists to it)
         $this->authorize('update', $folder);
 
-        // View: resources/views/tasklists/create.blade.php
         return view('tasklists.create', compact('folder'));
     }
 
     /**
      * Store a newly created task list in storage.
      */
-     public function store(Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'due_date' => 'nullable|date',
-            'priority' => 'required|in:low,medium,high',
-            'task_list_id' => 'required|exists:task_lists,id',
+            'name' => 'required|string|max:255',
+            'folder_id' => 'required|exists:folders,id',
         ]);
 
-        // 1. Encontra a lista de tarefas pai
-        $taskList = TaskList::findOrFail($validated['task_list_id']);
-        
-        // 2. Autoriza se o usuário pode adicionar tarefas a esta lista
-        $this->authorize('update', $taskList);
+        $folder = Folder::findOrFail($validated['folder_id']);
+        $this->authorize('update', $folder);
 
-        // 3. CORREÇÃO: Cria a tarefa através do relacionamento com a TaskList
-        // Isso garante que o 'task_list_id' seja preenchido corretamente.
-        $taskList->tasks()->create([
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'due_date' => $validated['due_date'],
-            'priority' => $validated['priority'],
-            'user_id' => auth()->id(), // Garante que o dono da tarefa seja o usuário logado
+        // Forma mais robusta de criar, usando o relacionamento da pasta
+        $folder->taskLists()->create([
+            'name' => $validated['name'],
+            'user_id' => Auth::id(),
         ]);
 
-        // Redireciona de volta para a página da lista de tarefas
-        return redirect()->route('tasklists.show', $taskList)->with('success', 'Tarefa criada com sucesso!');
+        // CORREÇÃO: Usando o nome de rota correto
+        return redirect()->route('webapp.folders.show', $folder)->with('success', 'Lista de tarefas criada com sucesso!');
     }
+
     /**
      * Display the specified task list.
      */
-     public function show(TaskList $tasklist)
+    public function show(TaskList $tasklist)
     {
         $this->authorize('view', $tasklist);
-
-        // Carrega as tarefas associadas para evitar múltiplas queries
         $tasklist->load('tasks');
         
-        // CORREÇÃO: Apontando para a view correta
         return view('tasklists.show', compact('tasklist'));
     }
 
     /**
      * Show the form for editing the specified task list.
      */
-    public function edit(TaskList $tasklist) // <-- CORRIGIDO AQUI
+    public function edit(TaskList $tasklist)
     {
-        $this->authorize('update', $tasklist); // <-- CORRIGIDO AQUI
+        $this->authorize('update', $tasklist);
 
-        // View: resources/views/tasklists/edit.blade.php
-        return view('tasklists.edit', compact('tasklist')); // <-- CORRIGIDO AQUI
+        return view('tasklists.edit', compact('tasklist'));
     }
 
     /**
      * Update the specified task list in storage.
      */
-    public function update(Request $request, TaskList $tasklist) // <-- CORRIGIDO AQUI
+    public function update(Request $request, TaskList $tasklist)
     {
-        $this->authorize('update', $tasklist); // <-- CORRIGIDO AQUI
+        $this->authorize('update', $tasklist);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
-        $tasklist->update($validated); // <-- CORRIGIDO AQUI
+        $tasklist->update($validated);
 
-        return redirect()->route('webapp.folders.show', $tasklist->folder_id)->with('success', 'Lista de tarefas atualizada com sucesso!'); // <-- CORRIGIDO AQUI
+        // CORREÇÃO: Usando o nome de rota correto
+        return redirect()->route('webapp.folders.show', $tasklist->folder_id)->with('success', 'Lista de tarefas atualizada com sucesso!');
     }
 
     /**
      * Remove the specified task list from storage.
      */
-    public function destroy(TaskList $tasklist) // <-- CORRIGIDO AQUI
+    public function destroy(TaskList $tasklist)
     {
-        $this->authorize('delete', $tasklist); // <-- CORRIGIDO AQUI
+        $this->authorize('delete', $tasklist);
 
-        $folderId = $tasklist->folder_id; // <-- CORRIGIDO AQUI
-        $tasklist->delete(); // <-- CORRIGIDO AQUI
+        $folderId = $tasklist->folder_id;
+        $tasklist->delete();
 
+        // CORREÇÃO: Usando o nome de rota correto
         return redirect()->route('webapp.folders.show', $folderId)->with('success', 'Lista de tarefas deletada com sucesso!');
     }
 }
