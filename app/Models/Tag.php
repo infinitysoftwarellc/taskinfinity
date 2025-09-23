@@ -11,26 +11,23 @@ class Tag extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'user_id',
         'name',
         'color',
+        'user_id',
     ];
 
-    /**
-     * Get the user that owns the tag.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * The tasks that belong to the tag.
+     */
     public function tasks(): BelongsToMany
-{
-    return $this->belongsToMany(Task::class);
-}
+    {
+        // O Laravel vai procurar a tabela 'tag_task' por padrão.
+        return $this->belongsToMany(Task::class);
+    }
 }
