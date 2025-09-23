@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Task extends Model
 {
@@ -61,6 +62,10 @@ class Task extends Model
     {
         return $this->belongsTo(Task::class, 'parent_id');
     }
+    public function tags(): BelongsToMany
+{
+    return $this->belongsToMany(Tag::class);
+}
 
     /**
      * Get the child tasks (sub-tasks).
