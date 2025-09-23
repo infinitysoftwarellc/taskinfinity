@@ -87,4 +87,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Tag::class);
     }
+    public function habits()
+{
+    return $this->hasMany(Habit::class);
+}
 }

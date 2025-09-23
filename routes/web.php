@@ -5,6 +5,7 @@ use App\Http\Controllers\Task\TaskController;
 use App\Http\Controllers\Folder\FolderController;
 use App\Http\Controllers\TaskList\TaskListController;
 use App\Http\Controllers\PomodoroController;
+use App\Http\Controllers\HabitController;   
 
 
 
@@ -27,6 +28,7 @@ Route::middleware(['auth'])->prefix('webapp')->name('webapp.')->group(function (
     Route::get('/pomodoro', [PomodoroController::class, 'index'])
     ->middleware(['auth', 'verified']) // Garante que apenas usuários logados possam acessar
     ->name('pomodoro');
+    Route::get('/habits', [HabitController::class, 'index'])->name('habits.index');
 
     
 });
