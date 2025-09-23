@@ -21,6 +21,7 @@ Route::middleware(['auth'])->prefix('webapp')->name('webapp.')->group(function (
      Route::resource('folders', FolderController::class);
 
     // Adicione esta nova linha para as listas de tarefas
+    Route::get('folders/{folder}/tasklists', [TaskListController::class, 'index'])->name('tasklists.index');
     Route::resource('tasklists', TaskListController::class)->except(['index']);
     Route::resource('tasks', TaskController::class)->except(['index']);
         
@@ -32,4 +33,3 @@ require __DIR__.'/auth.php';
  // Adicione no topo
 
 // ...
-

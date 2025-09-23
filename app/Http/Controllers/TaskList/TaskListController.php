@@ -11,6 +11,15 @@ use Illuminate\Support\Facades\Auth;
 class TaskListController extends Controller
 {
     /**
+     * Display a listing of the resource.
+     */
+    public function index(Folder $folder)
+    {
+        $this->authorize('view', $folder);
+        return view('tasklists.index', compact('folder'));
+    }
+
+    /**
      * Show the form for creating a new task list within a specific folder.
      */
     public function create(Request $request)
