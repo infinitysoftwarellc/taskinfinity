@@ -68,9 +68,9 @@ class User extends Authenticatable
      * Get all of the task lists for the User.
      */
     public function taskLists(): HasMany
-    {
-        return $this->hasMany(TaskList::class);
-    }
+{
+    return $this->hasMany(TaskList::class);
+}
 
     /**
      * Get all of the tasks for the User.

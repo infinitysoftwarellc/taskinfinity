@@ -8,10 +8,13 @@ use Illuminate\Auth\Access\Response;
 
 class TaskListPolicy
 {
-    public function view(User $user, TaskList $taskList): bool
-    {
-        return $user->id === $taskList->user_id;
-    }
+    // app/Policies/TaskListPolicy.php
+
+public function view(User $user, TaskList $taskList): bool
+{
+
+    return $user->id === $taskList->user_id;
+}
 
     public function update(User $user, TaskList $taskList): bool
     {

@@ -42,74 +42,71 @@ class TaskListController extends Controller
      * Store a newly created task list in storage.
      */
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'folder_id' => 'required|exists:folders,id',
-    ]);
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'folder_id' => 'required|exists:folders,id',
+        ]);
 
-    $folder = Folder::findOrFail($validated['folder_id']);
-    $this->authorize('update', $folder);
+        $folder = Folder::findOrFail($validated['folder_id']);
+        $this->authorize('update', $folder);
 
-    $folder->taskLists()->create([
-        'name' => $validated['name'],
-        'user_id' => auth()->id(), // <-- Esta linha é a mais importante
-    ]);
+        auth()->user()->taskLists()->create([
+            'name' => $validated['name'],
+            'folder_id' => $folder->id,
+        ]);
 
-    return redirect()->route('webapp.folders.show', $folder)->with('success', 'Lista de tarefas criada com sucesso!');
-}
+        return redirect()->route('webapp.folders.show', $folder)->with('success', 'Lista de tarefas criada com sucesso!');
+    }
 
     /**
      * Display the specified task list.
      */
-    public function show(TaskList $taskList)
+    public function show(TaskList $tasklist) // <-- CORRIGIDO AQUI
     {
-        // ADICIONE ESTA LINHA PARA VER OS DADOS
-        dd('ID do dono da lista:', $taskList->user_id, 'ID do usuário logado:', auth()->id());
+        $this->authorize('view', $tasklist); // <-- CORRIGIDO AQUI
 
-        $this->authorize('view', $taskList);
+        $tasklist->load('tasks'); // <-- CORRIGIDO AQUI
 
-        $taskList->load('tasks');
-
-        return view('webapp.tasklists.show', compact('taskList'));
+        return view('tasklists.show', compact('tasklist')); // <-- CORRIGIDO AQUI
     }
 
     /**
      * Show the form for editing the specified task list.
      */
-    public function edit(TaskList $taskList)
+    public function edit(TaskList $tasklist) // <-- CORRIGIDO AQUI
     {
-        $this->authorize('update', $taskList);
+        $this->authorize('update', $tasklist); // <-- CORRIGIDO AQUI
 
         // View: resources/views/tasklists/edit.blade.php
-        return view('tasklists.edit', compact('taskList'));
+        return view('tasklists.edit', compact('tasklist')); // <-- CORRIGIDO AQUI
     }
 
     /**
      * Update the specified task list in storage.
      */
-    public function update(Request $request, TaskList $taskList)
+    public function update(Request $request, TaskList $tasklist) // <-- CORRIGIDO AQUI
     {
-        $this->authorize('update', $taskList);
+        $this->authorize('update', $tasklist); // <-- CORRIGIDO AQUI
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
-        $taskList->update($validated);
+        $tasklist->update($validated); // <-- CORRIGIDO AQUI
 
-        return redirect()->route('webapp.folders.show', $taskList->folder_id)->with('success', 'Lista de tarefas atualizada com sucesso!');
+        return redirect()->route('webapp.folders.show', $tasklist->folder_id)->with('success', 'Lista de tarefas atualizada com sucesso!'); // <-- CORRIGIDO AQUI
     }
 
     /**
      * Remove the specified task list from storage.
      */
-    public function destroy(TaskList $taskList)
+    public function destroy(TaskList $tasklist) // <-- CORRIGIDO AQUI
     {
-        $this->authorize('delete', $taskList);
+        $this->authorize('delete', $tasklist); // <-- CORRIGIDO AQUI
 
-        $folderId = $taskList->folder_id;
-        $taskList->delete();
+        $folderId = $tasklist->folder_id; // <-- CORRIGIDO AQUI
+        $tasklist->delete(); // <-- CORRIGIDO AQUI
 
         return redirect()->route('webapp.folders.show', $folderId)->with('success', 'Lista de tarefas deletada com sucesso!');
     }

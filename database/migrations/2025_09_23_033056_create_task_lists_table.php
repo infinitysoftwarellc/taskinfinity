@@ -9,20 +9,21 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('task_lists', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('folder_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            
-            // Para permitir sub-listas (hierarquia)
-            $table->foreignId('parent_id')->nullable()->constrained('task_lists')->onDelete('cascade');
-            
-            $table->string('name');
-            $table->timestamps();
-        });
-    }
+    // database/migrations/2025_09_23_033056_create_task_lists_table.php
+
+public function up(): void
+{
+    Schema::create('task_lists', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->foreignId('folder_id')->constrained()->onDelete('cascade');
+        
+        // ADICIONE ESTA LINHA
+        $table->foreignId('user_id')->constrained()->onDelete('cascade');
+
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.
