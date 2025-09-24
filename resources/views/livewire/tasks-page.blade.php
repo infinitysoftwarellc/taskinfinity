@@ -1,49 +1,26 @@
 <div>
-    // resources/views/livewire/tasks-page.blade.php
-<div>
-    <h1 class="text-3xl font-bold">{{ $pageTitle }}</h1>
+    <h1 class="text-3xl font-bold text-white">{{ $pageTitle }}</h1>
 
-    {{-- NEW TASK FORM --}}
-    <form wire:submit.prevent="saveTask" class="mt-6">
+    <form wire:submit="saveTask" class="mt-6">
         <input 
             type="text" 
-            wire:model="newTaskDescription" 
-            placeholder="Add a new task..."
-            class="w-full bg-gray-900/80 border-gray-700 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+            wire:model.live="newTaskDescription" {{-- Use .live para feedback instantâneo --}}
+            placeholder="Add a new task in {{ $pageTitle }}..."
+            class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg text-white focus:ring-indigo-500 focus:border-indigo-500"
         >
     </form>
-    {{-- END NEW TASK FORM --}}
 
-    <div class="mt-8">
-        {{-- Aqui você vai iterar e mostrar as tarefas --}}
+    <div class="mt-8 space-y-4">
         @forelse ($tasks as $task)
-            <div class="bg-gray-800/50 p-4 rounded-lg mb-4">
-                <p>{{ $task->description }}</p>
+            <div class="bg-gray-800/80 p-4 rounded-lg border border-gray-700">
+                <p class="text-gray-200">{{ $task->description }}</p>
                 @if ($task->due_date)
-                    <span class="text-sm text-gray-400">Vence em: {{ $task->due_date->format('d/m/Y') }}</span>
+                    <span class="text-xs text-gray-400">Vence em: {{ $task->due_date->format('d/m/Y') }}</span>
                 @endif
             </div>
         @empty
-            <div class="bg-gray-800/50 p-4 rounded-lg text-center mt-4">
-                <p>Nenhuma tarefa encontrada.</p>
-            </div>
-        @endforelse
-    </div>
-</div>
-    <h1 class="text-3xl font-bold">{{ $pageTitle }}</h1>
-
-    <div class="mt-8">
-        {{-- Aqui você vai iterar e mostrar as tarefas --}}
-        @forelse ($tasks as $task)
-            <div class="bg-gray-800/50 p-4 rounded-lg mb-4">
-                <p>{{ $task->description }}</p>
-                @if ($task->due_date)
-                    <span class="text-sm text-gray-400">Vence em: {{ $task->due_date->format('d/m/Y') }}</span>
-                @endif
-            </div>
-        @empty
-            <div class="bg-gray-800/50 p-4 rounded-lg text-center">
-                <p>Nenhuma tarefa encontrada.</p>
+            <div class="bg-gray-800/50 p-6 rounded-lg text-center border border-dashed border-gray-700">
+                <p class="text-gray-400">Nenhuma tarefa aqui. Que tal adicionar uma?</p>
             </div>
         @endforelse
     </div>

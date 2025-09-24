@@ -164,17 +164,13 @@
         </main>
 
     </div>
-    // resources/views/tasks/index.blade.php
-<x-app-layout>
-    <div class="flex-1 flex flex-col overflow-hidden">
-        
-        <div>
-            @livewire('project-list')
-            @livewire('create-project-form')
-        </div>
+    <x-app-layout>
+    <div class="flex h-screen bg-gray-900 text-white">
+        {{-- Carrega o componente da barra lateral de projetos --}}
+        @livewire('project-list')
 
         <main class="flex-1 p-8 overflow-y-auto">
-            {{-- Carrega o componente Livewire passando o identificador da rota --}}
+            {{-- Carrega o componente principal que exibe as tarefas --}}
             @livewire('tasks-page', ['identifier' => $identifier])
         </main>
     </div>

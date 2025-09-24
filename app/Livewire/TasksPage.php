@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Project;
 use App\Models\Task;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -14,44 +14,42 @@ class TasksPage extends Component
     public Collection $tasks;
     public $identifier;
 
-    // Property for the new task form
+    // 1. ADICIONE UMA PROPRIEDADE PARA ARMAZENAR O PROJETO ATUAL
+    public ?Project $currentProject = null;
+
     public string $newTaskDescription = '';
 
-    /**
-     * Mount the component and load initial data based on the route parameter.
-     *
-     * @param string|Project $identifier
-     */
     public function mount($identifier): void
     {
         $this->identifier = $identifier;
+
+        // 2. CARREGUE O PROJETO CORRETAMENTE NO MOUNT
+        if ($this->identifier instanceof Project) {
+            $this->currentProject = $this->identifier;
+        }
+
         $this->loadTasks();
     }
 
-    /**
-     * Load tasks based on the identifier (filter string or Project model).
-     */
     public function loadTasks(): void
     {
-        if ($this->identifier instanceof Project) {
-            $this->pageTitle = $this->identifier->name;
-            $this->tasks = Task::where('project_id', $this->identifier->id)
+        // 3. USE A NOVA PROPRIEDADE `currentProject` PARA A VERIFICAÇÃO
+        if ($this->currentProject) {
+            $this->pageTitle = $this->currentProject->name;
+            $this->tasks = Task::where('project_id', $this->currentProject->id)
                                ->where('user_id', Auth::id())
                                ->where('organization_id', auth()->user()->organization_id)
+                               ->orderBy('created_at', 'desc')
                                ->get();
         } else {
+            // A lógica para filtros ('inbox', etc.) permanece a mesma
             $this->loadTasksByFilter($this->identifier);
         }
     }
 
-    /**
-     * Load tasks for static filters like 'inbox', 'today', etc.
-     *
-     * @param string $filter
-     */
     public function loadTasksByFilter(string $filter): void
     {
-        $this->pageTitle = ucfirst($filter); // Ex: "Inbox" or "Today"
+        $this->pageTitle = ucfirst($filter);
 
         $query = Task::where('user_id', Auth::id())
                      ->where('organization_id', auth()->user()->organization_id);
@@ -60,13 +58,10 @@ class TasksPage extends Component
             'today' => $query->whereDate('due_date', today())->get(),
             'upcoming' => $query->where('due_date', '>', today())->get(),
             'inbox' => $query->whereNull('project_id')->get(),
-            default => collect(), // Returns an empty collection if the filter is invalid
+            default => collect(),
         };
     }
 
-    /**
-     * Save a new task to the database.
-     */
     public function saveTask(): void
     {
         $this->validate([
@@ -77,19 +72,17 @@ class TasksPage extends Component
             'description' => $this->newTaskDescription,
             'user_id' => Auth::id(),
             'organization_id' => auth()->user()->organization_id,
-            // Assign project_id if the current page is a project
-            'project_id' => ($this->identifier instanceof Project) ? $this->identifier->id : null,
+            // 4. USE A PROPRIEDADE `currentProject` PARA SALVAR O ID CORRETO
+            'project_id' => $this->currentProject?->id, // O '?->' garante que não haverá erro se o projeto for nulo
         ]);
 
-        // Reset the input field
         $this->reset('newTaskDescription');
-
-        // Refresh the task list
         $this->loadTasks();
     }
 
     public function render()
     {
+        // Lembre-se de remover o dd() se ele ainda estiver aqui
         return view('livewire.tasks-page');
     }
 }

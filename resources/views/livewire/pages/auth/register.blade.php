@@ -1,14 +1,16 @@
 <?php
 
 use App\Models\User;
+use App\Models\Organization;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
-new #[Layout('layouts.guest')] class extends Component
+new #[Layout('components.layouts.auth')] class extends Component
 {
     public string $name = '';
     public string $email = '';
@@ -26,63 +28,67 @@ new #[Layout('layouts.guest')] class extends Component
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
+        // Envolve a lógica em uma transação de banco de dados para garantir a integridade
+        DB::transaction(function () use ($validated) {
+            
+            // Cria o usuário
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        event(new Registered($user = User::create($validated)));
+            // Cria uma organização para o usuário
+            $organization = Organization::create([
+                'name' => $validated['name'] . "'s Organization",
+                'owner_id' => $user->id,
+            ]);
 
-        Auth::login($user);
+            // Atribui o usuário à sua nova organização
+            $user->organization_id = $organization->id;
+            $user->save();
+
+            event(new Registered($user));
+
+            Auth::login($user);
+        });
 
         $this->redirect(route('dashboard', absolute: false), navigate: true);
     }
 }; ?>
 
 <div>
-    <form wire:submit="register">
-        <!-- Name -->
+    <x-auth-header title="Create an account" description="Start your journey with us today" />
+
+    <form wire:submit="register" class="mt-8 grid gap-y-6">
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input wire:model="name" id="name" class="block mt-1 w-full" type="text" name="name" required autofocus autocomplete="name" />
+            <x-input-label for="name" value="Name" />
+            <x-text-input wire:model="name" id="name" name="name" type="text" required autofocus autocomplete="name" class="mt-1 w-full" />
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
-
-        <!-- Email Address -->
-        <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autocomplete="username" />
+        <div>
+            <x-input-label for="email" value="Email" />
+            <x-text-input wire:model="email" id="email" name="email" type="email" required autocomplete="username" class="mt-1 w-full" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
-
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input wire:model="password" id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
-
+        <div>
+            <x-input-label for="password" value="Password" />
+            <x-text-input wire:model="password" id="password" name="password" type="password" required autocomplete="new-password" class="mt-1 w-full" />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
-
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input wire:model="password_confirmation" id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
-
+        <div>
+            <x-input-label for="password_confirmation" value="Confirm Password" />
+            <x-text-input wire:model="password_confirmation" id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password" class="mt-1 w-full" />
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800" href="{{ route('login') }}" wire:navigate>
-                {{ __('Already registered?') }}
-            </a>
-
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
-            </x-primary-button>
-        </div>
+        <x-primary-button type="submit" intent="primary" full-width>
+            Register
+        </x-primary-button>
     </form>
+    <p class="mt-8 text-center text-sm/6 text-zinc-500 dark:text-zinc-400">
+        Already registered?
+        <a href="{{ route('login') }}" wire:navigate class="font-semibold text-zinc-950 hover:text-zinc-800 dark:text-white dark:hover:text-zinc-100">
+            Sign in
+        </a>
+    </p>
 </div>
