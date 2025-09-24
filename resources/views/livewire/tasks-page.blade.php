@@ -4,7 +4,8 @@
     <form wire:submit="saveTask" class="mt-6">
         <input 
             type="text" 
-            wire:model.live="newTaskDescription" {{-- Use .live para feedback instantâneo --}}
+            {{-- 1. ATUALIZE O wire:model --}}
+            wire:model="newTaskName"
             placeholder="Add a new task in {{ $pageTitle }}..."
             class="w-full bg-gray-800 border-2 border-gray-700 rounded-lg text-white focus:ring-indigo-500 focus:border-indigo-500"
         >
@@ -13,7 +14,8 @@
     <div class="mt-8 space-y-4">
         @forelse ($tasks as $task)
             <div class="bg-gray-800/80 p-4 rounded-lg border border-gray-700">
-                <p class="text-gray-200">{{ $task->description }}</p>
+                {{-- 2. EXIBA O CAMPO 'name' --}}
+                <p class="text-gray-200">{{ $task->name }}</p>
                 @if ($task->due_date)
                     <span class="text-xs text-gray-400">Vence em: {{ $task->due_date->format('d/m/Y') }}</span>
                 @endif

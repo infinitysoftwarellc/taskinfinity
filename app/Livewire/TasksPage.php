@@ -13,47 +13,47 @@ class TasksPage extends Component
     public string $pageTitle = '';
     public Collection $tasks;
     public $identifier;
-
-    // 1. ADICIONE UMA PROPRIEDADE PARA ARMAZENAR O PROJETO ATUAL
     public ?Project $currentProject = null;
-
-    public string $newTaskDescription = '';
+    
+    // RENOMEADO PARA MAIOR CLAREZA
+    public string $newTaskName = '';
 
     public function mount($identifier): void
     {
         $this->identifier = $identifier;
-
-        // 2. CARREGUE O PROJETO CORRETAMENTE NO MOUNT
-        if ($this->identifier instanceof Project) {
-            $this->currentProject = $this->identifier;
+        if ($identifier instanceof Project) {
+            $this->currentProject = $identifier;
+        } elseif (is_numeric($identifier)) {
+            $this->currentProject = Project::where('id', $identifier)
+                ->where('organization_id', auth()->user()->organization_id)
+                ->first();
         }
-
         $this->loadTasks();
     }
 
     public function loadTasks(): void
     {
-        // 3. USE A NOVA PROPRIEDADE `currentProject` PARA A VERIFICAÇÃO
+        // ... (código existente sem alterações)
         if ($this->currentProject) {
             $this->pageTitle = $this->currentProject->name;
             $this->tasks = Task::where('project_id', $this->currentProject->id)
+                               ->where('parent_id', null)
                                ->where('user_id', Auth::id())
                                ->where('organization_id', auth()->user()->organization_id)
                                ->orderBy('created_at', 'desc')
                                ->get();
         } else {
-            // A lógica para filtros ('inbox', etc.) permanece a mesma
-            $this->loadTasksByFilter($this->identifier);
+            $this->loadTasksByFilter(strval($this->identifier));
         }
     }
 
     public function loadTasksByFilter(string $filter): void
     {
+        // ... (código existente sem alterações)
         $this->pageTitle = ucfirst($filter);
-
         $query = Task::where('user_id', Auth::id())
-                     ->where('organization_id', auth()->user()->organization_id);
-
+                     ->where('organization_id', auth()->user()->organization_id)
+                     ->where('parent_id', null);
         $this->tasks = match ($filter) {
             'today' => $query->whereDate('due_date', today())->get(),
             'upcoming' => $query->where('due_date', '>', today())->get(),
@@ -64,25 +64,26 @@ class TasksPage extends Component
 
     public function saveTask(): void
     {
+        // ATUALIZADO PARA VALIDAR a nova propriedade
         $this->validate([
-            'newTaskDescription' => 'required|string|max:1000',
+            'newTaskName' => 'required|string|max:255',
         ]);
 
         Task::create([
-            'description' => $this->newTaskDescription,
+            // ATUALIZADO PARA SALVAR EM 'name'
+            'name' => $this->newTaskName,
             'user_id' => Auth::id(),
             'organization_id' => auth()->user()->organization_id,
-            // 4. USE A PROPRIEDADE `currentProject` PARA SALVAR O ID CORRETO
-            'project_id' => $this->currentProject?->id, // O '?->' garante que não haverá erro se o projeto for nulo
+            'project_id' => $this->currentProject?->id,
         ]);
 
-        $this->reset('newTaskDescription');
+        // ATUALIZADO PARA LIMPAR a nova propriedade
+        $this->reset('newTaskName');
         $this->loadTasks();
     }
 
     public function render()
     {
-        // Lembre-se de remover o dd() se ele ainda estiver aqui
         return view('livewire.tasks-page');
     }
 }
