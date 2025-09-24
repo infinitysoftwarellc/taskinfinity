@@ -25,7 +25,11 @@ class User extends Authenticatable
         'password',
         'pomodoro_ends_at',      // <-- ADICIONADO
         'pomodoro_session_type', // <-- ADICIONADO
-         'pomodoro_paused_at',
+        'pomodoro_paused_at',
+        'pomodoro_work_minutes',
+        'pomodoro_short_break_minutes',
+        'pomodoro_long_break_minutes',
+        'pomodoro_cycles',
     ];
 
     /**
@@ -61,7 +65,7 @@ class User extends Authenticatable
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
     public function folders(): HasMany
@@ -73,9 +77,9 @@ class User extends Authenticatable
      * Get all of the task lists for the User.
      */
     public function taskLists(): HasMany
-{
-    return $this->hasMany(TaskList::class);
-}
+    {
+        return $this->hasMany(TaskList::class);
+    }
 
     /**
      * Get all of the tasks for the User.
@@ -93,7 +97,7 @@ class User extends Authenticatable
         return $this->hasMany(Tag::class);
     }
     public function habits()
-{
-    return $this->hasMany(Habit::class);
-}
+    {
+        return $this->hasMany(Habit::class);
+    }
 }

@@ -4,14 +4,16 @@ namespace App\Livewire;
 
 use App\Models\PomodoroSession;
 use Livewire\Component;
+use Livewire\Attributes\Computed;
+use Illuminate\Support\Facades\Auth;
 
 class PomodoroTimer extends Component
 {
-    // Configurações
-    public int $workMinutes = 25;
-    public int $shortBreakMinutes = 5;
-    public int $longBreakMinutes = 15;
-    public int $cyclesUntilLongBreak = 4;
+    // Configurações (serão carregadas do usuário)
+    public int $workMinutes;
+    public int $shortBreakMinutes;
+    public int $longBreakMinutes;
+    public int $cyclesUntilLongBreak;
 
     // Estado
     public ?int $remainingSeconds = null;
@@ -21,43 +23,53 @@ class PomodoroTimer extends Component
 
     public function mount()
     {
-        $this->loadStateFromServer();
+        // Carrega as configurações salvas do usuário logado
+        $user = Auth::user();
+        $this->workMinutes = $user->pomodoro_work_minutes;
+        $this->shortBreakMinutes = $user->pomodoro_short_break_minutes;
+        $this->longBreakMinutes = $user->pomodoro_long_break_minutes;
+        $this->cyclesUntilLongBreak = $user->pomodoro_cycles;
+
+        $this->loadStateFromServer(false);
     }
 
-    public function loadStateFromServer()
+    #[Computed]
+    public function state(): array
     {
-        $user = auth()->user()->fresh(); // Pega os dados mais recentes do DB
+        return $this->getStateAsArray();
+    }
 
-        if ($user->pomodoro_paused_at) { // Se está pausado
+    public function loadStateFromServer(bool $dispatchEvent = true): void
+    {
+        $user = Auth::user()->fresh();
+        $this->sessionType = $user->pomodoro_session_type ?? $this->sessionType;
+
+        if ($user->pomodoro_paused_at) {
             $this->timerRunning = true;
             $this->isPaused = true;
-            $this->sessionType = $user->pomodoro_session_type;
-            // Calcula o tempo restante com base na data de término e a data de pausa
             $this->remainingSeconds = $user->pomodoro_ends_at->diffInSeconds($user->pomodoro_paused_at);
-
-        } elseif ($user->pomodoro_ends_at && $user->pomodoro_ends_at->isFuture()) { // Se está rodando
+        } elseif ($user->pomodoro_ends_at && $user->pomodoro_ends_at->isFuture()) {
             $this->timerRunning = true;
             $this->isPaused = false;
-            $this->sessionType = $user->pomodoro_session_type;
             $this->remainingSeconds = now()->diffInSeconds($user->pomodoro_ends_at);
-
-        } else { // Se está parado
+        } else {
             $this->timerRunning = false;
             $this->isPaused = false;
-            // sessionType pode ter sido alterado pelo usuário, então o mantemos
             $this->remainingSeconds = $this->getMinutesForType($this->sessionType) * 60;
         }
 
-        // Envia o estado atualizado para o Alpine.js
-        $this->dispatch('state-loaded', state: $this->getStateAsArray());
+        if ($dispatchEvent) {
+            $this->dispatch('state-loaded', state: $this->getStateAsArray());
+        }
     }
 
-    public function startTimer()
+    // O restante do arquivo continua igual...
+    
+    public function startTimer(): void
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
-        // Se o timer estava pausado, apenas retoma
-        if ($this->isPaused && $user->pomodoro_paused_at) {
+        if ($user->pomodoro_paused_at) {
             $pausedDuration = now()->diffInSeconds($user->pomodoro_paused_at);
             $newEndsAt = $user->pomodoro_ends_at->addSeconds($pausedDuration);
             
@@ -65,8 +77,7 @@ class PomodoroTimer extends Component
                 'pomodoro_ends_at' => $newEndsAt,
                 'pomodoro_paused_at' => null,
             ]);
-
-        } else { // Inicia um novo timer
+        } elseif (!$user->pomodoro_ends_at || $user->pomodoro_ends_at->isPast()) {
             $durationMinutes = $this->getMinutesForType($this->sessionType);
             
             $user->update([
@@ -79,7 +90,7 @@ class PomodoroTimer extends Component
                 'user_id' => $user->id,
                 'session_type' => $this->sessionType,
                 'configured_duration' => $durationMinutes,
-                'actual_duration' => 0, // <-- A CORREÇÃO ESTÁ AQUI
+                'actual_duration' => 0,
                 'started_at' => now(),
                 'status' => 'running',
             ]);
@@ -88,17 +99,20 @@ class PomodoroTimer extends Component
         $this->loadStateFromServer();
     }
 
-    public function pauseTimer()
+    public function pauseTimer(): void
     {
-        if (!$this->timerRunning || $this->isPaused) return;
+        $user = Auth::user();
+        if (!$user->pomodoro_ends_at || $user->pomodoro_paused_at) {
+            return;
+        }
 
-        auth()->user()->update(['pomodoro_paused_at' => now()]);
+        $user->update(['pomodoro_paused_at' => now()]);
         $this->loadStateFromServer();
     }
 
     public function stopTimer()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $session = PomodoroSession::where('user_id', $user->id)->where('status', 'running')->latest()->first();
 
         if ($session) {
@@ -111,7 +125,7 @@ class PomodoroTimer extends Component
 
         $user->update([
             'pomodoro_ends_at' => null,
-            'pomodoro_session_type' => $this->sessionType, // Mantém o tipo para o próximo início
+            'pomodoro_session_type' => $this->sessionType,
             'pomodoro_paused_at' => null,
         ]);
         
@@ -124,6 +138,29 @@ class PomodoroTimer extends Component
 
         $this->sessionType = $type;
         $this->loadStateFromServer();
+    }
+
+    public function updated($property, $value)
+    {
+        // Mapeia a propriedade do componente para a coluna do banco de dados
+        $settingsMap = [
+            'workMinutes' => 'pomodoro_work_minutes',
+            'shortBreakMinutes' => 'pomodoro_short_break_minutes',
+            'longBreakMinutes' => 'pomodoro_long_break_minutes',
+            'cyclesUntilLongBreak' => 'pomodoro_cycles',
+        ];
+        
+        // Se a propriedade alterada for uma das configurações, salva no banco
+        if (array_key_exists($property, $settingsMap)) {
+            Auth::user()->update([
+                $settingsMap[$property] => $value
+            ]);
+
+            // Se o timer não estiver rodando, atualiza o display
+            if (!$this->timerRunning) {
+                $this->loadStateFromServer();
+            }
+        }
     }
 
     private function getMinutesForType(string $type): int

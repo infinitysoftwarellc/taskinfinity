@@ -1,5 +1,6 @@
 <div class="p-4 sm:p-10 bg-gray-50 rounded-lg shadow-inner"
-     x-data="pomodoroTimer()"
+     x-data="pomodoroTimer({{ json_encode($this->state) }})"
+     x-init="init()"
      x-on:state-loaded.window="handleStateUpdate($event.detail.state)">
 
     {{-- Seção de Configurações --}}
@@ -68,22 +69,23 @@
 
     <script>
     document.addEventListener('alpine:init', () => {
-        Alpine.data('pomodoroTimer', () => ({
-            state: {
-                remainingSeconds: 0,
-                timerRunning: false,
-                isPaused: false,
-                sessionType: 'work'
-            },
+        Alpine.data('pomodoroTimer', (initialState) => ({
+            state: initialState,
             display: { minutes: '00', seconds: '00' },
             interval: null,
 
+            init() {
+                this.updateDisplay(this.state.remainingSeconds);
+                if (this.state.timerRunning && !this.state.isPaused) {
+                    this.startCountdown();
+                }
+            },
+
             handleStateUpdate(newState) {
-                this.stopCountdown(); // Para o contador antigo
+                this.stopCountdown();
                 this.state = newState;
                 this.updateDisplay(this.state.remainingSeconds);
 
-                // Se o timer estiver rodando e não pausado, inicia o contador visual
                 if (this.state.timerRunning && !this.state.isPaused) {
                     this.startCountdown();
                 }
@@ -98,8 +100,6 @@
                         this.updateDisplay(this.state.remainingSeconds);
                     } else {
                         this.stopCountdown();
-                        // Quando o tempo acabar, pede para o servidor carregar o próximo estado
-                        // (ex: ir de 'work' para 'short_break')
                         @this.call('loadStateFromServer');
                     }
                 }, 1000);
