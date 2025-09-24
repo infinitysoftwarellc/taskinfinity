@@ -26,7 +26,7 @@ Route::middleware(['auth'])->prefix('webapp')->name('webapp.')->group(function (
     Route::resource('tasklists', TaskListController::class)->except(['index']);
     Route::resource('tasks', TaskController::class)->except(['index']);
     Route::get('/pomodoro', [PomodoroController::class, 'index'])
-    ->middleware(['auth', 'verified']) // Garante que apenas usuários logados possam acessar
+    ->middleware(['auth', 'verified'])
     ->name('pomodoro');
     Route::get('/habits', [HabitController::class, 'index'])->name('habits.index');
 

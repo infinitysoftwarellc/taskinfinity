@@ -10,17 +10,25 @@ use Carbon\Carbon;
 
 class PomodoroHistory extends Component
 {
-    // Apenas para ouvir o evento e recarregar
     protected $listeners = ['pomodoroStopped' => '$refresh'];
+
+    public string $startDate;
+    public string $endDate;
+
+    public function mount()
+    {
+        // Define o período padrão para a última semana
+        $this->endDate = now()->toDateString();
+        $this->startDate = now()->subDays(6)->toDateString();
+    }
 
     #[Computed]
     public function sessions()
     {
-        // Busca apenas as sessões de 'foco' que foram completadas ou paradas,
-        // ordenadas da mais recente para a mais antiga.
+        // Busca todas as sessões concluídas ou paradas no período selecionado
         return PomodoroSession::where('user_id', Auth::id())
-            ->where('session_type', 'work')
             ->whereIn('status', ['completed', 'stopped'])
+            ->whereBetween('started_at', [$this->startDate, Carbon::parse($this->endDate)->endOfDay()])
             ->latest('started_at')
             ->get();
     }
@@ -28,18 +36,35 @@ class PomodoroHistory extends Component
     #[Computed]
     public function stats()
     {
-        $todaySessions = $this->sessions()->filter(function ($session) {
-            return Carbon::parse($session->started_at)->isToday();
-        });
+        $sessionsInPeriod = $this->sessions();
 
-        $totalSecondsToday = $todaySessions->sum('actual_duration');
-        $totalHoursToday = floor($totalSecondsToday / 3600);
-        $totalMinutesToday = floor(($totalSecondsToday % 3600) / 60);
+        $pomodorosToday = $sessionsInPeriod->filter(function ($session) {
+            return Carbon::parse($session->started_at)->isToday() && $session->session_type === 'work';
+        })->count();
+
+        $totalSecondsToday = $sessionsInPeriod->filter(function ($session) {
+            return Carbon::parse($session->started_at)->isToday() && $session->session_type === 'work';
+        })->sum('actual_duration');
 
         return [
-            'pomodoros_today' => $todaySessions->count(),
-            'total_time_today_formatted' => sprintf('%dh %02dm', $totalHoursToday, $totalMinutesToday),
+            'pomodoros_today' => $pomodorosToday,
+            'total_time_today_formatted' => $this->formatDuration($totalSecondsToday),
+            'total_work_time' => $this->formatDuration($sessionsInPeriod->where('session_type', 'work')->sum('actual_duration')),
+            'total_short_break_time' => $this->formatDuration($sessionsInPeriod->where('session_type', 'short_break')->sum('actual_duration')),
+            'total_long_break_time' => $this->formatDuration($sessionsInPeriod->where('session_type', 'long_break')->sum('actual_duration')),
         ];
+    }
+    
+    // Função auxiliar para formatar a duração de segundos para "Xh XXm"
+    private function formatDuration($totalSeconds): string
+    {
+        if ($totalSeconds < 60) {
+            return "0m";
+        }
+        $hours = floor($totalSeconds / 3600);
+        $minutes = floor(($totalSeconds % 3600) / 60);
+
+        return sprintf('%dh %02dm', $hours, $minutes);
     }
 
     public function render()

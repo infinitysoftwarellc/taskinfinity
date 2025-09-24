@@ -12,6 +12,7 @@ class PomodoroController extends Controller
      */
     public function index(): View
     {
+        // Altere para a nova view
         return view('pomodoro');
     }
 }
