@@ -32,12 +32,9 @@ new class extends Component {
                     <x-nav-link :href="route('webapp.task.index')" :active="request()->routeIs('webapp.task.index')" wire:navigate>
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('webapp.pomodoro')" :active="request()->routeIs('pomodoro')" wire:navigate>
-                        {{ __('Pomodoro') }}
-                    </x-nav-link>
                     <x-nav-link :href="route('webapp.habits.index')" :active="request()->routeIs('webapp.habits.index')" wire:navigate>
-        {{ __('Hábitos') }}
-    </x-nav-link>
+                        {{ __('Hábitos') }}
+                    </x-nav-link>
                 </div>
 
             </div>

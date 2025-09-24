@@ -18,7 +18,3 @@ use Illuminate\Support\Facades\Schedule; // Certifique-se de que esta linha exis
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
-
-
-// ADICIONE SEU AGENDAMENTO AQUI
-Schedule::command('pomodoro:process')->everyMinute();

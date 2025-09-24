@@ -23,13 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'pomodoro_ends_at',      // <-- ADICIONADO
-        'pomodoro_session_type', // <-- ADICIONADO
-        'pomodoro_paused_at',
-        'pomodoro_work_minutes',
-        'pomodoro_short_break_minutes',
-        'pomodoro_long_break_minutes',
-        'pomodoro_cycles',
+        
     ];
 
     /**
@@ -52,8 +46,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'pomodoro_ends_at' => 'datetime', // <-- ADICIONADO
-            'pomodoro_paused_at' => 'datetime',
         ];
     }
 
