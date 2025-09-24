@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Livewire\Attributes\Computed;
 
 class PomodoroTimer extends Component
 {
@@ -19,15 +18,19 @@ class PomodoroTimer extends Component
 
     public bool $showSettings = false;
 
+    // ✅ Propriedade pública em vez de computed
+    public bool $timerIsRunning = false;
+
     public function mount()
     {
         $this->resetTimer();
+        $this->updateTimerStatus();
     }
 
-    #[Computed]
-    public function timerIsRunning(): bool
+    // ✅ Método para atualizar o status do timer
+    private function updateTimerStatus(): void
     {
-        return $this->status === 'running';
+        $this->timerIsRunning = $this->status === 'running';
     }
 
     public function startTimer(): void
@@ -37,11 +40,13 @@ class PomodoroTimer extends Component
         }
 
         $this->status = 'running';
+        $this->updateTimerStatus(); // ✅ Atualiza a propriedade
     }
 
     public function stopTimer(): void
     {
         $this->status = 'stopped';
+        $this->updateTimerStatus(); // ✅ Atualiza a propriedade
     }
 
     public function skipTimer(): void
@@ -61,6 +66,7 @@ class PomodoroTimer extends Component
         }
 
         $this->resetTimer();
+        $this->updateTimerStatus(); // ✅ Atualiza a propriedade
     }
 
     public function resetTimer(): void
@@ -73,6 +79,7 @@ class PomodoroTimer extends Component
         $this->sessionType = $type;
         $this->status = 'stopped';
         $this->resetTimer();
+        $this->updateTimerStatus(); // ✅ Atualiza a propriedade
     }
 
     public function getMinutesForType(string $type): int
@@ -89,6 +96,7 @@ class PomodoroTimer extends Component
     {
         $this->resetTimer();
         $this->showSettings = false;
+        $this->updateTimerStatus(); // ✅ Atualiza a propriedade
     }
 
     public function render()

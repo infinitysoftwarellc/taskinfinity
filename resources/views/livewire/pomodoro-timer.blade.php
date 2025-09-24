@@ -16,8 +16,8 @@
         startInterval() {
             if (this.intervalId) clearInterval(this.intervalId);
             this.intervalId = setInterval(() => {
-                // ✅ Corrigido: agora acessa como propriedade
-                if (this.$wire.timerIsRunning && this.remaining > 0) {
+                // ✅ Usando $wire.status diretamente
+                if ($wire.status === 'running' && this.remaining > 0) {
                     this.remaining--;
                 }
             }, 1000);
@@ -39,9 +39,9 @@
 
     <!-- Botões de Controle -->
     <div class="flex justify-center gap-4">
-        <!-- ✅ Corrigido: sem parênteses -->
+        <!-- ✅ Usando $wire.status diretamente -->
         <button 
-            x-show="!$wire.timerIsRunning" 
+            x-show="$wire.status !== 'running'" 
             wire:click="startTimer" 
             class="px-4 py-2 bg-green-500 text-white rounded-lg shadow hover:bg-green-600 transition"
         >
@@ -49,7 +49,7 @@
         </button>
 
         <button 
-            x-show="$wire.timerIsRunning" 
+            x-show="$wire.status === 'running'" 
             wire:click="stopTimer" 
             class="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600 transition"
         >
