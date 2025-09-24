@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+
 class Task extends Model
 {
     use HasFactory;
@@ -36,6 +37,11 @@ class Task extends Model
         'wont_do' => 'boolean',
         'is_pinned' => 'boolean',
     ];
+
+    public function taskList(): BelongsTo
+{
+    return $this->belongsTo(TaskList::class);
+}
 
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
     public function project(): BelongsTo { return $this->belongsTo(Project::class); }
