@@ -1,45 +1,68 @@
 <?php
+// app/Models/PomodoroSession.php
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class PomodoroSession extends Model
 {
-    use HasFactory;
+    protected $guarded = []; // Permite todos os campos por enquanto
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'user_id',
-        'session_type',
-        'started_at',
-        'stopped_at',
-        'configured_duration',
-        'actual_duration',
-        'status',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
-        'started_at' => 'datetime', // <-- ADICIONE ESTA LINHA
-        'stopped_at' => 'datetime', // <-- E ESTA TAMBÉM
+        'started_at' => 'datetime',
+        'ended_at' => 'datetime',
+        'stopped_at' => 'datetime', // caso exista
+        'paused_at' => 'datetime',  // caso exista
     ];
 
-    /**
-     * Get the user that owns the pomodoro session.
-     */
-    public function user(): BelongsTo
+    // Método genérico que funciona com qualquer estrutura
+    public function getCurrentRemainingSeconds()
     {
-        return $this->belongsTo(User::class);
+        // Se tem remaining_seconds, usa ele
+        if (isset($this->attributes['remaining_seconds'])) {
+            if ($this->status !== 'running') {
+                return $this->remaining_seconds;
+            }
+        }
+
+        // Senão, calcula baseado na duração
+        $duration = $this->duration_minutes ?? $this->planned_duration ?? 25;
+        if (is_string($duration)) {
+            $duration = (int) $duration;
+        }
+        
+        $elapsed = now()->diffInSeconds($this->started_at);
+        $totalSeconds = $duration * 60;
+        
+        return max(0, $totalSeconds - $elapsed);
+    }
+
+    // Verifica se expirou
+    public function isExpired()
+    {
+        return $this->getCurrentRemainingSeconds() <= 0;
+    }
+
+    // Accessor para stopped_at se não existir
+    public function getStoppedAtAttribute()
+    {
+        return $this->ended_at ?? $this->attributes['stopped_at'] ?? null;
+    }
+
+    // Accessor para actual_duration se não existir  
+    public function getActualDurationAttribute()
+    {
+        if (isset($this->attributes['actual_duration'])) {
+            return $this->attributes['actual_duration'];
+        }
+        
+        // Calcula baseado no tempo decorrido
+        if ($this->started_at && $this->ended_at) {
+            return $this->started_at->diffInSeconds($this->ended_at);
+        }
+        
+        return 0;
     }
 }

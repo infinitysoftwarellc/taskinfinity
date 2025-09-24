@@ -10,39 +10,41 @@ use Carbon\Carbon;
 class ProcessPomodoroTimers extends Command
 {
     protected $signature = 'pomodoro:process';
-    protected $description = 'Process finished pomodoro timers and start the next session';
+    protected $description = 'Processa os timers pomodoro finalizados';
 
     public function handle()
     {
-        $usersWithFinishedTimers = User::where('pomodoro_ends_at', '<=', now())->get();
+        // Encontra usuários cujo timer terminou e não está pausado
+        $usersWithFinishedTimers = User::whereNotNull('pomodoro_ends_at')
+            ->where('pomodoro_ends_at', '<=', now())
+            ->whereNull('pomodoro_paused_at') // Importante para não processar timers pausados
+            ->get();
 
         foreach ($usersWithFinishedTimers as $user) {
-            // Encontra a última sessão "em andamento" para garantir
             $lastSession = PomodoroSession::where('user_id', $user->id)
                 ->where('status', 'running')
                 ->latest('started_at')
                 ->first();
 
             if ($lastSession) {
+                // Atualiza a sessão como 'completed'
                 $lastSession->update([
                     'status' => 'completed',
                     'stopped_at' => $user->pomodoro_ends_at,
+                    'actual_duration' => $lastSession->configured_duration,
                 ]);
             }
-            
-            // Lógica para iniciar o próximo ciclo (simplificada)
-            // Aqui você pode adicionar a lógica completa de ciclos e pausas longas
-            $nextSessionType = $user->pomodoro_session_type === 'work' ? 'short_break' : 'work';
-            
-            // Por simplicidade, vamos pausar o pomodoro após uma sessão
-            // Para continuar automaticamente, você precisaria recriar a lógica de `timerFinished` aqui
+
+            // Limpa o estado do timer do usuário
             $user->update([
                 'pomodoro_ends_at' => null,
                 'pomodoro_session_type' => null,
+                'pomodoro_paused_at' => null,
             ]);
 
-            // Opcional: Enviar uma notificação para o usuário
-            // event(new PomodoroCycleFinished($user, $nextSessionType));
+            // Aqui você pode adicionar lógica para iniciar a próxima sessão
+            // ou enviar uma notificação para o usuário.
+            $this->info("Pomodoro para o usuário {$user->email} finalizado.");
         }
     }
 }
