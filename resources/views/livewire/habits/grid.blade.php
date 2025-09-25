@@ -241,6 +241,7 @@
                                     <button
                                         type="button"
                                         wire:click="deleteHabit({{ $habit->id }})"
+                                        onclick="confirm('Tem certeza que deseja excluir este hábito?') || event.stopImmediatePropagation()"
                                         class="rounded-2xl border border-white/10 p-2 text-white/40 transition hover:border-rose-400/60 hover:text-rose-300"
                                         title="Remover hábito"
                                     >
