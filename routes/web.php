@@ -26,6 +26,8 @@ Route::prefix('webapp')
 
         Route::get('/tasks', [TaskController::class, 'index'])
             ->name('tasks.index');
+        Route::get('/tasks/lists/{list}', [TaskController::class, 'show'])
+            ->name('tasks.lists.show');
         Route::get('/tasks/board', [TaskController::class, 'board'])
             ->name('tasks.board');
         Route::get('/tasks/timeline', [TaskController::class, 'timeline'])
