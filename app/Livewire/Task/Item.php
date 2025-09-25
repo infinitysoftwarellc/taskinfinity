@@ -313,6 +313,13 @@ class Item extends Component
         $this->createSubtask();
     }
 
+    public function toggleCompletion(): void
+    {
+        $this->status = $this->status === 'done' ? 'todo' : 'done';
+
+        $this->saveStatus();
+    }
+
     public function deleteTask(): void
     {
         $this->task->delete();
