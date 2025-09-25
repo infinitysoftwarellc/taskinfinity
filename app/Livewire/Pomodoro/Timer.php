@@ -31,6 +31,8 @@ class Timer extends Component
 
     public ?int $remainingSeconds = null;
 
+    public ?int $currentDurationSeconds = null;
+
     public ?int $editingSessionId = null;
 
     #[Validate('required|in:focus,short,long')]
@@ -43,6 +45,23 @@ class Timer extends Component
      * @var list<array<string, mixed>>
      */
     public array $recentSessions = [];
+
+    /**
+     * @var array<string, int>
+     */
+    public array $overview = [
+        'today_pomodoros' => 0,
+        'today_focus_seconds' => 0,
+        'total_pomodoros' => 0,
+        'total_focus_seconds' => 0,
+    ];
+
+    /**
+     * @var list<array<string, mixed>>
+     */
+    public array $todayRecords = [];
+
+    public string $focusNote = '';
 
     public function mount(): void
     {
@@ -64,6 +83,8 @@ class Timer extends Component
 
         $this->refreshSession();
         $this->refreshRecentSessions();
+        $this->updateCurrentDurationReference();
+        $this->refreshMetrics();
     }
 
     public function syncTimezone(string $timezone): void
@@ -122,6 +143,7 @@ class Timer extends Component
         $this->currentSession->pause($remaining, $this->timezone);
         $this->currentSession->refresh();
         $this->remainingSeconds = $this->currentSession->secondsRemaining($this->timezone);
+        $this->updateCurrentDurationReference();
     }
 
     public function resume(): void
@@ -133,6 +155,7 @@ class Timer extends Component
         $this->currentSession->resume($this->timezone);
         $this->currentSession->refresh();
         $this->remainingSeconds = $this->currentSession->secondsRemaining($this->timezone);
+        $this->updateCurrentDurationReference();
     }
 
     public function stop(): void
@@ -145,6 +168,7 @@ class Timer extends Component
         $this->currentSession = null;
         $this->remainingSeconds = null;
         $this->refreshRecentSessions();
+        $this->updateCurrentDurationReference();
     }
 
     public function tick(): void
@@ -171,12 +195,15 @@ class Timer extends Component
             }
 
             $this->remainingSeconds = $remaining;
+            $this->updateCurrentDurationReference();
         } elseif ($this->currentSession->status === PomodoroSession::STATUS_PAUSED) {
             $this->remainingSeconds = $this->currentSession->secondsRemaining($this->timezone);
+            $this->updateCurrentDurationReference();
         } else {
             $this->currentSession = null;
             $this->remainingSeconds = null;
             $this->refreshRecentSessions();
+            $this->updateCurrentDurationReference();
         }
     }
 
@@ -196,6 +223,10 @@ class Timer extends Component
         return view('livewire.pomodoro.timer', [
             'displayTime' => $this->displayTime,
             'currentLabel' => $this->currentLabel(),
+            'progressRatio' => $this->progressRatio(),
+            'isRunning' => $this->currentSession && $this->currentSession->status === PomodoroSession::STATUS_RUNNING,
+            'isPaused' => $this->currentSession && $this->currentSession->status === PomodoroSession::STATUS_PAUSED,
+            'currentSessionType' => $this->currentSession?->type ?? PomodoroSession::TYPE_FOCUS,
         ]);
     }
 
@@ -276,6 +307,7 @@ class Timer extends Component
         $this->dispatch('session-deleted');
 
         $this->refreshRecentSessions();
+        $this->updateCurrentDurationReference();
     }
 
     protected function currentLabel(): string
@@ -323,6 +355,7 @@ class Timer extends Component
         $this->currentSession = $session;
         $this->remainingSeconds = $durationSeconds;
         $this->refreshRecentSessions();
+        $this->updateCurrentDurationReference();
     }
 
     protected function handleFinishedSession(PomodoroSession $session): void
@@ -363,7 +396,11 @@ class Timer extends Component
 
         if ($this->currentSession) {
             $this->remainingSeconds = $this->currentSession->secondsRemaining($this->timezone);
+        } else {
+            $this->remainingSeconds = null;
         }
+
+        $this->updateCurrentDurationReference();
     }
 
     protected function refreshRecentSessions(): void
@@ -388,6 +425,8 @@ class Timer extends Component
                 ];
             })
             ->all();
+
+        $this->refreshMetrics();
     }
 
     protected function resetEditing(): void
@@ -395,6 +434,158 @@ class Timer extends Component
         $this->editingSessionId = null;
         $this->editingType = PomodoroSession::TYPE_FOCUS;
         $this->editingDurationMinutes = 25;
+    }
+
+    protected function updateCurrentDurationReference(): void
+    {
+        if ($this->currentSession) {
+            $durationSeconds = $this->currentSession->duration_seconds ?? ($this->focusMinutes * 60);
+            $this->currentDurationSeconds = max(60, (int) $durationSeconds);
+
+            return;
+        }
+
+        $label = $this->currentLabel();
+        $minutes = $this->defaultDurationMinutes($label);
+        $this->currentDurationSeconds = max(60, $minutes * 60);
+    }
+
+    protected function defaultDurationMinutes(string $label): int
+    {
+        return match ($label) {
+            'Short Break' => $this->shortBreakMinutes,
+            'Long Break' => $this->longBreakMinutes,
+            default => $this->focusMinutes,
+        };
+    }
+
+    protected function progressRatio(): float
+    {
+        $duration = $this->currentDurationSeconds ?? ($this->focusMinutes * 60);
+
+        if ($duration <= 0) {
+            return 0.0;
+        }
+
+        if (! $this->currentSession || $this->remainingSeconds === null) {
+            return 0.0;
+        }
+
+        $remaining = max(0, $this->remainingSeconds);
+
+        return max(0, min(1, 1 - ($remaining / $duration)));
+    }
+
+    protected function refreshMetrics(): void
+    {
+        $activeTimezone = $this->timezone !== ''
+            ? $this->timezone
+            : config('app.timezone', 'UTC');
+
+        $now = Carbon::now($activeTimezone);
+        $startOfDayUtc = $now->copy()->startOfDay()->setTimezone('UTC');
+        $endOfDayUtc = $now->copy()->endOfDay()->setTimezone('UTC');
+
+        $todayFocusQuery = $this->user()
+            ->pomodoroSessions()
+            ->where('type', PomodoroSession::TYPE_FOCUS)
+            ->where('status', PomodoroSession::STATUS_FINISHED)
+            ->whereBetween('started_at', [$startOfDayUtc, $endOfDayUtc]);
+
+        $todayFocusSeconds = (clone $todayFocusQuery)->sum('duration_seconds');
+        $todayPomodoros = (clone $todayFocusQuery)->count();
+
+        $totalFocusQuery = $this->user()
+            ->pomodoroSessions()
+            ->where('type', PomodoroSession::TYPE_FOCUS)
+            ->where('status', PomodoroSession::STATUS_FINISHED);
+
+        $totalFocusSeconds = (clone $totalFocusQuery)->sum('duration_seconds');
+        $totalPomodoros = (clone $totalFocusQuery)->count();
+
+        $this->overview = [
+            'today_pomodoros' => $todayPomodoros,
+            'today_focus_seconds' => (int) $todayFocusSeconds,
+            'total_pomodoros' => $totalPomodoros,
+            'total_focus_seconds' => (int) $totalFocusSeconds,
+        ];
+
+        $sessionsToday = $this->user()
+            ->pomodoroSessions()
+            ->whereBetween('started_at', [$startOfDayUtc, $endOfDayUtc])
+            ->latest('started_at')
+            ->limit(12)
+            ->get();
+
+        $this->todayRecords = $sessionsToday
+            ->map(function (PomodoroSession $session) use ($activeTimezone) {
+                $startedAt = optional($session->started_at)?->setTimezone($activeTimezone);
+                $endedAt = optional($session->ended_at)?->setTimezone($activeTimezone);
+
+                if (! $endedAt && $startedAt && $session->duration_seconds) {
+                    $endedAt = $startedAt->copy()->addSeconds($session->duration_seconds);
+                }
+
+                $startMinutes = $startedAt
+                    ? ($startedAt->hour * 60) + $startedAt->minute
+                    : null;
+
+                $endMinutes = $endedAt
+                    ? ($endedAt->hour * 60) + $endedAt->minute
+                    : ($startMinutes !== null && $session->duration_seconds
+                        ? $startMinutes + (int) ceil($session->duration_seconds / 60)
+                        : null);
+
+                return [
+                    'id' => $session->id,
+                    'type' => $session->type,
+                    'status' => $session->status,
+                    'duration_seconds' => $session->duration_seconds,
+                    'started_at' => $startedAt,
+                    'ended_at' => $endedAt,
+                    'label' => $this->formatSessionLabel($startedAt, $endedAt),
+                    'duration_label' => $this->formatDurationLabel($session->duration_seconds),
+                    'start_minutes' => $startMinutes,
+                    'end_minutes' => $endMinutes,
+                ];
+            })
+            ->all();
+    }
+
+    protected function formatSessionLabel(?Carbon $start, ?Carbon $end): string
+    {
+        if (! $start) {
+            return '—';
+        }
+
+        $startLabel = $start->format('H:i');
+        $endLabel = $end ? $end->format('H:i') : '—';
+
+        return $startLabel . ' - ' . $endLabel;
+    }
+
+    protected function formatDurationLabel(?int $seconds): string
+    {
+        $seconds = (int) max(0, $seconds ?? 0);
+
+        if ($seconds === 0) {
+            return '0m';
+        }
+
+        $minutes = (int) round($seconds / 60);
+
+        if ($minutes < 60) {
+            return $minutes . 'm';
+        }
+
+        $hours = intdiv($minutes, 60);
+        $remainingMinutes = $minutes % 60;
+
+        if ($remainingMinutes === 0) {
+            return $hours . 'h';
+        }
+
+        return sprintf('%dh %02dm', $hours, $remainingMinutes);
     }
 
     protected function user(): Authenticatable
