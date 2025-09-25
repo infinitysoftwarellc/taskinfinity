@@ -27,6 +27,9 @@ class Task extends Model
         'pomodoros_done',
         'position',
         'completed_at',
+        'parent_id', 
+        'position', 
+        'depth',
     ];
 
     protected $casts = [
@@ -40,7 +43,6 @@ class Task extends Model
         'pomodoros_done' => 'integer',
         'position' => 'integer',
     ];
-
     /**
      * Get the list that owns the task.
      */

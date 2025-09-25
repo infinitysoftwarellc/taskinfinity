@@ -58,6 +58,7 @@ class Item extends Component
             $query->orderBy('position')->orderBy('created_at');
         }]);
 
+
         $resolvedDepth = $depth ?? $task->depth;
 
         $this->depth = ($resolvedDepth !== null && $resolvedDepth > 0)
