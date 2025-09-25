@@ -11,11 +11,9 @@ use Livewire\Component;
 class Sidebar extends Component
 {
     public array $views = [
-        ['label' => 'All', 'count' => 0, 'icon' => 'M3.75 5.25h16.5M3.75 9.75h16.5M3.75 14.25h16.5M3.75 18.75h16.5'],
-        ['label' => 'Today', 'count' => 0, 'icon' => 'M6 4.5h12m-12 6.75h12M9.75 3v3m4.5-3v3M9 15.75l2.25 2.25L15 13.5'],
-        ['label' => 'Next 7 Days', 'count' => 0, 'icon' => 'M8.25 6.75h7.5M8.25 12h7.5M8.25 17.25H12m-9.75-9l9-6 9 6v9a3 3 0 01-3 3h-12a3 3 0 01-3-3z'],
-        ['label' => 'Inbox', 'count' => 0, 'icon' => 'M3.75 5.25h16.5a1.5 1.5 0 011.5 1.5v10.5a1.5 1.5 0 01-1.5 1.5h-16.5a1.5 1.5 0 01-1.5-1.5V6.75a1.5 1.5 0 011.5-1.5zm0 0L12 13.5l8.25-8.25'],
-        ['label' => 'Summary', 'count' => 0, 'icon' => 'M4.5 6.75h15m-15 6h15M4.5 16.5h8.25'],
+        ['label' => 'All', 'slug' => 'all', 'count' => 0, 'icon' => 'M3.75 5.25h16.5M3.75 9.75h16.5M3.75 14.25h16.5M3.75 18.75h16.5'],
+        ['label' => 'Today', 'slug' => 'today', 'count' => 0, 'icon' => 'M6 4.5h12m-12 6.75h12M9.75 3v3m4.5-3v3M9 15.75l2.25 2.25L15 13.5'],
+        ['label' => 'Next 7 Days', 'slug' => 'next-7-days', 'count' => 0, 'icon' => 'M8.25 6.75h7.5M8.25 12h7.5M8.25 17.25H12m-9.75-9l9-6 9 6v9a3 3 0 01-3 3h-12a3 3 0 01-3-3z'],
     ];
 
     public string $filtersDescription = 'Display tasks filtered by list, date, priority, tag, and more.';
@@ -29,6 +27,8 @@ class Sidebar extends Component
 
     public ?int $activeListId = null;
 
+    public ?string $activeView = null;
+
     public bool $showCreateList = false;
 
     public array $form = [
@@ -36,9 +36,17 @@ class Sidebar extends Component
         'view_mode' => 'list',
     ];
 
-    public function mount(?int $activeListId = null): void
+    public function mount(?int $activeListId = null, ?string $activeView = null): void
     {
         $this->activeListId = $activeListId;
+        $this->activeView = $activeView;
+    }
+
+    public function updatedActiveListId(): void
+    {
+        if ($this->activeListId) {
+            $this->activeView = null;
+        }
     }
 
     public function updatedShowCreateList(): void
@@ -50,7 +58,26 @@ class Sidebar extends Component
 
     public function openList(int $listId)
     {
+        $this->activeView = null;
+
         return $this->redirectRoute('tasks.lists.show', ['list' => $listId], navigate: true);
+    }
+
+    public function openView(string $view)
+    {
+        $view = strtolower($view);
+        $availableViews = collect($this->views)->pluck('slug')->all();
+
+        abort_unless(in_array($view, $availableViews, true), 404);
+
+        $this->activeListId = null;
+        $this->activeView = $view;
+
+        $params = $view === 'all'
+            ? []
+            : ['view' => $view];
+
+        return $this->redirectRoute('tasks.index', $params, navigate: true);
     }
 
     public function createList()
@@ -110,12 +137,6 @@ class Sidebar extends Component
             $this->views[2]['count'] = (clone $tasksQuery)
                 ->whereBetween('due_at', [now()->startOfDay(), now()->addDays(7)->endOfDay()])
                 ->count();
-            $this->views[3]['count'] = (clone $tasksQuery)
-                ->whereNull('due_at')
-                ->count();
-            $this->views[4]['count'] = (clone $tasksQuery)
-                ->where('status', 'done')
-                ->count();
         }
 
         $lists = TaskList::query()
@@ -128,6 +149,7 @@ class Sidebar extends Component
         return view('livewire.task.sidebar', [
             'lists' => $lists,
             'views' => $this->views,
+            'activeView' => $this->activeView,
         ]);
     }
 }

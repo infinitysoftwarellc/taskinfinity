@@ -10,8 +10,8 @@
         <ul class="mt-4 space-y-2">
             @foreach ($views as $view)
                 <li>
-                    <button type="button"
-                        class="flex w-full items-center justify-between rounded-2xl bg-white/10 px-4 py-3 text-left text-sm font-medium text-white/80 transition hover:bg-white/15">
+                    <button type="button" wire:click="openView('{{ $view['slug'] }}')"
+                        class="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-medium transition {{ $activeView === $view['slug'] ? 'bg-indigo-500/20 text-white' : 'bg-white/10 text-white/80 hover:bg-white/15' }}">
                         <span class="flex items-center gap-3">
                             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-black/40 text-white/70">
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
