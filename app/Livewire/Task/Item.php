@@ -58,7 +58,7 @@ class Item extends Component
             $query->orderBy('position')->orderBy('created_at');
         }]);
 
-        $this->depth = $depth ?: $task->depth;
+        $this->depth = $depth > 0 ? $depth : ($task->depth ?? 0);
         $this->fillFromTask();
     }
 
