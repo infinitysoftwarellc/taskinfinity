@@ -5,6 +5,7 @@ use App\Livewire\Task\Workspace;
 use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -35,6 +36,29 @@ it('permite criar tarefas raiz rapidamente com Enter', function () {
         ->and($task->title)->toBe('Planejar lançamento')
         ->and($task->depth)->toBe(0)
         ->and($task->parent_id)->toBeNull();
+});
+
+it('permite criar tarefas raiz mesmo com Auth retornando id como string', function () {
+    $user = User::factory()->create();
+
+    $list = TaskList::create([
+        'user_id' => $user->id,
+        'name' => 'Lista principal',
+        'view_mode' => 'list',
+        'position' => 1,
+    ]);
+
+    $this->actingAs($user);
+
+    Auth::shouldReceive('id')
+        ->andReturn((string) $user->id);
+
+    Livewire::test(Workspace::class, ['listId' => $list->id])
+        ->set('newTaskTitle', 'Task com string')
+        ->call('createRootTask')
+        ->assertHasNoErrors();
+
+    expect(Task::where('title', 'Task com string')->exists())->toBeTrue();
 });
 
 it('impede criar subtarefas além do limite de sete níveis', function () {
