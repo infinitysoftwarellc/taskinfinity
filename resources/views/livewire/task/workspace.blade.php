@@ -92,29 +92,32 @@
             </div>
         </header>
 
-        <div class="space-y-6 rounded-3xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-            <div>
-                <label for="new-task-title" class="block text-xs font-semibold uppercase tracking-wide text-white/60">Criar tarefa rapidamente</label>
-                <div class="mt-2 flex items-center gap-3">
-                    <input id="new-task-title" type="text" placeholder="Digite o nome da tarefa e pressione Enter"
+        <div class="space-y-5 rounded-3xl border border-white/5 bg-white/5 p-6 backdrop-blur">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <label for="new-task-title" class="sr-only">Nome da tarefa</label>
+                <div class="flex w-full items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-4 py-2">
+                    <svg class="h-4 w-4 text-white/50" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    <input id="new-task-title" type="text" placeholder="+ Adicionar tarefa"
                         wire:model.defer="newTaskTitle" wire:keydown.enter.prevent="createRootTask"
-                        class="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
-                    <button type="button" wire:click="createRootTask"
-                        class="hidden rounded-2xl bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400 sm:flex">
-                        Criar
-                    </button>
+                        class="w-full bg-transparent text-sm text-white placeholder-white/40 focus:outline-none focus:ring-0" />
                 </div>
-                @error('newTaskTitle')
-                    <p class="mt-2 text-xs text-rose-300">{{ $message }}</p>
-                @enderror
+                <button type="button" wire:click="createRootTask"
+                    class="inline-flex items-center justify-center rounded-2xl bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-indigo-400">
+                    Adicionar
+                </button>
             </div>
+            @error('newTaskTitle')
+                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+            @enderror
 
-            <div class="space-y-4">
+            <div class="space-y-3">
                 @forelse ($tasks as $task)
                     <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-' . $task->id" />
                 @empty
                     <div class="rounded-2xl border border-dashed border-white/10 bg-black/30 p-6 text-sm text-white/60">
-                        Nenhuma tarefa cadastrada nesta lista ainda. Comece criando uma tarefa no campo acima e organize subtarefas com até 7 níveis de hierarquia.
+                        Nenhuma tarefa cadastrada ainda. Crie a primeira tarefa no campo acima.
                     </div>
                 @endforelse
             </div>
