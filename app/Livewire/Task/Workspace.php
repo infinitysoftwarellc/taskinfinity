@@ -137,7 +137,9 @@ class Workspace extends Component
 
         $userId = Auth::id();
 
-        abort_unless($this->list->user_id === $userId, 403);
+        if (! $userId || $this->list->user_id !== (int) $userId) {
+            abort(403);
+        }
 
         $validated = $this->validate([
             'newTaskTitle' => ['required', 'string', 'max:255'],
