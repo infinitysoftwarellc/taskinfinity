@@ -120,6 +120,32 @@ test('focus session automatically transitions to short break when finished', fun
     expect($component->instance()->currentSession?->type)->toBe(PomodoroSession::TYPE_SHORT);
 });
 
+test('break session automatically transitions back to focus when finished', function () {
+    $user = User::factory()->create();
+
+    Carbon::setTestNow(Carbon::create(2024, 1, 1, 14, 0, 0, 'America/Sao_Paulo'));
+
+    $this->actingAs($user);
+
+    $component = Livewire::test(Timer::class)
+        ->set('timezone', 'America/Sao_Paulo');
+
+    $component->call('startFocus');
+
+    Carbon::setTestNow(Carbon::create(2024, 1, 1, 14, 25, 0, 'America/Sao_Paulo'));
+    $component->call('tick'); // finish focus -> start short break
+
+    Carbon::setTestNow(Carbon::create(2024, 1, 1, 14, 30, 0, 'America/Sao_Paulo'));
+    $component->call('tick');
+
+    $activeSession = PomodoroSession::latest('started_at')->first();
+
+    expect($activeSession)->not->toBeNull();
+    expect($activeSession->type)->toBe(PomodoroSession::TYPE_FOCUS);
+    expect($activeSession->status)->toBe(PomodoroSession::STATUS_RUNNING);
+    expect($component->instance()->currentSession?->type)->toBe(PomodoroSession::TYPE_FOCUS);
+});
+
 test('long break starts after configured number of focus sessions', function () {
     $user = User::factory()->create();
 
