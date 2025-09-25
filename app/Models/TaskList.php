@@ -42,4 +42,15 @@ class TaskList extends Model
     {
         return $this->hasMany(Task::class, 'list_id');
     }
+
+    /**
+     * Root tasks for the list.
+     */
+    public function rootTasks(): HasMany
+    {
+        return $this->tasks()
+            ->whereNull('parent_id')
+            ->orderBy('position')
+            ->orderBy('created_at');
+    }
 }
