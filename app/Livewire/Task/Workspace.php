@@ -186,10 +186,6 @@ class Workspace extends Component
 
     public function openEditor(int $taskId): void
     {
-        if (! $this->list) {
-            return;
-        }
-
         $task = $this->findTask($taskId);
         $task->load('tags');
 
@@ -280,6 +276,7 @@ class Workspace extends Component
         $this->editorTagIds = $selectedTagIds;
         $this->showEditor = false;
         $this->loadAvailableTags();
+        $this->dispatch('task-tags-updated');
         $this->dispatch('task-updated');
     }
 
@@ -335,6 +332,7 @@ class Workspace extends Component
         $this->newTagName = '';
         $this->resetErrorBag(['newTagName', 'newTagColor']);
         $this->loadAvailableTags();
+        $this->dispatch('task-tags-updated');
         $this->newTagColor = $this->nextTagColor();
     }
 
@@ -360,8 +358,11 @@ class Workspace extends Component
 
         $query = Task::query()
             ->where('user_id', $userId)
-            ->where('list_id', $this->list?->id)
             ->with('tags');
+
+        if ($this->list?->id) {
+            $query->where('list_id', $this->list->id);
+        }
 
         if ($this->supportsHierarchy) {
             $query->with('childrenRecursive');
