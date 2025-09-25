@@ -22,9 +22,41 @@ class Grid extends Component
     public array $form = [
         'name' => '',
         'schedule' => 'daily',
+        'frequency' => 'daily_check_in',
+        'goal' => 'achieve_it_all',
+        'start_date' => '',
+        'goal_days' => 'forever',
+        'reminder' => 'others',
+        'auto_popup' => false,
         'custom_days' => [],
         'goal_per_period' => null,
         'color' => '#22c55e',
+    ];
+
+    public array $frequencyOptions = [
+        'daily_check_in' => 'Daily Check-in',
+        'build_momentum' => 'Build momentum',
+        'weekly_focus' => 'Weekly focus',
+    ];
+
+    public array $goalOptions = [
+        'achieve_it_all' => 'Achieve it all',
+        'stay_consistent' => 'Stay consistent',
+        'feel_amazing' => 'Feel amazing',
+    ];
+
+    public array $goalDaysOptions = [
+        'forever' => 'Forever',
+        '30_days' => '30 days',
+        '90_days' => '90 days',
+    ];
+
+    public array $reminderOptions = [
+        'none' => 'Nenhum',
+        'morning' => 'Morning',
+        'afternoon' => 'Afternoon',
+        'evening' => 'Evening',
+        'others' => 'Others',
     ];
 
     public array $weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -32,6 +64,7 @@ class Grid extends Component
     public function mount(): void
     {
         $this->activeDate = now()->toDateString();
+        $this->resetForm();
     }
 
     public function toggleCreateForm(): void
@@ -73,6 +106,12 @@ class Grid extends Component
             'user_id' => $userId,
             'name' => $data['form']['name'],
             'schedule' => $data['form']['schedule'],
+            'frequency' => $data['form']['frequency'],
+            'goal' => $data['form']['goal'],
+            'start_date' => $data['form']['start_date'],
+            'goal_days' => $data['form']['goal_days'],
+            'reminder' => $data['form']['reminder'],
+            'auto_popup' => (bool) ($data['form']['auto_popup'] ?? false),
             'custom_days' => $data['form']['schedule'] === 'custom'
                 ? array_values(array_unique(array_map('intval', $data['form']['custom_days'])))
                 : null,
@@ -115,6 +154,10 @@ class Grid extends Component
 
         $targetDate = Carbon::parse($date)->startOfDay();
         $today = now()->startOfDay();
+
+        if ($habit->start_date instanceof Carbon && $targetDate->lt($habit->start_date->startOfDay())) {
+            return;
+        }
 
         if ($targetDate->greaterThan($today)) {
             return;
@@ -228,11 +271,20 @@ class Grid extends Component
             'today' => $today,
             'summaries' => $summaries,
             'activeDate' => $activeDate,
+            'frequencyOptions' => $this->frequencyOptions,
+            'goalOptions' => $this->goalOptions,
+            'goalDaysOptions' => $this->goalDaysOptions,
+            'reminderOptions' => $this->reminderOptions,
         ]);
     }
 
     protected function rules(int $userId): array
     {
+        $frequencyKeys = array_keys($this->frequencyOptions);
+        $goalKeys = array_keys($this->goalOptions);
+        $goalDaysKeys = array_keys($this->goalDaysOptions);
+        $reminderKeys = array_keys($this->reminderOptions);
+
         return [
             'form.name' => [
                 'required',
@@ -241,6 +293,12 @@ class Grid extends Component
                 Rule::unique('habits', 'name')->where(fn ($query) => $query->where('user_id', $userId)),
             ],
             'form.schedule' => ['required', Rule::in(['daily', 'weekly', 'custom'])],
+            'form.frequency' => ['required', Rule::in($frequencyKeys)],
+            'form.goal' => ['required', Rule::in($goalKeys)],
+            'form.start_date' => ['required', 'date'],
+            'form.goal_days' => ['required', Rule::in($goalDaysKeys)],
+            'form.reminder' => ['required', Rule::in($reminderKeys)],
+            'form.auto_popup' => ['boolean'],
             'form.custom_days' => [
                 Rule::requiredIf(fn () => $this->form['schedule'] === 'custom'),
                 'array',
@@ -259,6 +317,12 @@ class Grid extends Component
         $this->form = [
             'name' => '',
             'schedule' => 'daily',
+            'frequency' => 'daily_check_in',
+            'goal' => 'achieve_it_all',
+            'start_date' => now()->toDateString(),
+            'goal_days' => 'forever',
+            'reminder' => 'others',
+            'auto_popup' => false,
             'custom_days' => [],
             'goal_per_period' => null,
             'color' => '#22c55e',
@@ -287,7 +351,17 @@ class Grid extends Component
 
     protected function expectedCompletionsForMonth(Habit $habit, Carbon $monthStart, Carbon $monthEnd): int
     {
-        $days = $monthStart->diffInDays($monthEnd) + 1;
+        $startDate = $habit->start_date?->copy()->startOfDay();
+
+        if ($startDate && $startDate->greaterThan($monthEnd)) {
+            return 0;
+        }
+
+        $effectiveStart = $startDate && $startDate->greaterThan($monthStart)
+            ? $startDate
+            : $monthStart;
+
+        $days = max(0, $effectiveStart->diffInDays($monthEnd) + 1);
 
         return match ($habit->schedule) {
             'daily' => $days,
@@ -303,8 +377,18 @@ class Grid extends Component
 
     protected function calculateStreaks(Habit $habit, Collection $entries): array
     {
-        $startDate = $habit->created_at ? $habit->created_at->copy()->startOfDay() : now()->startOfDay();
+        $startDate = $habit->start_date?->copy()->startOfDay()
+            ?? $habit->created_at?->copy()->startOfDay()
+            ?? now()->startOfDay();
         $today = now()->startOfDay();
+
+        if ($startDate->greaterThan($today)) {
+            return [
+                'current' => 0,
+                'longest' => 0,
+            ];
+        }
+
         $entryMap = $entries->keyBy(fn (HabitEntry $entry) => $entry->entry_date->toDateString());
 
         $current = 0;
@@ -340,7 +424,11 @@ class Grid extends Component
         $currentDate = now()->startOfDay();
         $streak = 0;
 
-        while ($currentDate->greaterThanOrEqualTo($habit->created_at?->startOfDay() ?? $currentDate->copy()->subDays(30))) {
+        $lowerBound = $habit->start_date?->copy()->startOfDay()
+            ?? $habit->created_at?->copy()->startOfDay()
+            ?? $currentDate->copy()->subDays(30);
+
+        while ($currentDate->greaterThanOrEqualTo($lowerBound)) {
             if (! $habit->isDueOn($currentDate)) {
                 $currentDate->subDay();
                 continue;
