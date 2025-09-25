@@ -4,6 +4,7 @@ namespace App\Livewire\Pomodoro;
 
 use App\Models\PomodoroSession;
 use App\Models\PomodoroSetting;
+use Illuminate\Support\Carbon;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -208,7 +209,7 @@ class Timer extends Component
             $this->currentSession->cancel($this->timezone);
         }
 
-        $now = now($this->timezone);
+        $now = Carbon::now($this->timezone)->toImmutable();
         $durationSeconds = $minutes * 60;
 
         $session = $this->user()->pomodoroSessions()->create([

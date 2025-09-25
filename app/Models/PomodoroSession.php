@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -71,12 +72,22 @@ class PomodoroSession extends Model
             return 0;
         }
 
-        $startedAt = $this->started_at instanceof CarbonImmutable
-            ? $this->started_at->setTimezone($timezone)
-            : CarbonImmutable::now($timezone);
+        $metaTimezone = $this->meta['timezone'] ?? null;
+        if (! is_string($metaTimezone) || $metaTimezone === '') {
+            $metaTimezone = $timezone !== '' ? $timezone : null;
+        }
 
-        $now = CarbonImmutable::now($timezone);
-        $elapsed = $startedAt->diffInSeconds($now, false);
+        $timezoneForCalculation = $this->started_at instanceof CarbonImmutable
+            ? $this->started_at->getTimezone()->getName()
+            : ($metaTimezone ?? config('app.timezone', 'UTC'));
+
+        $now = Carbon::now($timezoneForCalculation)->toImmutable();
+
+        $startedAt = $this->started_at instanceof CarbonImmutable
+            ? $this->started_at
+            : $now;
+
+        $elapsed = $now->getTimestamp() - $startedAt->getTimestamp();
 
         $remaining = $this->duration_seconds - max(0, $elapsed);
 
@@ -85,13 +96,13 @@ class PomodoroSession extends Model
 
     public function markFinished(string $timezone): void
     {
-        $endedAt = CarbonImmutable::now($timezone);
+        $endedAtLocal = Carbon::now($timezone)->toImmutable();
         $meta = $this->ensureMetaTimezone($timezone);
-        $meta['local_finished_at'] = $endedAt->format('Y-m-d H:i');
+        $meta['local_finished_at'] = $endedAtLocal->format('Y-m-d H:i');
 
         $this->forceFill([
             'status' => self::STATUS_FINISHED,
-            'ended_at' => $endedAt,
+            'ended_at' => $endedAtLocal,
             'remaining_seconds' => 0,
             'meta' => $meta,
         ])->save();
@@ -99,21 +110,22 @@ class PomodoroSession extends Model
 
     public function cancel(string $timezone): void
     {
-        $endedAt = CarbonImmutable::now($timezone);
+        $endedAtLocal = Carbon::now($timezone)->toImmutable();
         $meta = $this->ensureMetaTimezone($timezone);
-        $meta['local_canceled_at'] = $endedAt->format('Y-m-d H:i');
+        $meta['local_canceled_at'] = $endedAtLocal->format('Y-m-d H:i');
 
         $this->forceFill([
             'status' => self::STATUS_CANCELED,
-            'ended_at' => $endedAt,
+            'ended_at' => $endedAtLocal,
             'meta' => $meta,
         ])->save();
     }
 
     public function pause(int $remainingSeconds, string $timezone): void
     {
+        $pausedAtLocal = Carbon::now($timezone)->toImmutable();
         $meta = $this->ensureMetaTimezone($timezone);
-        $meta['local_paused_at'] = CarbonImmutable::now($timezone)->format('Y-m-d H:i');
+        $meta['local_paused_at'] = $pausedAtLocal->format('Y-m-d H:i');
 
         $this->forceFill([
             'status' => self::STATUS_PAUSED,
@@ -124,14 +136,14 @@ class PomodoroSession extends Model
 
     public function resume(string $timezone): void
     {
-        $meta = $this->ensureMetaTimezone($timezone);
-        $meta['local_resumed_at'] = CarbonImmutable::now($timezone)->format('Y-m-d H:i');
-
         $remaining = $this->remaining_seconds ?? $this->duration_seconds;
+        $resumedAtLocal = Carbon::now($timezone)->toImmutable();
+        $meta = $this->ensureMetaTimezone($timezone);
+        $meta['local_resumed_at'] = $resumedAtLocal->format('Y-m-d H:i');
 
         $this->forceFill([
             'status' => self::STATUS_RUNNING,
-            'started_at' => CarbonImmutable::now($timezone),
+            'started_at' => $resumedAtLocal,
             'duration_seconds' => max(0, $remaining),
             'remaining_seconds' => null,
             'meta' => $meta,
@@ -152,4 +164,5 @@ class PomodoroSession extends Model
 
         return $meta;
     }
+
 }
