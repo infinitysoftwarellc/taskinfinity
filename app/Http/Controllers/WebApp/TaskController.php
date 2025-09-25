@@ -9,6 +9,16 @@ class TaskController extends Controller
 {
     public function index(): View
     {
-        return view('task.index');
+        return view('webapp.tasks.index');
+    }
+
+    public function board(): View
+    {
+        return view('webapp.tasks.board');
+    }
+
+    public function timeline(): View
+    {
+        return view('webapp.tasks.timeline');
     }
 }

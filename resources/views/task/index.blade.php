@@ -9,8 +9,8 @@
             ],
             [
                 'label' => 'Tasks',
-                'route' => route('task'),
-                'active' => request()->routeIs('task'),
+                'route' => route('tasks.index'),
+                'active' => request()->routeIs('tasks.*'),
                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 9.75h16.5M3.75 14.25h16.5M3.75 18.75h16.5" />',
                 'stroke' => true,
             ],
