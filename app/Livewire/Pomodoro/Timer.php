@@ -4,9 +4,9 @@ namespace App\Livewire\Pomodoro;
 
 use App\Models\PomodoroSession;
 use App\Models\PomodoroSetting;
-use Illuminate\Support\Carbon;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -30,6 +30,14 @@ class Timer extends Component
     public ?PomodoroSession $currentSession = null;
 
     public ?int $remainingSeconds = null;
+
+    public ?int $editingSessionId = null;
+
+    #[Validate('required|in:focus,short,long')]
+    public string $editingType = PomodoroSession::TYPE_FOCUS;
+
+    #[Validate('required|integer|min:1|max:180')]
+    public int $editingDurationMinutes = 25;
 
     /**
      * @var list<array<string, mixed>>
@@ -152,10 +160,13 @@ class Timer extends Component
             $remaining = $this->currentSession->secondsRemaining($this->timezone);
 
             if ($remaining <= 0) {
-                $this->currentSession->markFinished($this->timezone);
+                $finishedSession = $this->currentSession;
+                $finishedSession->markFinished($this->timezone);
                 $this->currentSession = null;
                 $this->remainingSeconds = null;
                 $this->refreshRecentSessions();
+                $this->handleFinishedSession($finishedSession);
+
                 return;
             }
 
@@ -186,6 +197,85 @@ class Timer extends Component
             'displayTime' => $this->displayTime,
             'currentLabel' => $this->currentLabel(),
         ]);
+    }
+
+    public function beginEditingSession(int $sessionId): void
+    {
+        $session = $this->user()->pomodoroSessions()->find($sessionId);
+
+        if (! $session) {
+            return;
+        }
+
+        $this->editingSessionId = $session->id;
+        $this->editingType = $session->type;
+        $durationMinutes = (int) ceil(max(1, $session->duration_seconds ?? 60) / 60);
+        $this->editingDurationMinutes = max(1, $durationMinutes);
+    }
+
+    public function cancelEditingSession(): void
+    {
+        $this->resetEditing();
+    }
+
+    public function saveEditedSession(): void
+    {
+        if (! $this->editingSessionId) {
+            return;
+        }
+
+        $this->validateOnly('editingType');
+
+        $this->validateOnly('editingDurationMinutes');
+
+        $session = $this->user()
+            ->pomodoroSessions()
+            ->find($this->editingSessionId);
+
+        if (! $session) {
+            $this->resetEditing();
+
+            return;
+        }
+
+        $session->forceFill([
+            'type' => $this->editingType,
+            'duration_seconds' => $this->editingDurationMinutes * 60,
+        ])->save();
+
+        if ($this->currentSession && $this->currentSession->id === $session->id) {
+            $this->currentSession = $session->fresh();
+            $this->remainingSeconds = $this->currentSession->secondsRemaining($this->timezone);
+        }
+
+        $this->dispatch('session-saved');
+
+        $this->resetEditing();
+        $this->refreshRecentSessions();
+    }
+
+    public function deleteSession(int $sessionId): void
+    {
+        $session = $this->user()->pomodoroSessions()->find($sessionId);
+
+        if (! $session) {
+            return;
+        }
+
+        if ($this->currentSession && $this->currentSession->id === $session->id) {
+            $this->currentSession = null;
+            $this->remainingSeconds = null;
+        }
+
+        if ($this->editingSessionId === $session->id) {
+            $this->resetEditing();
+        }
+
+        $session->delete();
+
+        $this->dispatch('session-deleted');
+
+        $this->refreshRecentSessions();
     }
 
     protected function currentLabel(): string
@@ -235,6 +325,30 @@ class Timer extends Component
         $this->refreshRecentSessions();
     }
 
+    protected function handleFinishedSession(PomodoroSession $session): void
+    {
+        if ($session->type !== PomodoroSession::TYPE_FOCUS) {
+            return;
+        }
+
+        $completedFocusCount = $this->user()
+            ->pomodoroSessions()
+            ->where('type', PomodoroSession::TYPE_FOCUS)
+            ->where('status', PomodoroSession::STATUS_FINISHED)
+            ->count();
+
+        if ($this->longBreakEvery > 0
+            && $completedFocusCount > 0
+            && $completedFocusCount % $this->longBreakEvery === 0
+        ) {
+            $this->startSession(PomodoroSession::TYPE_LONG, $this->longBreakMinutes);
+
+            return;
+        }
+
+        $this->startSession(PomodoroSession::TYPE_SHORT, $this->shortBreakMinutes);
+    }
+
     protected function refreshSession(): void
     {
         $this->currentSession = $this->user()
@@ -270,6 +384,13 @@ class Timer extends Component
                 ];
             })
             ->all();
+    }
+
+    protected function resetEditing(): void
+    {
+        $this->editingSessionId = null;
+        $this->editingType = PomodoroSession::TYPE_FOCUS;
+        $this->editingDurationMinutes = 25;
     }
 
     protected function user(): Authenticatable
