@@ -12,7 +12,7 @@ class Item extends Component
 {
     public Task $task;
 
-    public int $depth = 0;
+    public ?int $depth = 0;
 
     public string $title = '';
 
@@ -50,7 +50,7 @@ class Item extends Component
         'task-updated' => 'refreshTask',
     ];
 
-    public function mount(Task $task, int $depth = 0): void
+    public function mount(Task $task, ?int $depth = null): void
     {
         abort_unless($task->user_id === Auth::id(), 403);
 
@@ -58,7 +58,11 @@ class Item extends Component
             $query->orderBy('position')->orderBy('created_at');
         }]);
 
-        $this->depth = $depth > 0 ? $depth : ($task->depth ?? 0);
+        $resolvedDepth = $depth ?? $task->depth;
+
+        $this->depth = ($resolvedDepth !== null && $resolvedDepth > 0)
+            ? $resolvedDepth
+            : 0;
         $this->fillFromTask();
     }
 
