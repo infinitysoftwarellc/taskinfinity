@@ -1,20 +1,22 @@
 <?php
 
-use App\Livewire\Task\Page as TaskPage;
+use App\Http\Controllers\WebApp\TaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-Route::view('profile', 'profile')
+Route::prefix('webapp')
     ->middleware(['auth'])
-    ->name('profile');
+    ->group(function () {
+        Route::view('/dashboard', 'dashboard')
+            ->middleware(['verified'])
+            ->name('dashboard');
 
-Route::get('task', TaskPage::class)
-    ->middleware(['auth'])
-    ->name('task');
+        Route::view('/profile', 'profile')
+            ->name('profile');
+
+        Route::get('/task', [TaskController::class, 'index'])
+            ->name('task');
+    });
 
 require __DIR__.'/auth.php';
