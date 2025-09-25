@@ -22,7 +22,9 @@ class Item extends Component
 
     public string $priority = 'none';
 
-    public ?string $dueAt = null;
+    public ?string $dueDate = null;
+
+    public ?string $dueTime = null;
 
     public ?int $estimatePomodoros = null;
 
@@ -82,9 +84,23 @@ class Item extends Component
         $this->savePriority();
     }
 
-    public function updatedDueAt(): void
+    public function updatedDescription(): void
     {
-        $this->saveDueAt();
+        $this->saveDescription();
+    }
+
+    public function updatedDueDate(?string $value): void
+    {
+        $this->dueDate = $value !== '' ? $value : null;
+
+        $this->saveDueDateTime();
+    }
+
+    public function updatedDueTime(?string $value): void
+    {
+        $this->dueTime = $value !== '' ? $value : null;
+
+        $this->saveDueDateTime();
     }
 
     public function updatedEstimatePomodoros(): void
@@ -108,6 +124,7 @@ class Item extends Component
         ]);
 
         $this->refreshTask();
+        $this->notifySaved(__('Título atualizado automaticamente.'));
     }
 
     public function saveDescription(): void
@@ -121,6 +138,7 @@ class Item extends Component
         ]);
 
         $this->refreshTask();
+        $this->notifySaved(__('Descrição atualizada automaticamente.'));
     }
 
     public function saveStatus(): void
@@ -141,6 +159,7 @@ class Item extends Component
 
         $this->refreshTask();
         $this->dispatch('task-updated');
+        $this->notifySaved(__('Status atualizado automaticamente.'));
     }
 
     public function savePriority(): void
@@ -154,23 +173,35 @@ class Item extends Component
         ]);
 
         $this->refreshTask();
+        $this->notifySaved(__('Prioridade atualizada automaticamente.'));
     }
 
-    public function saveDueAt(): void
+    public function saveDueDateTime(): void
     {
         $validated = $this->validate([
-            'dueAt' => ['nullable', 'date'],
+            'dueDate' => ['nullable', 'date'],
+            'dueTime' => ['nullable', 'date_format:H:i'],
         ]);
 
         $timezone = config('app.timezone') ?? 'UTC';
 
+        $dueAt = null;
+
+        if (! empty($validated['dueDate'])) {
+            $dueAt = Carbon::parse($validated['dueDate'], $timezone)->startOfDay();
+
+            if (! empty($validated['dueTime'])) {
+                [$hour, $minute] = explode(':', $validated['dueTime']);
+                $dueAt = $dueAt->setTime((int) $hour, (int) $minute);
+            }
+        }
+
         $this->task->update([
-            'due_at' => $validated['dueAt']
-                ? Carbon::parse($validated['dueAt'], $timezone)
-                : null,
+            'due_at' => $dueAt,
         ]);
 
         $this->refreshTask();
+        $this->notifySaved(__('Prazo atualizado automaticamente.'));
     }
 
     public function saveEstimatePomodoros(): void
@@ -184,6 +215,7 @@ class Item extends Component
         ]);
 
         $this->refreshTask();
+        $this->notifySaved(__('Estimativa atualizada automaticamente.'));
     }
 
     public function savePomodorosDone(): void
@@ -197,6 +229,7 @@ class Item extends Component
         ]);
 
         $this->refreshTask();
+        $this->notifySaved(__('Progresso de pomodoros atualizado automaticamente.'));
     }
 
     public function toggleSubtaskForm(): void
@@ -294,7 +327,15 @@ class Item extends Component
         $this->description = $this->task->description;
         $this->status = $this->task->status;
         $this->priority = $this->task->priority;
-        $this->dueAt = $this->task->due_at?->format('Y-m-d\TH:i');
+        $dueAt = $this->task->due_at
+            ? $this->task->due_at->copy()->setTimezone(config('app.timezone') ?? 'UTC')
+            : null;
+
+        $this->dueDate = $dueAt?->format('Y-m-d');
+
+        $this->dueTime = $dueAt && $dueAt->format('H:i') !== '00:00'
+            ? $dueAt->format('H:i')
+            : null;
         $this->estimatePomodoros = $this->task->estimate_pomodoros;
         $this->pomodorosDone = $this->task->pomodoros_done;
     }
@@ -311,5 +352,10 @@ class Item extends Component
     public function render()
     {
         return view('livewire.task.item');
+    }
+
+    protected function notifySaved(?string $message = null): void
+    {
+        $this->dispatch('notify', $message ?? __('Alterações salvas automaticamente.'));
     }
 }

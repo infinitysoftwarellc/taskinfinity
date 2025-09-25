@@ -58,11 +58,23 @@
                     @enderror
                 </label>
 
-                <label class="flex flex-col gap-1">
+                <label class="flex flex-col gap-2">
                     <span class="text-xs font-semibold uppercase tracking-wide text-white/50">Prazo</span>
-                    <input type="datetime-local" wire:model.debounce.500ms="dueAt"
-                        class="rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
-                    @error('dueAt')
+                    <div class="flex flex-col gap-2">
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            <input type="date" wire:model="dueDate"
+                                class="flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0"
+                                placeholder="Selecione a data" />
+                            <input type="time" wire:model="dueTime"
+                                class="flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0"
+                                placeholder="Horário (opcional)" />
+                        </div>
+                        <p class="text-xs text-white/40">Escolha apenas a data ou adicione um horário se desejar.</p>
+                    </div>
+                    @error('dueDate')
+                        <p class="text-xs text-rose-300">{{ $message }}</p>
+                    @enderror
+                    @error('dueTime')
                         <p class="text-xs text-rose-300">{{ $message }}</p>
                     @enderror
                 </label>
@@ -89,7 +101,7 @@
 
             <div>
                 <label class="text-xs font-semibold uppercase tracking-wide text-white/50">Descrição</label>
-                <textarea rows="3" wire:model.defer="description" wire:blur="saveDescription"
+                <textarea rows="3" wire:model.debounce.800ms="description"
                     class="mt-1 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0"
                     placeholder="Detalhe os passos da tarefa, cole links ou anotações"></textarea>
                 @error('description')
