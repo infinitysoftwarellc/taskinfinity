@@ -6,6 +6,7 @@ use App\Models\PomodoroSession;
 use App\Models\PomodoroSetting;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Arr;
+use DateTimeInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Validate;
@@ -552,7 +553,7 @@ class Timer extends Component
             ->all();
     }
 
-    protected function formatSessionLabel(?Carbon $start, ?Carbon $end): string
+    protected function formatSessionLabel(?DateTimeInterface $start, ?DateTimeInterface $end): string
     {
         if (! $start) {
             return '—';
