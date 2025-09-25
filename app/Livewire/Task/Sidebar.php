@@ -50,7 +50,7 @@ class Sidebar extends Component
 
     public function openList(int $listId)
     {
-        return redirect()->route('tasks.lists.show', ['list' => $listId], navigate: true);
+        return $this->redirectRoute('tasks.lists.show', ['list' => $listId], navigate: true);
     }
 
     public function createList()
@@ -84,7 +84,7 @@ class Sidebar extends Component
 
         session()->flash('task_lists.created', 'Lista criada com sucesso.');
 
-        return redirect()->route('tasks.lists.show', ['list' => $list->getRouteKey()], navigate: true);
+        return $this->redirectRoute('tasks.lists.show', ['list' => $list->getRouteKey()], navigate: true);
     }
 
     public function resetForm(): void
