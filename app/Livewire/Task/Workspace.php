@@ -7,12 +7,15 @@ use App\Models\TaskList;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class Workspace extends Component
 {
+    protected bool $supportsHierarchy = false;
+
     public ?int $listId = null;
 
     public ?TaskList $list = null;
@@ -59,6 +62,9 @@ class Workspace extends Component
 
     public function mount(?int $listId = null): void
     {
+        $this->supportsHierarchy = Schema::hasColumn('tasks', 'parent_id')
+            && Schema::hasColumn('tasks', 'depth');
+
         $this->listId = $listId;
         $this->loadList();
     }
@@ -97,21 +103,30 @@ class Workspace extends Component
             return;
         }
 
-        $position = Task::query()
-            ->where('list_id', $this->list->id)
-            ->whereNull('parent_id')
-            ->max('position');
+        $positionQuery = Task::query()
+            ->where('list_id', $this->list->id);
 
-        Task::create([
+        if ($this->supportsHierarchy) {
+            $positionQuery->whereNull('parent_id');
+        }
+
+        $position = $positionQuery->max('position');
+
+        $payload = [
             'user_id' => $userId,
             'list_id' => $this->list->id,
-            'parent_id' => null,
-            'depth' => 0,
             'title' => $title,
             'status' => 'todo',
             'priority' => 'none',
             'position' => (int) $position + 1,
-        ]);
+        ];
+
+        if ($this->supportsHierarchy) {
+            $payload['parent_id'] = null;
+            $payload['depth'] = 0;
+        }
+
+        Task::create($payload);
 
         $this->newTaskTitle = '';
         $this->resetErrorBag('newTaskTitle');
@@ -221,11 +236,21 @@ class Workspace extends Component
     {
         $userId = Auth::id();
 
-        return Task::query()
+        $query = Task::query()
             ->where('user_id', $userId)
-            ->where('list_id', $this->list?->id)
-            ->with('childrenRecursive')
-            ->findOrFail($taskId);
+            ->where('list_id', $this->list?->id);
+
+        if ($this->supportsHierarchy) {
+            $query->with('childrenRecursive');
+        }
+
+        $task = $query->findOrFail($taskId);
+
+        if (! $this->supportsHierarchy) {
+            $task->setRelation('childrenRecursive', collect());
+        }
+
+        return $task;
     }
 
     protected function filterTaskTree(Collection $tasks): Collection
@@ -238,7 +263,11 @@ class Workspace extends Component
 
         return $tasks
             ->map(function (Task $task) use ($term) {
-                $children = $this->filterTaskTree($task->childrenRecursive);
+                $children = $task->relationLoaded('childrenRecursive')
+                    ? $task->childrenRecursive
+                    : collect();
+
+                $children = $this->filterTaskTree($children);
                 $task->setRelation('childrenRecursive', $children);
 
                 $matchesSelf = Str::contains(Str::lower($task->title), $term)
@@ -263,16 +292,26 @@ class Workspace extends Component
 
             $userId = Auth::id();
 
-            $tasks = Task::query()
+            $tasksQuery = Task::query()
                 ->where('user_id', $userId)
                 ->where('list_id', $this->list->id)
-                ->whereNull('parent_id')
                 ->orderBy('position')
-                ->orderBy('created_at')
-                ->with(['childrenRecursive' => function ($query) {
-                    $query->orderBy('position')->orderBy('created_at');
-                }])
-                ->get();
+                ->orderBy('created_at');
+
+            if ($this->supportsHierarchy) {
+                $tasksQuery->whereNull('parent_id')
+                    ->with(['childrenRecursive' => function ($query) {
+                        $query->orderBy('position')->orderBy('created_at');
+                    }]);
+            }
+
+            $tasks = $tasksQuery->get();
+
+            if (! $this->supportsHierarchy) {
+                $tasks = $tasks->map(function (Task $task) {
+                    return $task->setRelation('childrenRecursive', collect());
+                });
+            }
 
             $tasks = $this->filterTaskTree($tasks);
         }
