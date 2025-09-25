@@ -29,6 +29,7 @@ test('user can start a focus session with user timezone metadata', function () {
     expect($session->duration_seconds)->toBe(25 * 60);
     expect($session->meta['timezone'] ?? null)->toBe('America/Sao_Paulo');
     expect($session->meta['initial_started_at'] ?? null)->toBe('2024-01-01 09:30');
+    expect($session->meta['started_at_utc'] ?? null)->toBe('2024-01-01 12:30:00');
 });
 
 test('focus session can be paused and resumed keeping remaining time', function () {
@@ -44,6 +45,9 @@ test('focus session can be paused and resumed keeping remaining time', function 
     $component->call('startFocus');
 
     Carbon::setTestNow(Carbon::create(2024, 1, 1, 10, 5, 0, 'America/Sao_Paulo'));
+    $instance = $component->instance()->currentSession;
+    expect($instance->secondsRemaining('America/Sao_Paulo'))
+        ->toBe(20 * 60);
     $component->call('pause');
 
     $session = PomodoroSession::first();
@@ -60,4 +64,34 @@ test('focus session can be paused and resumed keeping remaining time', function 
     expect($session->status)->toBe(PomodoroSession::STATUS_RUNNING);
     expect($session->duration_seconds)->toBe(20 * 60);
     expect($session->remaining_seconds)->toBeNull();
+});
+
+test('focus session only finishes after duration elapses', function () {
+    $user = User::factory()->create();
+
+    Carbon::setTestNow(Carbon::create(2024, 1, 1, 11, 0, 0, 'America/Sao_Paulo'));
+
+    $this->actingAs($user);
+
+    $component = Livewire::test(Timer::class)
+        ->set('timezone', 'America/Sao_Paulo');
+
+    $component->call('startFocus');
+
+    Carbon::setTestNow(Carbon::create(2024, 1, 1, 11, 5, 0, 'America/Sao_Paulo'));
+    $component->call('tick');
+
+    $session = PomodoroSession::first();
+    $session->refresh();
+
+    expect($session->status)->toBe(PomodoroSession::STATUS_RUNNING);
+    expect($session->duration_seconds)->toBe(25 * 60);
+
+    Carbon::setTestNow(Carbon::create(2024, 1, 1, 11, 25, 0, 'America/Sao_Paulo'));
+    $component->call('tick');
+
+    $session->refresh();
+
+    expect($session->status)->toBe(PomodoroSession::STATUS_FINISHED);
+    expect($session->meta['local_finished_at'] ?? null)->toBe('2024-01-01 11:25');
 });

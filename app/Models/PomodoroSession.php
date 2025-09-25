@@ -77,17 +77,34 @@ class PomodoroSession extends Model
             $metaTimezone = $timezone !== '' ? $timezone : null;
         }
 
-        $timezoneForCalculation = $this->started_at instanceof CarbonImmutable
-            ? $this->started_at->getTimezone()->getName()
-            : ($metaTimezone ?? config('app.timezone', 'UTC'));
+        $startedAtUtc = null;
 
-        $now = Carbon::now($timezoneForCalculation)->toImmutable();
+        if (isset($this->meta['started_at_utc'])) {
+            try {
+                $startedAtUtc = CarbonImmutable::createFromFormat('Y-m-d H:i:s', $this->meta['started_at_utc'], 'UTC');
+            } catch (\Exception) {
+                $startedAtUtc = null;
+            }
+        }
 
-        $startedAt = $this->started_at instanceof CarbonImmutable
-            ? $this->started_at
-            : $now;
+        if (! $startedAtUtc && $this->started_at instanceof CarbonImmutable) {
+            $startedAtUtc = $this->started_at->setTimezone('UTC');
+        }
 
-        $elapsed = $now->getTimestamp() - $startedAt->getTimestamp();
+        if (! $startedAtUtc && isset($this->meta['initial_started_at']) && $metaTimezone) {
+            try {
+                $startedAtUtc = CarbonImmutable::createFromFormat('Y-m-d H:i', $this->meta['initial_started_at'], $metaTimezone)
+                    ->setTimezone('UTC');
+            } catch (\Exception) {
+                $startedAtUtc = null;
+            }
+        }
+
+        $startedAtUtc ??= Carbon::now('UTC')->toImmutable();
+
+        $nowUtc = Carbon::now('UTC')->toImmutable();
+
+        $elapsed = $nowUtc->getTimestamp() - $startedAtUtc->getTimestamp();
 
         $remaining = $this->duration_seconds - max(0, $elapsed);
 
@@ -96,13 +113,15 @@ class PomodoroSession extends Model
 
     public function markFinished(string $timezone): void
     {
-        $endedAtLocal = Carbon::now($timezone)->toImmutable();
-        $meta = $this->ensureMetaTimezone($timezone);
+        $effectiveTimezone = $this->resolveTimezone($timezone);
+        $endedAtUtc = Carbon::now('UTC')->toImmutable();
+        $endedAtLocal = $endedAtUtc->setTimezone($effectiveTimezone);
+        $meta = $this->ensureMetaTimezone($effectiveTimezone);
         $meta['local_finished_at'] = $endedAtLocal->format('Y-m-d H:i');
 
         $this->forceFill([
             'status' => self::STATUS_FINISHED,
-            'ended_at' => $endedAtLocal,
+            'ended_at' => $endedAtUtc,
             'remaining_seconds' => 0,
             'meta' => $meta,
         ])->save();
@@ -110,21 +129,24 @@ class PomodoroSession extends Model
 
     public function cancel(string $timezone): void
     {
-        $endedAtLocal = Carbon::now($timezone)->toImmutable();
-        $meta = $this->ensureMetaTimezone($timezone);
+        $effectiveTimezone = $this->resolveTimezone($timezone);
+        $endedAtUtc = Carbon::now('UTC')->toImmutable();
+        $endedAtLocal = $endedAtUtc->setTimezone($effectiveTimezone);
+        $meta = $this->ensureMetaTimezone($effectiveTimezone);
         $meta['local_canceled_at'] = $endedAtLocal->format('Y-m-d H:i');
 
         $this->forceFill([
             'status' => self::STATUS_CANCELED,
-            'ended_at' => $endedAtLocal,
+            'ended_at' => $endedAtUtc,
             'meta' => $meta,
         ])->save();
     }
 
     public function pause(int $remainingSeconds, string $timezone): void
     {
-        $pausedAtLocal = Carbon::now($timezone)->toImmutable();
-        $meta = $this->ensureMetaTimezone($timezone);
+        $effectiveTimezone = $this->resolveTimezone($timezone);
+        $pausedAtLocal = Carbon::now('UTC')->toImmutable()->setTimezone($effectiveTimezone);
+        $meta = $this->ensureMetaTimezone($effectiveTimezone);
         $meta['local_paused_at'] = $pausedAtLocal->format('Y-m-d H:i');
 
         $this->forceFill([
@@ -137,17 +159,27 @@ class PomodoroSession extends Model
     public function resume(string $timezone): void
     {
         $remaining = $this->remaining_seconds ?? $this->duration_seconds;
-        $resumedAtLocal = Carbon::now($timezone)->toImmutable();
-        $meta = $this->ensureMetaTimezone($timezone);
+        $effectiveTimezone = $this->resolveTimezone($timezone);
+        $resumedAtUtc = Carbon::now('UTC')->toImmutable();
+        $resumedAtLocal = $resumedAtUtc->setTimezone($effectiveTimezone);
+        $meta = $this->ensureMetaTimezone($effectiveTimezone);
         $meta['local_resumed_at'] = $resumedAtLocal->format('Y-m-d H:i');
+        $meta['started_at_utc'] = $resumedAtUtc->format('Y-m-d H:i:s');
 
         $this->forceFill([
             'status' => self::STATUS_RUNNING,
-            'started_at' => $resumedAtLocal,
+            'started_at' => $resumedAtUtc,
             'duration_seconds' => max(0, $remaining),
             'remaining_seconds' => null,
             'meta' => $meta,
         ])->save();
+    }
+
+    protected function resolveTimezone(string $timezone): string
+    {
+        return $timezone !== ''
+            ? $timezone
+            : config('app.timezone', 'UTC');
     }
 
     protected function ensureMetaTimezone(string $timezone): array

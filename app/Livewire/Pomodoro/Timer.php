@@ -209,18 +209,24 @@ class Timer extends Component
             $this->currentSession->cancel($this->timezone);
         }
 
-        $now = Carbon::now($this->timezone)->toImmutable();
+        $activeTimezone = $this->timezone !== ''
+            ? $this->timezone
+            : config('app.timezone', 'UTC');
+
+        $nowUtc = Carbon::now('UTC')->toImmutable();
+        $nowLocal = $nowUtc->setTimezone($activeTimezone);
         $durationSeconds = $minutes * 60;
 
         $session = $this->user()->pomodoroSessions()->create([
             'type' => $type,
             'status' => PomodoroSession::STATUS_RUNNING,
-            'started_at' => $now,
+            'started_at' => $nowUtc,
             'duration_seconds' => $durationSeconds,
             'meta' => [
-                'timezone' => $this->timezone,
-                'initial_started_at' => $now->format('Y-m-d H:i'),
-                'local_started_at' => $now->format('Y-m-d H:i'),
+                'timezone' => $activeTimezone,
+                'initial_started_at' => $nowLocal->format('Y-m-d H:i'),
+                'local_started_at' => $nowLocal->format('Y-m-d H:i'),
+                'started_at_utc' => $nowUtc->format('Y-m-d H:i:s'),
             ],
         ]);
 
