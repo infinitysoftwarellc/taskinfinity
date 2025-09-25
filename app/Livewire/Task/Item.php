@@ -317,6 +317,7 @@ class Item extends Component
     {
         $this->task->delete();
         $this->dispatch('task-updated');
+        $this->dispatch('task-tags-updated');
     }
 
     public function openEditor(): void

@@ -11,6 +11,12 @@ use Livewire\Component;
 
 class Sidebar extends Component
 {
+    protected $listeners = [
+        'task-updated' => '$refresh',
+        'task-tags-updated' => '$refresh',
+        'task-lists-updated' => '$refresh',
+    ];
+
     public array $views = [
         ['label' => 'All', 'slug' => 'all', 'count' => 0, 'icon' => 'M3.75 5.25h16.5M3.75 9.75h16.5M3.75 14.25h16.5M3.75 18.75h16.5'],
         ['label' => 'Today', 'slug' => 'today', 'count' => 0, 'icon' => 'M6 4.5h12m-12 6.75h12M9.75 3v3m4.5-3v3M9 15.75l2.25 2.25L15 13.5'],
@@ -105,6 +111,7 @@ class Sidebar extends Component
         $this->showCreateList = false;
         $this->activeListId = $list->id;
 
+        $this->dispatch('task-lists-updated');
         session()->flash('task_lists.created', 'Lista criada com sucesso.');
 
         return $this->redirectRoute('tasks.lists.show', ['list' => $list->getRouteKey()], navigate: true);
