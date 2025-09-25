@@ -18,6 +18,12 @@ class Habit extends Model
         'user_id',
         'name',
         'schedule',
+        'frequency',
+        'goal',
+        'start_date',
+        'goal_days',
+        'reminder',
+        'auto_popup',
         'custom_days',
         'goal_per_period',
         'color',
@@ -26,6 +32,8 @@ class Habit extends Model
     protected $casts = [
         'custom_days' => 'array',
         'goal_per_period' => 'integer',
+        'start_date' => 'date',
+        'auto_popup' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -45,6 +53,10 @@ class Habit extends Model
 
     public function isDueOn(Carbon $date): bool
     {
+        if ($this->start_date instanceof Carbon && $date->lt($this->start_date->startOfDay())) {
+            return false;
+        }
+
         return match ($this->schedule) {
             'daily' => true,
             'weekly' => in_array(

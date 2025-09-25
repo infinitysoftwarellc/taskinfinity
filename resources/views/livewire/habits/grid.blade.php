@@ -59,6 +59,63 @@
                                 @enderror
                             </div>
 
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Frequência</label>
+                                <select
+                                    wire:model="form.frequency"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                                >
+                                    @foreach ($frequencyOptions as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('form.frequency')
+                                    <p class="text-xs text-rose-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Objetivo</label>
+                                <select
+                                    wire:model="form.goal"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                                >
+                                    @foreach ($goalOptions as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('form.goal')
+                                    <p class="text-xs text-rose-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Data de início</label>
+                                <input
+                                    type="date"
+                                    wire:model.defer="form.start_date"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                                />
+                                @error('form.start_date')
+                                    <p class="text-xs text-rose-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Período alvo</label>
+                                <select
+                                    wire:model="form.goal_days"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                                >
+                                    @foreach ($goalDaysOptions as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('form.goal_days')
+                                    <p class="text-xs text-rose-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+
                             @if ($form['schedule'] === 'weekly')
                                 <div class="space-y-2">
                                     <label class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Meta semanal</label>
@@ -99,6 +156,21 @@
                             @endif
 
                             <div class="space-y-2">
+                                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Lembrete</label>
+                                <select
+                                    wire:model="form.reminder"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                                >
+                                    @foreach ($reminderOptions as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('form.reminder')
+                                    <p class="text-xs text-rose-400">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="space-y-2">
                                 <label class="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Cor</label>
                                 <div class="flex items-center gap-3">
                                     <input
@@ -112,6 +184,15 @@
                                     <p class="text-xs text-rose-400">{{ $message }}</p>
                                 @enderror
                             </div>
+
+                            <label class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70 transition hover:text-white">
+                                <input
+                                    type="checkbox"
+                                    wire:model="form.auto_popup"
+                                    class="h-4 w-4 rounded border-white/20 bg-black/40 text-indigo-500 focus:ring-indigo-400"
+                                />
+                                <span class="text-xs uppercase tracking-[0.2em]">Abrir automaticamente o registro do hábito</span>
+                            </label>
 
                             <div class="flex items-center justify-end gap-3">
                                 <button
