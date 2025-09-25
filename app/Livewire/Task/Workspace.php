@@ -4,6 +4,7 @@ namespace App\Livewire\Task;
 
 use App\Models\Task;
 use App\Models\TaskList;
+use App\Models\TaskTag;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -45,6 +46,29 @@ class Workspace extends Component
         'pomodoros_done' => 0,
     ];
 
+    /**
+     * @var array<int, array{id:int,name:string,color:string}>
+     */
+    public array $availableTags = [];
+
+    /**
+     * @var array<int, int>
+     */
+    public array $editorTagIds = [];
+
+    public string $newTagName = '';
+
+    public string $newTagColor = '#6366f1';
+
+    protected array $tagPalette = [
+        '#6366F1',
+        '#F97316',
+        '#10B981',
+        '#EC4899',
+        '#FACC15',
+        '#0EA5E9',
+    ];
+
     public array $statusOptions = [
         ['value' => 'todo', 'label' => 'A fazer'],
         ['value' => 'doing', 'label' => 'Em progresso'],
@@ -77,6 +101,8 @@ class Workspace extends Component
         }
 
         $this->loadList();
+        $this->loadAvailableTags();
+        $this->newTagColor = $this->nextTagColor();
     }
 
     public function updatedListId(): void
@@ -165,6 +191,7 @@ class Workspace extends Component
         }
 
         $task = $this->findTask($taskId);
+        $task->load('tags');
 
         $this->editorTask = $task;
         $this->editorForm = [
@@ -176,6 +203,9 @@ class Workspace extends Component
             'estimate_pomodoros' => $task->estimate_pomodoros,
             'pomodoros_done' => $task->pomodoros_done,
         ];
+        $this->editorTagIds = $task->tags->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $this->loadAvailableTags();
+        $this->newTagColor = $this->nextTagColor();
 
         $this->showEditor = true;
     }
@@ -193,6 +223,9 @@ class Workspace extends Component
             'estimate_pomodoros' => 0,
             'pomodoros_done' => 0,
         ];
+        $this->editorTagIds = [];
+        $this->newTagName = '';
+        $this->newTagColor = $this->nextTagColor();
     }
 
     public function saveEditor(): void
@@ -235,9 +268,74 @@ class Workspace extends Component
 
         $task->update($payload);
 
-        $this->editorTask = $task->fresh();
+        $selectedTagIds = TaskTag::query()
+            ->where('user_id', $task->user_id)
+            ->whereIn('id', collect($this->editorTagIds)->map(fn ($id) => (int) $id)->filter()->all())
+            ->pluck('id')
+            ->all();
+
+        $task->tags()->sync($selectedTagIds);
+
+        $this->editorTask = $task->fresh('tags');
+        $this->editorTagIds = $selectedTagIds;
         $this->showEditor = false;
+        $this->loadAvailableTags();
         $this->dispatch('task-updated');
+    }
+
+    public function createTag(): void
+    {
+        $userId = Auth::id();
+
+        if (! $userId) {
+            return;
+        }
+
+        $data = $this->validate([
+            'newTagName' => ['required', 'string', 'max:50'],
+            'newTagColor' => ['required', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
+        ], [
+            'newTagName.required' => 'Informe um nome para a tag.',
+            'newTagName.max' => 'A tag deve ter no máximo 50 caracteres.',
+            'newTagColor.required' => 'Escolha uma cor para a tag.',
+            'newTagColor.regex' => 'Escolha uma cor válida.',
+        ], [
+            'newTagName' => 'nome da tag',
+            'newTagColor' => 'cor da tag',
+        ]);
+
+        $name = trim($data['newTagName']);
+
+        if ($name === '') {
+            $this->addError('newTagName', 'Informe um nome para a tag.');
+
+            return;
+        }
+
+        $color = strtoupper($data['newTagColor']);
+
+        $tag = TaskTag::firstOrCreate([
+            'user_id' => $userId,
+            'name' => $name,
+        ], [
+            'color' => $color,
+        ]);
+
+        if ($tag->color !== $color) {
+            $tag->update(['color' => $color]);
+        }
+
+        $this->editorTagIds = collect($this->editorTagIds)
+            ->map(fn ($id) => (int) $id)
+            ->push($tag->id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $this->newTagName = '';
+        $this->resetErrorBag(['newTagName', 'newTagColor']);
+        $this->loadAvailableTags();
+        $this->newTagColor = $this->nextTagColor();
     }
 
     protected function loadList(): void
@@ -262,7 +360,8 @@ class Workspace extends Component
 
         $query = Task::query()
             ->where('user_id', $userId)
-            ->where('list_id', $this->list?->id);
+            ->where('list_id', $this->list?->id)
+            ->with('tags');
 
         if ($this->supportsHierarchy) {
             $query->with('childrenRecursive');
@@ -382,18 +481,20 @@ class Workspace extends Component
 
             $tasksQuery = Task::query()
                 ->where('user_id', $userId)
-                ->whereIn('list_id', $lists->pluck('id'))
-                ->orderBy('position')
-                ->orderBy('created_at');
+            ->whereIn('list_id', $lists->pluck('id'))
+            ->orderBy('position')
+            ->orderBy('created_at');
 
-            if ($this->supportsHierarchy) {
-                $tasksQuery->whereNull('parent_id')
-                    ->with(['childrenRecursive' => function ($query) {
-                        $query->orderBy('position')->orderBy('created_at');
-                    }]);
-            } else {
-                $tasksQuery->with('list');
-            }
+        $tasksQuery->with('tags');
+
+        if ($this->supportsHierarchy) {
+            $tasksQuery->whereNull('parent_id')
+                ->with(['childrenRecursive' => function ($query) {
+                    $query->orderBy('position')->orderBy('created_at');
+                }]);
+        } else {
+            $tasksQuery->with(['list']);
+        }
 
             $tasks = $tasksQuery->get();
             $tasks = $this->prepareTasks($tasks);
@@ -419,7 +520,7 @@ class Workspace extends Component
             ->whereNotNull('due_at')
             ->orderBy('due_at')
             ->orderBy('created_at')
-            ->with('list');
+            ->with(['list', 'tags']);
 
         if ($this->supportsHierarchy) {
             $tasksQuery->whereNull('parent_id')
@@ -453,18 +554,19 @@ class Workspace extends Component
 
             $userId = Auth::id();
 
-            $tasksQuery = Task::query()
-                ->where('user_id', $userId)
-                ->where('list_id', $this->list->id)
-                ->orderBy('position')
-                ->orderBy('created_at');
+        $tasksQuery = Task::query()
+            ->where('user_id', $userId)
+            ->where('list_id', $this->list->id)
+            ->orderBy('position')
+            ->orderBy('created_at')
+            ->with('tags');
 
-            if ($this->supportsHierarchy) {
-                $tasksQuery->whereNull('parent_id')
-                    ->with(['childrenRecursive' => function ($query) {
-                        $query->orderBy('position')->orderBy('created_at');
-                    }]);
-            }
+        if ($this->supportsHierarchy) {
+            $tasksQuery->whereNull('parent_id')
+                ->with(['childrenRecursive' => function ($query) {
+                    $query->orderBy('position')->orderBy('created_at');
+                }]);
+        }
 
             $tasks = $tasksQuery->get();
             $tasks = $this->prepareTasks($tasks);
@@ -479,5 +581,40 @@ class Workspace extends Component
             'tasks' => $tasks,
             'viewPayload' => $viewPayload,
         ]);
+    }
+
+    protected function loadAvailableTags(): void
+    {
+        $userId = Auth::id();
+
+        if (! $userId) {
+            $this->availableTags = [];
+
+            return;
+        }
+
+        $this->availableTags = TaskTag::query()
+            ->where('user_id', $userId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'color'])
+            ->map(function (TaskTag $tag) {
+                return [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'color' => $tag->color,
+                ];
+            })
+            ->all();
+    }
+
+    protected function nextTagColor(): string
+    {
+        if (empty($this->tagPalette)) {
+            return '#6366F1';
+        }
+
+        $index = count($this->availableTags) % count($this->tagPalette);
+
+        return $this->tagPalette[$index];
     }
 }

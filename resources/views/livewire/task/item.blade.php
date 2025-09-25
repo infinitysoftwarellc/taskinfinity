@@ -32,6 +32,21 @@
             </div>
 
             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                @if ($task->tags->isNotEmpty())
+                    <div class="md:col-span-2 xl:col-span-4">
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($task->tags as $tag)
+                                <span
+                                    class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/80"
+                                    style="background-color: {{ $tag->color }}1A; border-color: {{ $tag->color }}33;">
+                                    <span class="h-2.5 w-2.5 rounded-full" style="background-color: {{ $tag->color }}"></span>
+                                    {{ $tag->name }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <label class="flex flex-col gap-1">
                     <span class="text-xs font-semibold uppercase tracking-wide text-white/50">Status</span>
                     <select wire:model="status"

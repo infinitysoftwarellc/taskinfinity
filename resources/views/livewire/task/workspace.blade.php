@@ -197,21 +197,83 @@
                             @enderror
                         </div>
 
+                    <div>
+                        <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Pomodoros concluídos</label>
+                        <input type="number" min="0" wire:model="editorForm.pomodoros_done"
+                            class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                        @error('editorForm.pomodoros_done')
+                            <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Tags</label>
+                        <span class="text-[11px] uppercase tracking-wide text-white/40">Opcional</span>
+                    </div>
+
+                    @if (empty($availableTags))
+                        <p class="rounded-2xl border border-dashed border-white/10 bg-black/40 p-4 text-xs text-white/60">
+                            Crie sua primeira tag abaixo para categorizar tarefas por contexto, prioridade ou cliente.
+                        </p>
+                    @else
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($availableTags as $tag)
+                                <label for="editor-tag-{{ $tag['id'] }}"
+                                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/70 transition hover:border-white/30 hover:text-white">
+                                    <input id="editor-tag-{{ $tag['id'] }}" type="checkbox" value="{{ $tag['id'] }}"
+                                        wire:model="editorTagIds"
+                                        class="h-3.5 w-3.5 rounded border-white/30 bg-black/20 text-indigo-400 focus:ring-indigo-400/60" />
+                                    <span class="flex items-center gap-2">
+                                        <span class="h-2.5 w-2.5 rounded-full" style="background-color: {{ $tag['color'] }}"></span>
+                                        {{ $tag['name'] }}
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
                         <div>
-                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Pomodoros concluídos</label>
-                            <input type="number" min="0" wire:model="editorForm.pomodoros_done"
-                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
-                            @error('editorForm.pomodoros_done')
+                            <label class="text-[11px] font-semibold uppercase tracking-wide text-white/50">Nova tag</label>
+                            <input type="text" wire:model.defer="newTagName" placeholder="ex: Cliente X"
+                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                            @error('newTagName')
+                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase tracking-wide text-white/50">Cor</label>
+                            <div class="mt-1 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-3 py-2">
+                                <input type="color" wire:model="newTagColor" class="h-9 w-9 cursor-pointer rounded border-none bg-transparent p-0"
+                                    title="Escolha a cor da tag" />
+                                <span class="text-xs uppercase tracking-wide text-white/60">{{ strtoupper($newTagColor) }}</span>
+                            </div>
+                            @error('newTagColor')
                                 <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
 
-                    <div>
-                        <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Descrição</label>
-                        <textarea rows="6" wire:model.defer="editorForm.description"
-                            class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0"></textarea>
-                        @error('editorForm.description')
+                    <div class="flex justify-end">
+                        <button type="button" wire:click="createTag"
+                            class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-indigo-500/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400"
+                            wire:loading.attr="disabled" wire:target="createTag">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            <span wire:loading.remove wire:target="createTag">Adicionar tag</span>
+                            <span wire:loading wire:target="createTag">Salvando...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Descrição</label>
+                    <textarea rows="6" wire:model.defer="editorForm.description"
+                        class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0"></textarea>
+                    @error('editorForm.description')
                             <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
                         @enderror
                     </div>

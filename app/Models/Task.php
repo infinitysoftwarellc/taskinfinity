@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Task extends Model
@@ -73,6 +74,7 @@ class Task extends Model
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id')
+            ->with('tags')
             ->orderBy('position')
             ->orderBy('created_at');
     }
@@ -83,5 +85,10 @@ class Task extends Model
     public function childrenRecursive(): HasMany
     {
         return $this->children()->with('childrenRecursive');
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(TaskTag::class, 'task_tag_task');
     }
 }
