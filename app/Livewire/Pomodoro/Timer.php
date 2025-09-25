@@ -327,26 +327,30 @@ class Timer extends Component
 
     protected function handleFinishedSession(PomodoroSession $session): void
     {
-        if ($session->type !== PomodoroSession::TYPE_FOCUS) {
+        if ($session->type === PomodoroSession::TYPE_FOCUS) {
+            $completedFocusCount = $this->user()
+                ->pomodoroSessions()
+                ->where('type', PomodoroSession::TYPE_FOCUS)
+                ->where('status', PomodoroSession::STATUS_FINISHED)
+                ->count();
+
+            if ($this->longBreakEvery > 0
+                && $completedFocusCount > 0
+                && $completedFocusCount % $this->longBreakEvery === 0
+            ) {
+                $this->startSession(PomodoroSession::TYPE_LONG, $this->longBreakMinutes);
+
+                return;
+            }
+
+            $this->startSession(PomodoroSession::TYPE_SHORT, $this->shortBreakMinutes);
+
             return;
         }
 
-        $completedFocusCount = $this->user()
-            ->pomodoroSessions()
-            ->where('type', PomodoroSession::TYPE_FOCUS)
-            ->where('status', PomodoroSession::STATUS_FINISHED)
-            ->count();
-
-        if ($this->longBreakEvery > 0
-            && $completedFocusCount > 0
-            && $completedFocusCount % $this->longBreakEvery === 0
-        ) {
-            $this->startSession(PomodoroSession::TYPE_LONG, $this->longBreakMinutes);
-
-            return;
+        if (in_array($session->type, [PomodoroSession::TYPE_SHORT, PomodoroSession::TYPE_LONG], true)) {
+            $this->startSession(PomodoroSession::TYPE_FOCUS, $this->focusMinutes);
         }
-
-        $this->startSession(PomodoroSession::TYPE_SHORT, $this->shortBreakMinutes);
     }
 
     protected function refreshSession(): void
