@@ -72,14 +72,25 @@
 
     <div>
         <p class="text-xs font-semibold uppercase tracking-widest text-white/50">Tags</p>
-        <ul class="mt-3 space-y-2 text-sm text-white/80">
-            @foreach ($tags as $tag)
-                <li class="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-white/10">
-                    <span class="h-2.5 w-2.5 rounded-full {{ $tag['color'] }}"></span>
-                    <span class="uppercase tracking-wide">{{ $tag['label'] }}</span>
-                </li>
-            @endforeach
-        </ul>
+        @if (empty($tags))
+            <p class="mt-3 rounded-2xl border border-dashed border-white/10 bg-black/40 p-4 text-xs text-white/60">
+                Crie tags ao editar uma tarefa para organizá-las por contexto.
+            </p>
+        @else
+            <ul class="mt-3 space-y-2 text-sm text-white/80">
+                @foreach ($tags as $tag)
+                    <li class="flex items-center justify-between gap-3 rounded-2xl px-3 py-2 transition hover:bg-white/10">
+                        <span class="flex items-center gap-3 uppercase tracking-wide">
+                            <span class="h-2.5 w-2.5 rounded-full" style="background-color: {{ $tag['color'] }}"></span>
+                            {{ $tag['label'] }}
+                        </span>
+                        <span class="text-[11px] font-semibold uppercase tracking-wide text-white/40">
+                            {{ $tag['tasks_count'] }}
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
     </div>
 
     @if ($showCreateList)

@@ -56,9 +56,12 @@ class Item extends Component
     {
         abort_unless($task->user_id === Auth::id(), 403);
 
-        $this->task = $task->load(['childrenRecursive' => function ($query) {
-            $query->orderBy('position')->orderBy('created_at');
-        }]);
+        $this->task = $task->load([
+            'childrenRecursive' => function ($query) {
+                $query->orderBy('position')->orderBy('created_at');
+            },
+            'tags',
+        ]);
 
 
         $resolvedDepth = $depth ?? $task->depth;
@@ -342,9 +345,12 @@ class Item extends Component
 
     public function refreshTask(): void
     {
-        $this->task->refresh()->load(['childrenRecursive' => function ($query) {
-            $query->orderBy('position')->orderBy('created_at');
-        }]);
+        $this->task->refresh()->load([
+            'childrenRecursive' => function ($query) {
+                $query->orderBy('position')->orderBy('created_at');
+            },
+            'tags',
+        ]);
 
         $this->fillFromTask();
     }

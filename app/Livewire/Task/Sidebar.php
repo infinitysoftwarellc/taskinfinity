@@ -4,6 +4,7 @@ namespace App\Livewire\Task;
 
 use App\Models\Task;
 use App\Models\TaskList;
+use App\Models\TaskTag;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -18,12 +19,7 @@ class Sidebar extends Component
 
     public string $filtersDescription = 'Display tasks filtered by list, date, priority, tag, and more.';
 
-    public array $tags = [
-        ['label' => 'PRÓXIMAS TASKS', 'color' => 'bg-sky-500'],
-        ['label' => 'FOLDERS', 'color' => 'bg-purple-500'],
-        ['label' => 'PORTFOLIO GUILHERMEINFINITY', 'color' => 'bg-amber-500'],
-        ['label' => 'PORTFOLIO SOFTWAREINFINITY', 'color' => 'bg-lime-500'],
-    ];
+    public array $tags = [];
 
     public ?int $activeListId = null;
 
@@ -145,6 +141,25 @@ class Sidebar extends Component
             ->orderBy('position')
             ->orderBy('name')
             ->get();
+
+        if ($userId) {
+            $this->tags = TaskTag::query()
+                ->where('user_id', $userId)
+                ->withCount('tasks')
+                ->orderBy('name')
+                ->get()
+                ->map(function (TaskTag $tag) {
+                    return [
+                        'id' => $tag->id,
+                        'label' => $tag->name,
+                        'color' => $tag->color,
+                        'tasks_count' => $tag->tasks_count,
+                    ];
+                })
+                ->all();
+        } else {
+            $this->tags = [];
+        }
 
         return view('livewire.task.sidebar', [
             'lists' => $lists,
