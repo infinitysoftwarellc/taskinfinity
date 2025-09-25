@@ -463,7 +463,7 @@
                     <div class="rounded-3xl border border-white/10 bg-[#090c17]/95 p-7 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.7)]">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-xs uppercase tracking-[0.4em] text-white/40">{{ $activeDate->translatedFormat('F Y') }}</p>
+                                <p class="text-xs uppercase tracking-[0.4em] text-white/40">{{ $monthLabel }}</p>
                                 <h3 class="mt-2 text-lg font-semibold text-white/80">{{ __('Resumo do mês') }}</h3>
                             </div>
                             <span class="rounded-2xl border border-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white/50">
