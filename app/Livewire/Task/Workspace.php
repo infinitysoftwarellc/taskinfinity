@@ -16,9 +16,13 @@ class Workspace extends Component
 {
     protected bool $supportsHierarchy = false;
 
+    protected array $availableViews = ['all', 'today', 'next-7-days'];
+
     public ?int $listId = null;
 
     public ?TaskList $list = null;
+
+    public ?string $view = null;
 
     public string $search = '';
 
@@ -60,18 +64,38 @@ class Workspace extends Component
         'open-task-editor' => 'openEditor',
     ];
 
-    public function mount(?int $listId = null): void
+    public function mount(?int $listId = null, ?string $view = null): void
     {
         $this->supportsHierarchy = Schema::hasColumn('tasks', 'parent_id')
             && Schema::hasColumn('tasks', 'depth');
 
         $this->listId = $listId;
+        $this->view = $this->normalizeView($view);
+
+        if ($this->view) {
+            $this->listId = null;
+        }
+
         $this->loadList();
     }
 
     public function updatedListId(): void
     {
+        if ($this->listId) {
+            $this->view = null;
+        }
+
         $this->loadList();
+    }
+
+    public function updatedView(): void
+    {
+        $this->view = $this->normalizeView($this->view);
+
+        if ($this->view) {
+            $this->listId = null;
+            $this->list = null;
+        }
     }
 
     public function updatedSearch(): void
@@ -283,9 +307,146 @@ class Workspace extends Component
             ->values();
     }
 
+    protected function normalizeView(?string $view): ?string
+    {
+        if (! $view) {
+            return null;
+        }
+
+        $normalized = Str::of($view)->lower()->toString();
+
+        return in_array($normalized, $this->availableViews, true)
+            ? $normalized
+            : null;
+    }
+
+    protected function viewMeta(string $view): array
+    {
+        return match ($view) {
+            'today' => [
+                'title' => 'Hoje',
+                'description' => 'Tarefas com prazo para hoje.',
+            ],
+            'next-7-days' => [
+                'title' => 'Próximos 7 dias',
+                'description' => 'Acompanhe o que está previsto para a próxima semana.',
+            ],
+            default => [
+                'title' => 'Todas as tarefas',
+                'description' => 'Visualize todas as tarefas organizadas por lista.',
+            ],
+        };
+    }
+
+    protected function prepareTasks(Collection $tasks): Collection
+    {
+        if ($this->supportsHierarchy) {
+            return $tasks;
+        }
+
+        return $tasks->map(function (Task $task) {
+            return $task->setRelation('childrenRecursive', collect());
+        });
+    }
+
+    protected function buildViewPayload(): ?array
+    {
+        $view = $this->normalizeView($this->view);
+
+        if (! $view) {
+            return null;
+        }
+
+        $meta = $this->viewMeta($view) + [
+            'slug' => $view,
+            'lists' => collect(),
+            'tasks' => collect(),
+        ];
+
+        $userId = Auth::id();
+
+        if (! $userId) {
+            return $meta;
+        }
+
+        if ($view === 'all') {
+            $lists = TaskList::query()
+                ->where('user_id', $userId)
+                ->orderBy('position')
+                ->orderBy('name')
+                ->get();
+
+            if ($lists->isEmpty()) {
+                return $meta;
+            }
+
+            $tasksQuery = Task::query()
+                ->where('user_id', $userId)
+                ->whereIn('list_id', $lists->pluck('id'))
+                ->orderBy('position')
+                ->orderBy('created_at');
+
+            if ($this->supportsHierarchy) {
+                $tasksQuery->whereNull('parent_id')
+                    ->with(['childrenRecursive' => function ($query) {
+                        $query->orderBy('position')->orderBy('created_at');
+                    }]);
+            } else {
+                $tasksQuery->with('list');
+            }
+
+            $tasks = $tasksQuery->get();
+            $tasks = $this->prepareTasks($tasks);
+            $tasks = $this->filterTaskTree($tasks);
+
+            $grouped = $tasks->groupBy('list_id');
+
+            $meta['lists'] = $lists->map(function (TaskList $list) use ($grouped) {
+                return [
+                    'id' => $list->id,
+                    'name' => $list->name,
+                    'tasks' => $grouped->get($list->id, collect()),
+                ];
+            })->filter(function (array $list) {
+                return $list['tasks']->isNotEmpty();
+            })->values();
+
+            return $meta;
+        }
+
+        $tasksQuery = Task::query()
+            ->where('user_id', $userId)
+            ->whereNotNull('due_at')
+            ->orderBy('due_at')
+            ->orderBy('created_at')
+            ->with('list');
+
+        if ($this->supportsHierarchy) {
+            $tasksQuery->whereNull('parent_id')
+                ->with(['childrenRecursive' => function ($query) {
+                    $query->orderBy('position')->orderBy('created_at');
+                }]);
+        }
+
+        if ($view === 'today') {
+            $tasksQuery->whereDate('due_at', now()->toDateString());
+        }
+
+        if ($view === 'next-7-days') {
+            $tasksQuery->whereBetween('due_at', [now()->startOfDay(), now()->addDays(7)->endOfDay()]);
+        }
+
+        $tasks = $tasksQuery->get();
+        $tasks = $this->prepareTasks($tasks);
+        $meta['tasks'] = $this->filterTaskTree($tasks);
+
+        return $meta;
+    }
+
     public function render()
     {
         $tasks = collect();
+        $viewPayload = null;
 
         if ($this->list) {
             $this->list->loadCount('tasks');
@@ -306,18 +467,17 @@ class Workspace extends Component
             }
 
             $tasks = $tasksQuery->get();
-
-            if (! $this->supportsHierarchy) {
-                $tasks = $tasks->map(function (Task $task) {
-                    return $task->setRelation('childrenRecursive', collect());
-                });
-            }
-
+            $tasks = $this->prepareTasks($tasks);
             $tasks = $this->filterTaskTree($tasks);
+        }
+
+        if (! $this->list && $this->view) {
+            $viewPayload = $this->buildViewPayload();
         }
 
         return view('livewire.task.workspace', [
             'tasks' => $tasks,
+            'viewPayload' => $viewPayload,
         ]);
     }
 }

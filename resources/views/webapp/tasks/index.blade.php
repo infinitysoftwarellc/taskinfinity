@@ -72,11 +72,11 @@
             </div>
 
             <div class="w-full lg:w-80 xl:w-96">
-                <livewire:task.sidebar :active-list-id="$list?->id" :key="'task-sidebar-' . ($list?->id ?? 'empty')" />
+                <livewire:task.sidebar :active-list-id="$list?->id" :active-view="$view" :key="'task-sidebar-' . ($list?->id ?? $view ?? 'empty')" />
             </div>
 
             <div class="flex-1">
-                <livewire:task.workspace :list-id="$list?->id" :key="'task-workspace-' . ($list?->id ?? 'empty')" />
+                <livewire:task.workspace :list-id="$list?->id" :view="$view" :key="'task-workspace-' . ($list?->id ?? $view ?? 'empty')" />
             </div>
         </div>
     </div>

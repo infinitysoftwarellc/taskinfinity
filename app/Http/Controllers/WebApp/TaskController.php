@@ -4,26 +4,24 @@ namespace App\Http\Controllers\WebApp;
 
 use App\Http\Controllers\Controller;
 use App\Models\TaskList;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TaskController extends Controller
 {
-    public function index(Request $request): View|RedirectResponse
+    public function index(Request $request): View
     {
-        $user = $request->user();
-        $firstList = $user?->taskLists()
-            ->orderBy('position')
-            ->orderBy('name')
-            ->first();
+        $view = (string) $request->query('view', 'all');
 
-        if ($firstList) {
-            return redirect()->route('tasks.lists.show', $firstList);
+        $availableViews = ['all', 'today', 'next-7-days'];
+
+        if (! in_array($view, $availableViews, true)) {
+            $view = 'all';
         }
 
         return view('webapp.tasks.index', [
             'list' => null,
+            'view' => $view,
         ]);
     }
 
@@ -33,6 +31,7 @@ class TaskController extends Controller
 
         return view('webapp.tasks.index', [
             'list' => $list,
+            'view' => null,
         ]);
     }
 

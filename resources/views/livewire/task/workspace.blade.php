@@ -1,5 +1,76 @@
 <section class="space-y-6">
-    @if ($list)
+    @if ($viewPayload)
+        @php
+            $totalViewTasks = $viewPayload['slug'] === 'all'
+                ? $viewPayload['lists']->sum(fn ($list) => $list['tasks']->count())
+                : $viewPayload['tasks']->count();
+        @endphp
+
+        <header class="flex flex-col justify-between gap-4 rounded-3xl border border-white/5 bg-white/5 p-6 text-sm backdrop-blur md:flex-row md:items-center">
+            <div>
+                <p class="text-xs uppercase tracking-wider text-white/60">{{ $totalViewTasks }} tarefas</p>
+                <h1 class="text-2xl font-semibold text-white">{{ $viewPayload['title'] }}</h1>
+                <p class="mt-1 text-xs text-white/60">{{ $viewPayload['description'] }}</p>
+            </div>
+            <div class="flex flex-1 flex-col gap-3 md:flex-row md:items-center md:justify-end">
+                <div class="relative w-full md:max-w-xs">
+                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-white/40">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15z" />
+                        </svg>
+                    </span>
+                    <input type="search" placeholder="Pesquisar tarefas" wire:model.debounce.400ms="search"
+                        class="w-full rounded-2xl border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder-white/40 focus:border-white/30 focus:outline-none focus:ring-0" />
+                </div>
+                <p class="rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-white/60">
+                    Use a busca para filtrar tarefas por título ou descrição.
+                </p>
+            </div>
+        </header>
+
+        <div class="space-y-6 rounded-3xl border border-white/5 bg-white/5 p-6 backdrop-blur">
+            @if ($viewPayload['slug'] === 'all')
+                @forelse ($viewPayload['lists'] as $viewList)
+                    <div class="space-y-3">
+                        <div class="flex flex-col gap-1 text-white sm:flex-row sm:items-center sm:justify-between">
+                            <h2 class="text-lg font-semibold">{{ $viewList['name'] }}</h2>
+                            <span class="text-xs uppercase tracking-wide text-white/50">{{ $viewList['tasks']->count() }} tarefas</span>
+                        </div>
+                        <div class="space-y-4">
+                            @foreach ($viewList['tasks'] as $task)
+                                <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-view-' . $viewList['id'] . '-' . $task->id" />
+                            @endforeach
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-2xl border border-dashed border-white/10 bg-black/30 p-6 text-sm text-white/60">
+                        Nenhuma tarefa encontrada. Crie tarefas nas suas listas para vê-las aqui.
+                    </div>
+                @endforelse
+            @else
+                <div class="space-y-4">
+                    @forelse ($viewPayload['tasks'] as $task)
+                        <div class="space-y-2">
+                            @if ($task->relationLoaded('list') && $task->list)
+                                <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] uppercase tracking-wide text-white/60">
+                                    {{ $task->list->name }}
+                                </span>
+                            @endif
+                            <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-view-' . $task->id" />
+                        </div>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-white/10 bg-black/30 p-6 text-sm text-white/60">
+                            @if ($viewPayload['slug'] === 'today')
+                                Nenhuma tarefa com prazo para hoje.
+                            @else
+                                Nenhuma tarefa com prazo para os próximos 7 dias.
+                            @endif
+                        </div>
+                    @endforelse
+                </div>
+            @endif
+        </div>
+    @elseif ($list)
         <header class="flex flex-col justify-between gap-4 rounded-3xl border border-white/5 bg-white/5 p-6 text-sm backdrop-blur md:flex-row md:items-center">
             <div>
                 <p class="text-xs uppercase tracking-wider text-white/60">{{ $list->tasks_count }} tarefas</p>
@@ -40,7 +111,7 @@
 
             <div class="space-y-4">
                 @forelse ($tasks as $task)
-                    <livewire:task.item :task="$task" :depth="$task->depth" :key="'task-item-' . $task->id" />
+                    <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-' . $task->id" />
                 @empty
                     <div class="rounded-2xl border border-dashed border-white/10 bg-black/30 p-6 text-sm text-white/60">
                         Nenhuma tarefa cadastrada nesta lista ainda. Comece criando uma tarefa no campo acima e organize subtarefas com até 7 níveis de hierarquia.
