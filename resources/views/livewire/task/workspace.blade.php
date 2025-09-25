@@ -9,92 +9,154 @@
                 <div class="relative w-full md:max-w-xs">
                     <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-white/40">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15z" />
                         </svg>
                     </span>
                     <input type="search" placeholder="Pesquisar tarefas" wire:model.debounce.400ms="search"
                         class="w-full rounded-2xl border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder-white/40 focus:border-white/30 focus:outline-none focus:ring-0" />
                 </div>
-                <div class="flex items-center gap-2">
-                    <button type="button"
-                        class="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs font-medium uppercase tracking-wide text-white/70 hover:border-white/30">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M3 12h18M3 20h18" />
-                        </svg>
-                        Filtros
-                    </button>
-                    <button type="button"
-                        class="flex items-center gap-2 rounded-2xl bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-400">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        Nova tarefa
-                    </button>
-                </div>
+                <p class="rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-white/60">
+                    <span class="font-semibold text-white">Dica:</span> pressione <kbd class="rounded bg-white/10 px-1">Shift</kbd> + <kbd class="rounded bg-white/10 px-1">Enter</kbd> no nome da tarefa para criar uma subtarefa instantaneamente.
+                </p>
             </div>
         </header>
 
-        <div class="space-y-6">
-            @foreach ($statusMeta as $status => $meta)
-                @php
-                    $items = $taskGroups->get($status, collect());
-                @endphp
-                <article class="rounded-3xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div>
-                            <h2 class="text-lg font-semibold text-white">{{ $meta['label'] }}</h2>
-                            <p class="text-xs uppercase tracking-wider text-white/50">{{ $items->count() }} tarefas</p>
-                        </div>
-                        <span class="rounded-full px-3 py-1 text-xs font-semibold text-white/80 {{ $meta['badge'] }}">
-                            {{ strtoupper($status) }}
-                        </span>
-                    </div>
+        <div class="space-y-6 rounded-3xl border border-white/5 bg-white/5 p-6 backdrop-blur">
+            <div>
+                <label for="new-task-title" class="block text-xs font-semibold uppercase tracking-wide text-white/60">Criar tarefa rapidamente</label>
+                <div class="mt-2 flex items-center gap-3">
+                    <input id="new-task-title" type="text" placeholder="Digite o nome da tarefa e pressione Enter"
+                        wire:model.defer="newTaskTitle" wire:keydown.enter.prevent="createRootTask"
+                        class="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                    <button type="button" wire:click="createRootTask"
+                        class="hidden rounded-2xl bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400 sm:flex">
+                        Criar
+                    </button>
+                </div>
+                @error('newTaskTitle')
+                    <p class="mt-2 text-xs text-rose-300">{{ $message }}</p>
+                @enderror
+            </div>
 
-                    @if ($items->isEmpty())
-                        <div class="mt-6 rounded-2xl border border-dashed border-white/10 bg-black/30 p-4 text-xs text-white/60">
-                            Nenhuma tarefa encontrada nesta etapa.
-                            @if ($search)
-                                <span class="block pt-1 text-white/50">Ajuste a busca para ver outros resultados.</span>
-                            @endif
-                        </div>
-                    @else
-                        <ul class="mt-6 space-y-3">
-                            @foreach ($items as $task)
-                                <li class="group flex items-center justify-between rounded-2xl border border-white/5 bg-black/30 px-4 py-3 transition hover:border-indigo-400/60 hover:bg-black/40">
-                                    <div class="flex items-center gap-3">
-                                        <span class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-white">
-                                            <svg class="h-5 w-5 text-indigo-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                            </svg>
-                                        </span>
-                                        <div>
-                                            <p class="text-sm font-semibold text-white">{{ $task->title }}</p>
-                                            @if ($task->due_at)
-                                                <p class="text-xs text-white/50">Prazo: {{ $task->due_at->translatedFormat('d M Y \à\s H\hi') }}</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/60">
-                                            Prioridade: {{ strtoupper($task->priority) }}
-                                        </span>
-                                        <button type="button"
-                                            class="rounded-full border border-white/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-white/60 transition hover:border-indigo-400 hover:text-indigo-300">
-                                            Detalhes
-                                        </button>
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
-                </article>
-            @endforeach
+            <div class="space-y-4">
+                @forelse ($tasks as $task)
+                    <livewire:task.item :task="$task" :depth="$task->depth" :key="'task-item-' . $task->id" />
+                @empty
+                    <div class="rounded-2xl border border-dashed border-white/10 bg-black/30 p-6 text-sm text-white/60">
+                        Nenhuma tarefa cadastrada nesta lista ainda. Comece criando uma tarefa no campo acima e organize subtarefas com até 7 níveis de hierarquia.
+                    </div>
+                @endforelse
+            </div>
         </div>
     @else
         <div class="rounded-3xl border border-dashed border-white/10 bg-black/40 p-10 text-center text-sm text-white/70">
             <h2 class="text-xl font-semibold text-white">Comece criando uma lista</h2>
             <p class="mt-2 text-white/60">Use o botão “+ New” na barra lateral para criar listas e organizar suas tarefas sem recarregar a página.</p>
+        </div>
+    @endif
+
+    @if ($showEditor && $editorTask)
+        <div class="fixed inset-0 z-50 flex items-start justify-end bg-black/60 p-0 backdrop-blur-sm">
+            <div class="relative flex h-full w-full max-w-3xl flex-col gap-6 overflow-y-auto bg-zinc-950/95 p-8 text-sm text-white shadow-2xl">
+                <button type="button" wire:click="closeEditor"
+                    class="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/70 transition hover:border-white/30 hover:text-white">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m6 6 12 12M6 18 18 6" />
+                    </svg>
+                </button>
+
+                <header class="pr-12">
+                    <p class="text-xs uppercase tracking-wider text-white/50">Editor avançado</p>
+                    <h2 class="mt-1 text-2xl font-semibold text-white">{{ $editorTask->title }}</h2>
+                    <p class="mt-1 text-xs text-white/50">Edite todos os detalhes da tarefa sem sair da página.</p>
+                </header>
+
+                <form wire:submit.prevent="saveEditor" class="space-y-6">
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div class="md:col-span-2">
+                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Nome</label>
+                            <input type="text" wire:model.defer="editorForm.title"
+                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                            @error('editorForm.title')
+                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Status</label>
+                            <select wire:model="editorForm.status"
+                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0">
+                                @foreach ($statusOptions as $option)
+                                    <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                @endforeach
+                            </select>
+                            @error('editorForm.status')
+                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Prioridade</label>
+                            <select wire:model="editorForm.priority"
+                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0">
+                                @foreach ($priorityOptions as $option)
+                                    <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                @endforeach
+                            </select>
+                            @error('editorForm.priority')
+                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Prazo</label>
+                            <input type="datetime-local" wire:model="editorForm.due_at"
+                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                            @error('editorForm.due_at')
+                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Estimativa de pomodoros</label>
+                            <input type="number" min="0" wire:model="editorForm.estimate_pomodoros"
+                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                            @error('editorForm.estimate_pomodoros')
+                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Pomodoros concluídos</label>
+                            <input type="number" min="0" wire:model="editorForm.pomodoros_done"
+                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                            @error('editorForm.pomodoros_done')
+                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Descrição</label>
+                        <textarea rows="6" wire:model.defer="editorForm.description"
+                            class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0"></textarea>
+                        @error('editorForm.description')
+                            <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="button" wire:click="closeEditor"
+                            class="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:border-white/30 hover:text-white">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="rounded-2xl bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400">
+                            Salvar alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     @endif
 </section>
