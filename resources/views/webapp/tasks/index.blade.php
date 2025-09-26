@@ -2,16 +2,24 @@
     @php
         $menuLinks = [
             [
-                'label' => 'Dashboard',
-                'route' => route('dashboard'),
-                'active' => request()->routeIs('dashboard'),
-                'icon' => '<path d="M3 9.75 12 3l9 6.75V21a.75.75 0 0 1-.75.75H3.75A.75.75 0 0 1 3 21z" />',
-            ],
-            [
                 'label' => 'Tasks',
                 'route' => route('tasks.index'),
                 'active' => request()->routeIs('tasks.*'),
                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 9.75h16.5M3.75 14.25h16.5M3.75 18.75h16.5" />',
+                'stroke' => true,
+            ],
+            [
+                'label' => 'Pomodoro',
+                'route' => route('pomodoro'),
+                'active' => request()->routeIs('pomodoro'),
+                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5c-4.142 0-7.5 3.134-7.5 7s3.358 7 7.5 7 7.5-3.134 7.5-7" />',
+                'stroke' => true,
+            ],
+            [
+                'label' => 'Habits',
+                'route' => route('habits'),
+                'active' => request()->routeIs('habits'),
+                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3.75v2.25m10.5-2.25v2.25M4.5 9.75h15M6 7.5h12a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V9A1.5 1.5 0 0 1 6 7.5z" />',
                 'stroke' => true,
             ],
             [
@@ -44,7 +52,7 @@
 
     <div class="flex min-h-screen bg-gray-950 text-gray-100">
         <aside class="hidden w-20 shrink-0 flex-col items-center border-r border-white/10 bg-black/30 py-6 md:flex">
-            <a href="{{ route('dashboard') }}" class="mb-8 flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500 text-white transition hover:bg-indigo-400">
+            <a href="{{ route('tasks.index') }}" class="mb-8 flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500 text-white transition hover:bg-indigo-400">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75" />
                 </svg>
