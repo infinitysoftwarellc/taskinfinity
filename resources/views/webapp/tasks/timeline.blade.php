@@ -41,11 +41,13 @@
                 'label' => 'Kanban',
                 'route' => route('tasks.board'),
                 'active' => request()->routeIs('tasks.board'),
+                'visible' => false,
             ],
             [
                 'label' => 'Linha do tempo',
                 'route' => route('tasks.timeline'),
                 'active' => request()->routeIs('tasks.timeline'),
+                'visible' => false,
             ],
         ];
     @endphp
@@ -104,6 +106,9 @@
             <div class="flex-1 space-y-5">
                 <nav class="flex items-center gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/30 p-2 text-xs font-semibold uppercase tracking-wide text-white/60">
                     @foreach ($taskViews as $view)
+                        @if (!($view['visible'] ?? true))
+                            @continue
+                        @endif
                         <a
                             href="{{ $view['route'] }}"
                             class="rounded-2xl px-4 py-2 transition {{ ($view['active'] ?? false) ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-white/5 hover:bg-white/10 hover:text-white' }}"
