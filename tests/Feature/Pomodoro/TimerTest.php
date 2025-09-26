@@ -66,6 +66,22 @@ test('focus session can be paused and resumed keeping remaining time', function 
     expect($session->remaining_seconds)->toBeNull();
 });
 
+test('focus session note metadata is stored when provided', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    Livewire::test(Timer::class)
+        ->set('focusNote', 'Deep work on roadmap draft')
+        ->call('startFocus')
+        ->assertSet('focusNote', 'Deep work on roadmap draft');
+
+    $session = PomodoroSession::first();
+
+    expect($session)->not->toBeNull();
+    expect($session->meta['focus_note'] ?? null)->toBe('Deep work on roadmap draft');
+});
+
 test('focus session only finishes after duration elapses', function () {
     $user = User::factory()->create();
 

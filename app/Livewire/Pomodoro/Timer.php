@@ -28,6 +28,9 @@ class Timer extends Component
 
     public string $timezone;
 
+    #[Validate('nullable|string|max:500')]
+    public ?string $focusNote = null;
+
     public ?PomodoroSession $currentSession = null;
 
     public ?int $remainingSeconds = null;
@@ -355,22 +358,40 @@ class Timer extends Component
             ? $this->timezone
             : config('app.timezone', 'UTC');
 
+        if ($type === PomodoroSession::TYPE_FOCUS) {
+            $this->validateOnly('focusNote');
+        }
+
         $nowUtc = Carbon::now('UTC')->toImmutable();
         $nowLocal = $nowUtc->setTimezone($activeTimezone);
         $durationSeconds = $minutes * 60;
+
+        $focusNote = $type === PomodoroSession::TYPE_FOCUS
+            ? $this->normalizedFocusNote()
+            : null;
+
+        $meta = [
+            'timezone' => $activeTimezone,
+            'initial_started_at' => $nowLocal->format('Y-m-d H:i'),
+            'local_started_at' => $nowLocal->format('Y-m-d H:i'),
+            'started_at_utc' => $nowUtc->format('Y-m-d H:i:s'),
+        ];
+
+        if ($focusNote !== null) {
+            $meta['focus_note'] = $focusNote;
+        }
 
         $session = $this->user()->pomodoroSessions()->create([
             'type' => $type,
             'status' => PomodoroSession::STATUS_RUNNING,
             'started_at' => $nowUtc,
             'duration_seconds' => $durationSeconds,
-            'meta' => [
-                'timezone' => $activeTimezone,
-                'initial_started_at' => $nowLocal->format('Y-m-d H:i'),
-                'local_started_at' => $nowLocal->format('Y-m-d H:i'),
-                'started_at_utc' => $nowUtc->format('Y-m-d H:i:s'),
-            ],
+            'meta' => $meta,
         ]);
+
+        if ($type === PomodoroSession::TYPE_FOCUS) {
+            $this->focusNote = $focusNote;
+        }
 
         $this->currentSession = $session;
         $this->remainingSeconds = $durationSeconds;
@@ -416,6 +437,9 @@ class Timer extends Component
 
         if ($this->currentSession) {
             $this->remainingSeconds = $this->currentSession->secondsRemaining($this->timezone);
+            if ($this->currentSession->type === PomodoroSession::TYPE_FOCUS && $this->focusNote === null) {
+                $this->focusNote = $this->extractFocusNote($this->currentSession->meta ?? []);
+            }
         } else {
             $this->remainingSeconds = null;
         }
@@ -567,6 +591,7 @@ class Timer extends Component
                     'duration_label' => $this->formatDurationLabel($session->duration_seconds),
                     'start_minutes' => $startMinutes,
                     'end_minutes' => $endMinutes,
+                    'focus_note' => $this->extractFocusNote($session->meta ?? []),
                 ];
             })
             ->all();
@@ -606,6 +631,30 @@ class Timer extends Component
         }
 
         return sprintf('%dh %02dm', $hours, $remainingMinutes);
+    }
+
+    protected function normalizedFocusNote(): ?string
+    {
+        if ($this->focusNote === null) {
+            return null;
+        }
+
+        $note = trim($this->focusNote);
+
+        return $note === '' ? null : $note;
+    }
+
+    protected function extractFocusNote(array $meta): ?string
+    {
+        $note = $meta['focus_note'] ?? null;
+
+        if (! is_string($note)) {
+            return null;
+        }
+
+        $note = trim($note);
+
+        return $note === '' ? null : $note;
     }
 
     protected function user(): Authenticatable
