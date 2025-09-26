@@ -13,6 +13,7 @@ use App\Http\Controllers\WebApp\TaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
+Route::view('/teste', 'teste');
 
 Route::prefix('webapp')
     ->middleware(['auth'])
