@@ -62,8 +62,6 @@ class Timer extends Component
      */
     public array $todayRecords = [];
 
-    public string $focusNote = '';
-
     public function mount(): void
     {
         $user = $this->user();
@@ -106,6 +104,24 @@ class Timer extends Component
     {
         $this->validate();
 
+        $this->persistSettings();
+        $this->notifySettingsSaved();
+    }
+
+    public function updated(string $propertyName): void
+    {
+        if (! in_array($propertyName, ['focusMinutes', 'shortBreakMinutes', 'longBreakMinutes', 'longBreakEvery'], true)) {
+            return;
+        }
+
+        $this->validateOnly($propertyName);
+
+        $this->persistSettings();
+        $this->notifySettingsSaved();
+    }
+
+    protected function persistSettings(): void
+    {
         /** @var PomodoroSetting $settings */
         $settings = $this->user()->pomodoroSetting;
 
@@ -115,7 +131,10 @@ class Timer extends Component
             'long_break_minutes' => $this->longBreakMinutes,
             'long_break_every' => $this->longBreakEvery,
         ]);
+    }
 
+    protected function notifySettingsSaved(): void
+    {
         $this->dispatch('settings-saved');
     }
 
