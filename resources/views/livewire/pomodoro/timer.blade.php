@@ -354,22 +354,173 @@
         @endphp
 
         <div class="rounded-3xl border border-white/10 bg-black/40 p-6 sm:p-8">
-            <h3 class="text-sm font-semibold uppercase tracking-[0.3em] text-white/50">Focus record</h3>
-            <ul class="mt-6 space-y-4">
-                @forelse ($focusRecords as $record)
-                    <li class="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/60 px-4 py-3">
-                        <div>
-                            <p class="text-sm font-medium text-white">{{ $record['label'] }}</p>
-                            <p class="text-xs text-white/50 capitalize">{{ str_replace('_', ' ', $record['status']) }}</p>
-                        </div>
-                        <span class="text-sm font-semibold text-indigo-300">{{ $record['duration_label'] }}</span>
-                    </li>
-                @empty
-                    <li class="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-white/50">
-                        No focus sessions recorded today.
-                    </li>
-                @endforelse
-            </ul>
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.3em] text-white/50">Focus record</h3>
+                <button
+                    type="button"
+                    wire:click="startFocus"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-200 transition hover:bg-indigo-500/30 hover:text-white"
+                    title="Add a pomodoro"
+                >
+                    <span class="sr-only">Add pomodoro</span>
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                    </svg>
+                </button>
+            </div>
+
+            <div
+                x-data="{ openRecordId: null }"
+                x-on:keydown.escape.window="openRecordId = null"
+                class="mt-6"
+            >
+                <div class="relative pl-8">
+                    <div class="absolute left-4 top-0 bottom-0 w-px bg-white/10"></div>
+
+                    <ul class="space-y-6">
+                        @forelse ($focusRecords as $record)
+                            @php
+                                /** @var \Illuminate\Support\Carbon|null $recordStart */
+                                $recordStart = $record['started_at'];
+                                /** @var \Illuminate\Support\Carbon|null $recordEnd */
+                                $recordEnd = $record['ended_at'];
+
+                                $dayDescriptor = $recordStart
+                                    ? ($recordStart->isToday()
+                                        ? 'Today'
+                                        : ($recordStart->isYesterday() ? 'Yesterday' : $recordStart->format('d M')))
+                                    : null;
+
+                                $timeWindow = $recordStart
+                                    ? ($dayDescriptor
+                                        ? sprintf('%s, %s - %s', $dayDescriptor, $recordStart->format('d M, H:i'), $recordEnd ? $recordEnd->format('H:i') : '—')
+                                        : '—')
+                                    : '—';
+                            @endphp
+
+                            <li class="relative" wire:key="focus-record-{{ $record['id'] }}">
+                                <div class="absolute -left-[7px] top-2 h-3 w-3 rounded-full border-2 border-indigo-400 bg-black"></div>
+
+                                <div class="flex items-start justify-between gap-4">
+                                    <button
+                                        type="button"
+                                        class="group flex flex-1 items-start gap-4 rounded-2xl border border-transparent px-4 py-3 text-left transition hover:border-white/10 hover:bg-black/50"
+                                        x-on:click="openRecordId = openRecordId === {{ $record['id'] }} ? null : {{ $record['id'] }}"
+                                    >
+                                        <div class="relative mt-1 h-2.5 w-2.5">
+                                            <span class="absolute inset-0 rounded-full bg-indigo-400"></span>
+                                            <span class="absolute inset-0 scale-[2] rounded-full bg-indigo-500/10 opacity-0 transition group-hover:opacity-100"></span>
+                                        </div>
+
+                                        <div>
+                                            <p class="text-sm font-semibold text-white">{{ $record['label'] }}</p>
+                                            <p class="text-xs text-white/50 capitalize">{{ str_replace('_', ' ', $record['status']) }}</p>
+                                        </div>
+                                    </button>
+
+                                    <span class="mt-1 text-sm font-semibold text-indigo-300">{{ $record['duration_label'] }}</span>
+                                </div>
+
+                                <div
+                                    x-cloak
+                                    x-show="openRecordId === {{ $record['id'] }}"
+                                    x-transition
+                                    x-on:click.outside="openRecordId = null"
+                                    class="relative z-10 mt-4 max-w-lg rounded-2xl border border-white/10 bg-black/80 p-4 shadow-2xl shadow-indigo-500/20 backdrop-blur"
+                                >
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h4 class="text-sm font-semibold text-white">Focus Record</h4>
+                                            <p class="text-xs text-white/50">Detailed session overview</p>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" class="rounded-full p-1.5 text-white/40 transition hover:bg-white/5 hover:text-white">
+                                                <span class="sr-only">Copy session</span>
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 2H6a2 2 0 0 0-2 2v10" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="rounded-full p-1.5 text-white/40 transition hover:bg-white/5 hover:text-white"
+                                                x-on:click="openRecordId = null"
+                                            >
+                                                <span class="sr-only">Close</span>
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m6 6 12 12M18 6 6 18" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 space-y-4">
+                                        <div class="flex items-center gap-3 text-sm text-white/80">
+                                            <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-300">
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm8 3a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
+                                                </svg>
+                                            </span>
+                                            <div>
+                                                <p class="text-xs uppercase tracking-[0.2em] text-white/40">Set Task</p>
+                                                <p class="text-sm font-medium text-white">Focus session</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-3 text-sm text-white/80">
+                                            <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/5 text-white/60">
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
+                                                    <circle cx="12" cy="12" r="9" />
+                                                </svg>
+                                            </span>
+                                            <div>
+                                                <p class="text-xs uppercase tracking-[0.2em] text-white/40">Time</p>
+                                                <p class="text-sm font-medium text-white">{{ $timeWindow }}</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-3 text-sm text-white/80">
+                                            <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/5 text-white/60">
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14" />
+                                                </svg>
+                                            </span>
+                                            <div>
+                                                <p class="text-xs uppercase tracking-[0.2em] text-white/40">Duration</p>
+                                                <p class="text-sm font-medium text-white">{{ $record['duration_label'] }}</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="text-xs uppercase tracking-[0.2em] text-white/40">Notes</label>
+                                            <textarea
+                                                rows="3"
+                                                class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+                                                placeholder="What do you have in mind?"
+                                            ></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 flex items-center justify-end gap-3">
+                                        <button type="button" class="rounded-full border border-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-white/60 transition hover:border-white/20 hover:text-white">
+                                            Delete
+                                        </button>
+                                        <button type="button" class="rounded-full bg-indigo-500 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-indigo-400">
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                        @empty
+                            <li class="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-white/50">
+                                No focus sessions recorded today.
+                            </li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
