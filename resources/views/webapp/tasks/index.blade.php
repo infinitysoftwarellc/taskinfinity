@@ -1,1 +1,5 @@
-<h1>Hello world!</h1>
+@extends('layouts.app')
+
+@section('content')
+    <livewire:task.workspace />
+@endsection

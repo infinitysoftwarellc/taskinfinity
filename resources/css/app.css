@@ -140,9 +140,66 @@
 
 .tasks-shell {
     display: grid;
-    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-columns: 64px 280px minmax(0, 1fr) 340px;
     gap: 16px;
     height: calc(100vh - 72px);
+    align-items: stretch;
+}
+
+.tasks-rail {
+    background: var(--tasks-panel-2);
+    border: 1px solid var(--tasks-border);
+    border-radius: var(--tasks-radius);
+    box-shadow: var(--tasks-shadow);
+    padding: 14px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.tasks-rail-brand {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--tasks-accent), var(--tasks-accent-2));
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tasks-rail-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(232, 236, 243, 0.7);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background var(--tasks-transition), color var(--tasks-transition), border-color var(--tasks-transition);
+    font-size: 18px;
+}
+
+.tasks-rail-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--tasks-text);
+}
+
+.tasks-rail-btn.is-active {
+    background: rgba(79, 102, 255, 0.22);
+    border-color: rgba(79, 102, 255, 0.45);
+    color: #fff;
+    box-shadow: 0 12px 26px rgba(79, 102, 255, 0.35);
+}
+
+.tasks-rail-spacer {
+    flex: 1;
 }
 
 .tasks-panel {
@@ -618,6 +675,11 @@
     border-color: rgba(79, 102, 255, 0.25);
 }
 
+.task-card.is-active {
+    border-color: rgba(79, 102, 255, 0.45);
+    box-shadow: 0 16px 30px rgba(79, 102, 255, 0.2);
+}
+
 .task-card-main {
     flex: 1;
     display: flex;
@@ -637,6 +699,18 @@
     color: rgba(232, 236, 243, 0.6);
     cursor: pointer;
     transition: background var(--tasks-transition), border-color var(--tasks-transition), color var(--tasks-transition);
+}
+
+.task-pill {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(37, 48, 74, 0.9);
+    background: rgba(16, 24, 39, 0.75);
+    color: rgba(232, 236, 243, 0.8);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .task-checkbox span {
