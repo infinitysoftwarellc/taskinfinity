@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\WebApp;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Contracts\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(): View
     {
-        return redirect()->route('tasks.index');
+        return view('webapp.dashboard.index');
     }
 }

@@ -26,7 +26,7 @@ test('password can be confirmed', function () {
     $component->call('confirmPassword');
 
     $component
-        ->assertRedirect(route('tasks.index', absolute: false))
+        ->assertRedirect(route('dashboard', absolute: false))
         ->assertHasNoErrors();
 });
 

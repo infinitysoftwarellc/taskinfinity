@@ -2,11 +2,11 @@
     @php
         $menuLinks = [
             [
-                'label' => 'Tasks',
-                'route' => route('tasks.index'),
-                'active' => request()->routeIs('tasks.*'),
-                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 9.75h16.5M3.75 14.25h16.5M3.75 18.75h16.5" />',
-                'stroke' => true,
+                'label' => 'Dashboard',
+                'route' => route('dashboard'),
+                'active' => request()->routeIs('dashboard'),
+                'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M3 3h7.5v7.5H3V3zm10.5 0H21v7.5h-7.5V3zM3 13.5h7.5V21H3v-7.5zm10.5 0H21V21h-7.5v-7.5z" />',
+                'stroke' => false,
             ],
             [
                 'label' => 'Pomodoro',
@@ -34,7 +34,7 @@
 
     <div class="flex min-h-screen bg-gray-950 text-gray-100">
         <aside class="hidden w-20 shrink-0 flex-col items-center border-r border-white/10 bg-black/30 py-6 md:flex">
-            <a href="{{ route('tasks.index') }}" class="mb-8 flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500 text-white transition hover:bg-indigo-400">
+            <a href="{{ route('dashboard') }}" class="mb-8 flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500 text-white transition hover:bg-indigo-400">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75" />
                 </svg>
