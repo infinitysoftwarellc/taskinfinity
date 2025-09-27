@@ -9,7 +9,7 @@ test('non-admin users are redirected from admin analytics', function () {
 
     $response = $this->get(route('admin.analytics'));
 
-    $response->assertRedirect(route('tasks.index'));
+    $response->assertRedirect(route('dashboard'));
 });
 
 test('non-admin users are redirected from the admin dashboard routes', function () {
@@ -19,5 +19,5 @@ test('non-admin users are redirected from the admin dashboard routes', function 
 
     $response = $this->get(route('dashboard.index'));
 
-    $response->assertRedirect(route('tasks.index'));
+    $response->assertRedirect(route('dashboard'));
 });

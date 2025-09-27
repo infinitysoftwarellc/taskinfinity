@@ -4,12 +4,12 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -71,22 +71,6 @@ class User extends Authenticatable
             ->take(2)
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
-    }
-
-    /**
-     * Get the task lists that belong to the user.
-     */
-    public function taskLists(): HasMany
-    {
-        return $this->hasMany(TaskList::class, 'user_id');
-    }
-
-    /**
-     * Get the tasks that belong to the user.
-     */
-    public function tasks(): HasMany
-    {
-        return $this->hasMany(Task::class, 'user_id');
     }
 
     public function pomodoroSetting(): HasOne

@@ -462,7 +462,7 @@
                                                 </svg>
                                             </span>
                                             <div>
-                                                <p class="text-xs uppercase tracking-[0.2em] text-white/40">Set Task</p>
+                                                <p class="text-xs uppercase tracking-[0.2em] text-white/40">Session</p>
                                                 <p class="text-sm font-medium text-white">Focus session</p>
                                             </div>
                                         </div>

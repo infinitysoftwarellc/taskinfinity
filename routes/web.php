@@ -10,12 +10,9 @@ use App\Http\Controllers\WebApp\GamerController;
 use App\Http\Controllers\WebApp\HabitController;
 use App\Http\Controllers\WebApp\PomodoroController;
 use App\Http\Controllers\WebApp\Support\TicketController;
-use App\Http\Controllers\WebApp\TaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
-Route::view('/teste', 'teste');
-
 Route::prefix('dashboard')
     ->middleware(['auth', 'verified', 'admin'])
     ->name('dashboard.')
@@ -32,15 +29,6 @@ Route::prefix('webapp')
 
         Route::view('/profile', 'profile')
             ->name('profile');
-
-        Route::get('/tasks', [TaskController::class, 'index'])
-            ->name('tasks.index');
-        Route::get('/tasks/lists/{list}', [TaskController::class, 'show'])
-            ->name('tasks.lists.show');
-        Route::get('/tasks/board', [TaskController::class, 'board'])
-            ->name('tasks.board');
-        Route::get('/tasks/timeline', [TaskController::class, 'timeline'])
-            ->name('tasks.timeline');
 
         Route::get('/pomodoro', [PomodoroController::class, 'index'])
             ->name('pomodoro');

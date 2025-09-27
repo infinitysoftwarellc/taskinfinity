@@ -22,7 +22,7 @@ class EnsureUserIsAdmin
                 abort(403);
             }
 
-            return redirect()->route('tasks.index');
+            return redirect()->route('dashboard');
         }
 
         return $next($request);
