@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\WebApp\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\WebApp\AiController;
 use App\Http\Controllers\WebApp\BillingController;
-use App\Http\Controllers\WebApp\DashboardController;
+use App\Http\Controllers\WebApp\DashboardController as WebAppDashboardController;
 use App\Http\Controllers\WebApp\ExportController;
 use App\Http\Controllers\WebApp\GamerController;
 use App\Http\Controllers\WebApp\HabitController;
@@ -15,10 +16,17 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'welcome');
 Route::view('/teste', 'teste');
 
+Route::prefix('dashboard')
+    ->middleware(['auth', 'verified', 'admin'])
+    ->name('dashboard.')
+    ->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('index');
+    });
+
 Route::prefix('webapp')
     ->middleware(['auth'])
     ->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index'])
+        Route::get('/dashboard', [WebAppDashboardController::class, 'index'])
             ->middleware(['verified'])
             ->name('dashboard');
 
