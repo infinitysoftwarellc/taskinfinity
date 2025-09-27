@@ -71,7 +71,7 @@ Route::prefix('webapp')
             Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
         });
 
-        Route::prefix('admin')->name('admin.')->group(function () {
+        Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function () {
             Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
         });
     });

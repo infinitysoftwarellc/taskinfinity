@@ -18,7 +18,11 @@ class EnsureUserIsAdmin
         $user = $request->user();
 
         if (! $user || ! method_exists($user, 'isAdmin') || ! $user->isAdmin()) {
-            abort(403);
+            if ($request->expectsJson()) {
+                abort(403);
+            }
+
+            return redirect()->route('tasks.index');
         }
 
         return $next($request);
