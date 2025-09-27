@@ -243,6 +243,55 @@
     color: #d7e0f7;
 }
 
+.tasks-sidebar-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    border-radius: 14px;
+    border: 1px dashed var(--tasks-border);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(232, 236, 243, 0.85);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--tasks-transition), border-color var(--tasks-transition), color var(--tasks-transition);
+}
+
+.tasks-sidebar-action:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--tasks-text);
+}
+
+.tasks-create-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--tasks-border);
+    background: rgba(12, 18, 27, 0.9);
+}
+
+.tasks-create-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.tasks-sidebar-empty {
+    padding: 12px 10px;
+    border-radius: 12px;
+    border: 1px dashed var(--tasks-border);
+    background: rgba(12, 18, 27, 0.6);
+    color: var(--tasks-muted);
+    font-size: 12px;
+}
+
 .tasks-info-card {
     padding: 12px 14px;
     border-radius: 14px;
