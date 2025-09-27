@@ -1,67 +1,34 @@
 <?php
 
-use App\Http\Controllers\Dashboard\DashboardController;
-use App\Http\Controllers\WebApp\Admin\AnalyticsController as AdminAnalyticsController;
-use App\Http\Controllers\WebApp\AiController;
-use App\Http\Controllers\WebApp\BillingController;
-use App\Http\Controllers\WebApp\DashboardController as WebAppDashboardController;
-use App\Http\Controllers\WebApp\ExportController;
-use App\Http\Controllers\WebApp\GamerController;
-use App\Http\Controllers\WebApp\HabitController;
-use App\Http\Controllers\WebApp\PomodoroController;
-use App\Http\Controllers\WebApp\Support\TicketController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Features;
+use Livewire\Volt\Volt;
 
-Route::view('/', 'welcome');
-Route::prefix('dashboard')
-    ->middleware(['auth', 'verified', 'admin'])
-    ->name('dashboard.')
-    ->group(function () {
-        Route::get('/', [DashboardController::class, 'index'])->name('index');
-    });
+Route::get('/', function () {
+    return view('welcome');
+})->name('home');
 
-Route::prefix('webapp')
-    ->middleware(['auth'])
-    ->group(function () {
-        Route::get('/dashboard', [WebAppDashboardController::class, 'index'])
-            ->middleware(['verified'])
-            ->name('dashboard');
+Route::view('dashboard', 'dashboard')
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
-        Route::view('/profile', 'profile')
-            ->name('profile');
+Route::middleware(['auth'])->group(function () {
+    Route::redirect('settings', 'settings/profile');
 
-        Route::get('/pomodoro', [PomodoroController::class, 'index'])
-            ->name('pomodoro');
+    Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
+    Volt::route('settings/password', 'settings.password')->name('password.edit');
+    Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');
 
-        Route::get('/habits', [HabitController::class, 'index'])
-            ->name('habits');
-
-        Route::prefix('ai')->name('ai.')->group(function () {
-            Route::get('/plan', [AiController::class, 'plan'])->name('plan');
-            Route::get('/autolabel', [AiController::class, 'autolabel'])->name('autolabel');
-            Route::get('/split', [AiController::class, 'split'])->name('split');
-        });
-
-        Route::prefix('billing')->name('billing.')->group(function () {
-            Route::get('/', [BillingController::class, 'index'])->name('index');
-            Route::get('/stripe', [BillingController::class, 'stripe'])->name('stripe');
-            Route::get('/mercado-pago', [BillingController::class, 'mercadoPago'])->name('mercado-pago');
-        });
-
-        Route::get('/gamer', [GamerController::class, 'index'])
-            ->name('gamer');
-
-        Route::get('/export', [ExportController::class, 'index'])
-            ->name('export');
-
-        Route::prefix('support')->name('support.')->group(function () {
-            Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
-            Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
-        });
-
-        Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function () {
-            Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
-        });
-    });
+    Volt::route('settings/two-factor', 'settings.two-factor')
+        ->middleware(
+            when(
+                Features::canManageTwoFactorAuthentication()
+                    && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
+                ['password.confirm'],
+                [],
+            ),
+        )
+        ->name('two-factor.show');
+});
 
 require __DIR__.'/auth.php';

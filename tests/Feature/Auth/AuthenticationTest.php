@@ -1,26 +1,24 @@
 <?php
 
 use App\Models\User;
-use Livewire\Volt\Volt;
+use Laravel\Fortify\Features;
+use Livewire\Volt\Volt as LivewireVolt;
 
 test('login screen can be rendered', function () {
-    $response = $this->get('/login');
+    $response = $this->get(route('login'));
 
-    $response
-        ->assertOk()
-        ->assertSeeVolt('pages.auth.login');
+    $response->assertStatus(200);
 });
 
 test('users can authenticate using the login screen', function () {
     $user = User::factory()->create();
 
-    $component = Volt::test('pages.auth.login')
-        ->set('form.email', $user->email)
-        ->set('form.password', 'password');
+    $response = LivewireVolt::test('auth.login')
+        ->set('email', $user->email)
+        ->set('password', 'password')
+        ->call('login');
 
-    $component->call('login');
-
-    $component
+    $response
         ->assertHasNoErrors()
         ->assertRedirect(route('dashboard', absolute: false));
 
@@ -30,43 +28,50 @@ test('users can authenticate using the login screen', function () {
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $component = Volt::test('pages.auth.login')
-        ->set('form.email', $user->email)
-        ->set('form.password', 'wrong-password');
+    $response = LivewireVolt::test('auth.login')
+        ->set('email', $user->email)
+        ->set('password', 'wrong-password')
+        ->call('login');
 
-    $component->call('login');
-
-    $component
-        ->assertHasErrors()
-        ->assertNoRedirect();
+    $response->assertHasErrors('email');
 
     $this->assertGuest();
 });
 
-test('navigation menu can be rendered', function () {
+test('users with two factor enabled are redirected to two factor challenge', function () {
+    if (! Features::canManageTwoFactorAuthentication()) {
+        $this->markTestSkipped('Two-factor authentication is not enabled.');
+    }
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
     $user = User::factory()->create();
 
-    $this->actingAs($user);
+    $user->forceFill([
+        'two_factor_secret' => encrypt('test-secret'),
+        'two_factor_recovery_codes' => encrypt(json_encode(['code1', 'code2'])),
+        'two_factor_confirmed_at' => now(),
+    ])->save();
 
-    $response = $this->get(route('dashboard'));
+    $response = LivewireVolt::test('auth.login')
+        ->set('email', $user->email)
+        ->set('password', 'password')
+        ->call('login');
 
-    $response
-        ->assertOk()
-        ->assertSeeVolt('layout.navigation');
+    $response->assertRedirect(route('two-factor.login'));
+    $response->assertSessionHas('login.id', $user->id);
+    $this->assertGuest();
 });
 
 test('users can logout', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user);
+    $response = $this->actingAs($user)->post(route('logout'));
 
-    $component = Volt::test('layout.navigation');
-
-    $component->call('logout');
-
-    $component
-        ->assertHasNoErrors()
-        ->assertRedirect('/');
+    $response->assertRedirect(route('home'));
 
     $this->assertGuest();
 });
