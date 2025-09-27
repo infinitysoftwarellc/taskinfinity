@@ -1,298 +1,278 @@
-<section class="space-y-6">
-    @if ($viewPayload)
-        @php
-            $totalViewTasks = $viewPayload['slug'] === 'all'
-                ? $viewPayload['lists']->sum(fn ($list) => $list['tasks']->count())
-                : $viewPayload['tasks']->count();
-        @endphp
+<div class="tasks-workspace">
+    <section class="tasks-panel tasks-list-panel">
+        @if ($viewPayload)
+            @php
+                $totalViewTasks = $viewPayload['slug'] === 'all'
+                    ? $viewPayload['lists']->sum(fn ($list) => $list['tasks']->count())
+                    : $viewPayload['tasks']->count();
+            @endphp
 
-        <header class="flex flex-col justify-between gap-4 rounded-3xl border border-white/5 bg-white/5 p-6 text-sm backdrop-blur md:flex-row md:items-center">
-            <div>
-                <p class="text-xs uppercase tracking-wider text-white/60">{{ $totalViewTasks }} tarefas</p>
-                <h1 class="text-2xl font-semibold text-white">{{ $viewPayload['title'] }}</h1>
-                <p class="mt-1 text-xs text-white/60">{{ $viewPayload['description'] }}</p>
-            </div>
-            <div class="flex flex-1 flex-col gap-3 md:flex-row md:items-center md:justify-end">
-                <div class="relative w-full md:max-w-xs">
-                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-white/40">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15z" />
-                        </svg>
-                    </span>
-                    <input type="search" placeholder="Pesquisar tarefas" wire:model.debounce.400ms="search"
-                        class="w-full rounded-2xl border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder-white/40 focus:border-white/30 focus:outline-none focus:ring-0" />
+            <header class="tasks-list-header">
+                <span class="tasks-list-header-meta">{{ $totalViewTasks }} tarefas</span>
+                <h1 class="tasks-list-title">{{ $viewPayload['title'] }}</h1>
+                <p class="tasks-list-description">{{ $viewPayload['description'] }}</p>
+            </header>
+
+            <div class="tasks-search-row">
+                <div class="tasks-search-input">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15z" />
+                    </svg>
+                    <input type="search" placeholder="Pesquisar tarefas" wire:model.debounce.400ms="search" />
                 </div>
-                <p class="rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-white/60">
-                    Use a busca para filtrar tarefas por título ou descrição.
-                </p>
+                <div class="tasks-search-hint">Use a busca para filtrar tarefas por título ou descrição.</div>
             </div>
-        </header>
 
-        <div class="space-y-6 rounded-3xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-            @if ($viewPayload['slug'] === 'all')
-                @forelse ($viewPayload['lists'] as $viewList)
-                    <div class="space-y-3">
-                        <div class="flex flex-col gap-1 text-white sm:flex-row sm:items-center sm:justify-between">
-                            <h2 class="text-lg font-semibold">{{ $viewList['name'] }}</h2>
-                            <span class="text-xs uppercase tracking-wide text-white/50">{{ $viewList['tasks']->count() }} tarefas</span>
-                        </div>
-                        <div class="space-y-4">
-                            @foreach ($viewList['tasks'] as $task)
-                                <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-view-' . $viewList['id'] . '-' . $task->id" />
-                            @endforeach
-                        </div>
-                    </div>
-                @empty
-                    <div class="rounded-2xl border border-dashed border-white/10 bg-black/30 p-6 text-sm text-white/60">
-                        Nenhuma tarefa encontrada. Crie tarefas nas suas listas para vê-las aqui.
-                    </div>
-                @endforelse
-            @else
-                <div class="space-y-4">
-                    @forelse ($viewPayload['tasks'] as $task)
-                        <div class="space-y-2">
-                            @if ($task->relationLoaded('list') && $task->list)
-                                <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] uppercase tracking-wide text-white/60">
-                                    {{ $task->list->name }}
-                                </span>
-                            @endif
-                            <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-view-' . $task->id" />
+            <div class="tasks-groups">
+                @if ($viewPayload['slug'] === 'all')
+                    @forelse ($viewPayload['lists'] as $viewList)
+                        <div class="tasks-group">
+                            <div class="tasks-group-header" style="cursor: default;">
+                                <h2 class="tasks-list-title" style="font-size:18px; margin:0;">{{ $viewList['name'] }}</h2>
+                                <span class="tasks-group-count">{{ $viewList['tasks']->count() }} tarefas</span>
+                            </div>
+                            <div class="tasks-group-body">
+                                @foreach ($viewList['tasks'] as $task)
+                                    <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-view-' . $viewList['id'] . '-' . $task->id" />
+                                @endforeach
+                            </div>
                         </div>
                     @empty
-                        <div class="rounded-2xl border border-dashed border-white/10 bg-black/30 p-6 text-sm text-white/60">
-                            @if ($viewPayload['slug'] === 'today')
-                                Nenhuma tarefa com prazo para hoje.
-                            @else
-                                Nenhuma tarefa com prazo para os próximos 7 dias.
-                            @endif
+                        <div class="tasks-empty">
+                            Nenhuma tarefa encontrada. Crie tarefas nas suas listas para vê-las aqui.
                         </div>
                     @endforelse
-                </div>
-            @endif
-        </div>
-    @elseif ($list)
-        <header class="flex flex-col justify-between gap-4 rounded-3xl border border-white/5 bg-white/5 p-6 text-sm backdrop-blur md:flex-row md:items-center">
-            <div>
-                <p class="text-xs uppercase tracking-wider text-white/60">{{ $list->tasks_count }} tarefas</p>
-                <h1 class="text-2xl font-semibold text-white">{{ $list->name }}</h1>
+                @else
+                    <div class="tasks-group-body">
+                        @forelse ($viewPayload['tasks'] as $task)
+                            <div>
+                                @if ($task->relationLoaded('list') && $task->list)
+                                    <span class="tasks-badge" style="margin-left: 6px; margin-bottom:6px; display:inline-flex;">{{ $task->list->name }}</span>
+                                @endif
+                                <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-view-' . $task->id" />
+                            </div>
+                        @empty
+                            <div class="tasks-empty">
+                                @if ($viewPayload['slug'] === 'today')
+                                    Nenhuma tarefa com prazo para hoje.
+                                @else
+                                    Nenhuma tarefa com prazo para os próximos 7 dias.
+                                @endif
+                            </div>
+                        @endforelse
+                    </div>
+                @endif
             </div>
-            <div class="flex flex-1 flex-col gap-3 md:flex-row md:items-center md:justify-end">
-                <div class="relative w-full md:max-w-xs">
-                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-white/40">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15z" />
-                        </svg>
-                    </span>
-                    <input type="search" placeholder="Pesquisar tarefas" wire:model.debounce.400ms="search"
-                        class="w-full rounded-2xl border border-white/10 bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder-white/40 focus:border-white/30 focus:outline-none focus:ring-0" />
-                </div>
-                <p class="rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-white/60">
-                    <span class="font-semibold text-white">Dica:</span> pressione <kbd class="rounded bg-white/10 px-1">Shift</kbd> + <kbd class="rounded bg-white/10 px-1">Enter</kbd> no nome da tarefa para criar uma subtarefa instantaneamente.
-                </p>
-            </div>
-        </header>
+        @elseif ($list)
+            <header class="tasks-list-header">
+                <span class="tasks-list-header-meta">{{ $list->tasks_count }} tarefas</span>
+                <h1 class="tasks-list-title">{{ $list->name }}</h1>
+            </header>
 
-        <div class="space-y-5 rounded-3xl border border-white/5 bg-white/5 p-6 backdrop-blur">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <label for="new-task-title" class="sr-only">Nome da tarefa</label>
-                <div class="flex w-full items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-4 py-2">
-                    <svg class="h-4 w-4 text-white/50" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <div class="tasks-search-row">
+                <div class="tasks-search-input">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15z" />
+                    </svg>
+                    <input type="search" placeholder="Pesquisar tarefas" wire:model.debounce.400ms="search" />
+                </div>
+                <div class="tasks-search-hint">
+                    <span class="tasks-compact-text">Dica:</span> pressione <kbd>Shift</kbd> + <kbd>Enter</kbd> no nome da tarefa para criar uma subtarefa instantaneamente.
+                </div>
+            </div>
+
+            <div class="tasks-add-form">
+                <div class="tasks-input-field">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
-                    <input id="new-task-title" type="text" placeholder="+ Adicionar tarefa"
-                        wire:model.defer="newTaskTitle" wire:keydown.enter.prevent="createRootTask"
-                        class="w-full bg-transparent text-sm text-white placeholder-white/40 focus:outline-none focus:ring-0" />
+                    <input
+                        id="new-task-title"
+                        type="text"
+                        placeholder="+ Adicionar tarefa"
+                        wire:model.defer="newTaskTitle"
+                        wire:keydown.enter.prevent="createRootTask"
+                    />
                 </div>
-                <button type="button" wire:click="createRootTask"
-                    class="inline-flex items-center justify-center rounded-2xl bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-indigo-400">
+                <button type="button" class="tasks-input-action" wire:click="createRootTask">
                     Adicionar
                 </button>
             </div>
+
             @error('newTaskTitle')
-                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                <div class="tasks-error">{{ $message }}</div>
             @enderror
 
-            <div class="space-y-3">
+            <div class="tasks-groups">
                 @forelse ($tasks as $task)
                     <livewire:task.item :task="$task" :depth="$task->depth ?? 0" :key="'task-item-' . $task->id" />
                 @empty
-                    <div class="rounded-2xl border border-dashed border-white/10 bg-black/30 p-6 text-sm text-white/60">
+                    <div class="tasks-empty">
                         Nenhuma tarefa cadastrada ainda. Crie a primeira tarefa no campo acima.
                     </div>
                 @endforelse
             </div>
-        </div>
-    @else
-        <div class="rounded-3xl border border-dashed border-white/10 bg-black/40 p-10 text-center text-sm text-white/70">
-            <h2 class="text-xl font-semibold text-white">Comece criando uma lista</h2>
-            <p class="mt-2 text-white/60">Use o botão “+ New” na barra lateral para criar listas e organizar suas tarefas sem recarregar a página.</p>
-        </div>
-    @endif
+        @else
+            <div class="tasks-detail-placeholder" style="padding: 40px; text-align:center;">
+                <h2 class="tasks-list-title" style="font-size:20px; margin-bottom:12px;">Comece criando uma lista</h2>
+                <p class="tasks-search-hint">Use o botão “+ New” na barra lateral para criar listas e organizar suas tarefas sem recarregar a página.</p>
+            </div>
+        @endif
+    </section>
 
-    @if ($showEditor && $editorTask)
-        <div class="fixed inset-0 z-50 flex items-start justify-end bg-black/60 p-0 backdrop-blur-sm">
-            <div class="relative flex h-full w-full max-w-3xl flex-col gap-6 overflow-y-auto bg-zinc-950/95 p-8 text-sm text-white shadow-2xl">
-                <button type="button" wire:click="closeEditor"
-                    class="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/70 transition hover:border-white/30 hover:text-white">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+    <aside class="tasks-panel tasks-detail-panel">
+        <div class="tasks-detail-header">
+            <h4 class="tasks-detail-title">{{ $showEditor && $editorTask ? 'Editar tarefa' : 'Detalhes' }}</h4>
+            @if ($showEditor && $editorTask)
+                <button type="button" class="task-icon-btn" wire:click="closeEditor" style="width:34px; height:34px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m6 6 12 12M6 18 18 6" />
                     </svg>
                 </button>
+            @endif
+        </div>
 
-                <header class="pr-12">
-                    <p class="text-xs uppercase tracking-wider text-white/50">Editor avançado</p>
-                    <h2 class="mt-1 text-2xl font-semibold text-white">{{ $editorTask->title }}</h2>
-                    <p class="mt-1 text-xs text-white/50">Edite todos os detalhes da tarefa sem sair da página.</p>
-                </header>
+        <div class="tasks-detail-body">
+            @if ($showEditor && $editorTask)
+                <div>
+                    <p class="tasks-compact-text">Editor avançado</p>
+                    <h2 class="tasks-detail-task-title">{{ $editorTask->title }}</h2>
+                </div>
 
-                <form wire:submit.prevent="saveEditor" class="space-y-6">
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div class="md:col-span-2">
-                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Nome</label>
-                            <input type="text" wire:model.defer="editorForm.title"
-                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
-                            @error('editorForm.title')
-                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
-                            @enderror
-                        </div>
+                <hr class="tasks-detail-divider" />
 
-                        <div>
-                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Status</label>
-                            <select wire:model="editorForm.status"
-                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0">
+                <form wire:submit.prevent="saveEditor" class="tasks-detail-form">
+                    <div class="tasks-field">
+                        <label>Nome</label>
+                        <input type="text" wire:model.defer="editorForm.title" class="tasks-input" />
+                        @error('editorForm.title')
+                            <span class="tasks-error">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div class="tasks-detail-grid">
+                        <div class="tasks-field">
+                            <label>Status</label>
+                            <select wire:model="editorForm.status" class="tasks-select">
                                 @foreach ($statusOptions as $option)
                                     <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
                                 @endforeach
                             </select>
                             @error('editorForm.status')
-                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                                <span class="tasks-error">{{ $message }}</span>
                             @enderror
                         </div>
 
-                        <div>
-                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Prioridade</label>
-                            <select wire:model="editorForm.priority"
-                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0">
+                        <div class="tasks-field">
+                            <label>Prioridade</label>
+                            <select wire:model="editorForm.priority" class="tasks-select">
                                 @foreach ($priorityOptions as $option)
                                     <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
                                 @endforeach
                             </select>
                             @error('editorForm.priority')
-                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                                <span class="tasks-error">{{ $message }}</span>
                             @enderror
                         </div>
 
-                        <div>
-                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Prazo</label>
-                            <input type="datetime-local" wire:model="editorForm.due_at"
-                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                        <div class="tasks-field">
+                            <label>Prazo</label>
+                            <input type="datetime-local" wire:model="editorForm.due_at" class="tasks-input" />
                             @error('editorForm.due_at')
-                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                                <span class="tasks-error">{{ $message }}</span>
                             @enderror
                         </div>
 
-                        <div>
-                            <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Estimativa de pomodoros</label>
-                            <input type="number" min="0" wire:model="editorForm.estimate_pomodoros"
-                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
+                        <div class="tasks-field">
+                            <label>Estimativa de pomodoros</label>
+                            <input type="number" min="0" wire:model="editorForm.estimate_pomodoros" class="tasks-input" />
                             @error('editorForm.estimate_pomodoros')
-                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                                <span class="tasks-error">{{ $message }}</span>
                             @enderror
                         </div>
 
-                    <div>
-                        <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Pomodoros concluídos</label>
-                        <input type="number" min="0" wire:model="editorForm.pomodoros_done"
-                            class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
-                        @error('editorForm.pomodoros_done')
-                            <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Tags</label>
-                        <span class="text-[11px] uppercase tracking-wide text-white/40">Opcional</span>
-                    </div>
-
-                    @if (empty($availableTags))
-                        <p class="rounded-2xl border border-dashed border-white/10 bg-black/40 p-4 text-xs text-white/60">
-                            Crie sua primeira tag abaixo para categorizar tarefas por contexto, prioridade ou cliente.
-                        </p>
-                    @else
-                        <div class="flex flex-wrap gap-2">
-                            @foreach ($availableTags as $tag)
-                                <label for="editor-tag-{{ $tag['id'] }}"
-                                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/70 transition hover:border-white/30 hover:text-white">
-                                    <input id="editor-tag-{{ $tag['id'] }}" type="checkbox" value="{{ $tag['id'] }}"
-                                        wire:model="editorTagIds"
-                                        class="h-3.5 w-3.5 rounded border-white/30 bg-black/20 text-indigo-400 focus:ring-indigo-400/60" />
-                                    <span class="flex items-center gap-2">
-                                        <span class="h-2.5 w-2.5 rounded-full" style="background-color: {{ $tag['color'] }}"></span>
-                                        {{ $tag['name'] }}
-                                    </span>
-                                </label>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
-                        <div>
-                            <label class="text-[11px] font-semibold uppercase tracking-wide text-white/50">Nova tag</label>
-                            <input type="text" wire:model.defer="newTagName" placeholder="ex: Cliente X"
-                                class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0" />
-                            @error('newTagName')
-                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                        <div class="tasks-field">
+                            <label>Pomodoros concluídos</label>
+                            <input type="number" min="0" wire:model="editorForm.pomodoros_done" class="tasks-input" />
+                            @error('editorForm.pomodoros_done')
+                                <span class="tasks-error">{{ $message }}</span>
                             @enderror
                         </div>
-                        <div>
-                            <label class="text-[11px] font-semibold uppercase tracking-wide text-white/50">Cor</label>
-                            <div class="mt-1 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/40 px-3 py-2">
-                                <input type="color" wire:model="newTagColor" class="h-9 w-9 cursor-pointer rounded border-none bg-transparent p-0"
-                                    title="Escolha a cor da tag" />
-                                <span class="text-xs uppercase tracking-wide text-white/60">{{ strtoupper($newTagColor) }}</span>
+                    </div>
+
+                    <div class="tasks-field" style="gap:12px;">
+                        <div class="tasks-tags-manage" style="justify-content: space-between;">
+                            <span>Tags</span>
+                            <span class="tasks-compact-text">Opcional</span>
+                        </div>
+
+                        @if (empty($availableTags))
+                            <div class="tasks-info-card">
+                                Crie sua primeira tag abaixo para categorizar tarefas por contexto, prioridade ou cliente.
                             </div>
-                            @error('newTagColor')
-                                <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
-                            @enderror
+                        @else
+                            <div class="tasks-tags-grid">
+                                @foreach ($availableTags as $tag)
+                                    <label for="editor-tag-{{ $tag['id'] }}" class="tasks-tag-pill">
+                                        <span class="tasks-checkbox-label">
+                                            <input id="editor-tag-{{ $tag['id'] }}" type="checkbox" value="{{ $tag['id'] }}" wire:model="editorTagIds" />
+                                            <span class="tasks-tag-dot" style="background: {{ $tag['color'] }}"></span>
+                                            <span style="text-transform:uppercase; letter-spacing:0.08em;">{{ $tag['name'] }}</span>
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div class="tasks-detail-grid" style="grid-template-columns: minmax(0, 1fr) 120px;">
+                            <div class="tasks-field">
+                                <label>Nova tag</label>
+                                <input type="text" wire:model.defer="newTagName" placeholder="ex: Cliente X" class="tasks-input" />
+                                @error('newTagName')
+                                    <span class="tasks-error">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="tasks-field">
+                                <label>Cor</label>
+                                <input type="color" wire:model="newTagColor" class="tasks-color-input" title="Escolha a cor da tag" />
+                                <span class="tasks-compact-text">{{ strtoupper($newTagColor) }}</span>
+                                @error('newTagColor')
+                                    <span class="tasks-error">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="tasks-detail-actions" style="justify-content: flex-start;">
+                            <button type="button" class="tasks-button-secondary" wire:click="createTag" wire:loading.attr="disabled" wire:target="createTag">
+                                <span wire:loading.remove wire:target="createTag">Adicionar tag</span>
+                                <span wire:loading wire:target="createTag">Salvando...</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="flex justify-end">
-                        <button type="button" wire:click="createTag"
-                            class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-indigo-500/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400"
-                            wire:loading.attr="disabled" wire:target="createTag">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            <span wire:loading.remove wire:target="createTag">Adicionar tag</span>
-                            <span wire:loading wire:target="createTag">Salvando...</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold uppercase tracking-wide text-white/60">Descrição</label>
-                    <textarea rows="6" wire:model.defer="editorForm.description"
-                        class="mt-1 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-indigo-400/60 focus:outline-none focus:ring-0"></textarea>
-                    @error('editorForm.description')
-                            <p class="mt-1 text-xs text-rose-300">{{ $message }}</p>
+                    <div class="tasks-field">
+                        <label>Descrição</label>
+                        <textarea rows="6" wire:model.defer="editorForm.description" class="tasks-textarea"></textarea>
+                        @error('editorForm.description')
+                            <span class="tasks-error">{{ $message }}</span>
                         @enderror
                     </div>
 
-                    <div class="flex items-center justify-end gap-3">
-                        <button type="button" wire:click="closeEditor"
-                            class="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:border-white/30 hover:text-white">
+                    <div class="tasks-detail-actions">
+                        <button type="button" class="tasks-button-secondary" wire:click="closeEditor">
                             Cancelar
                         </button>
-                        <button type="submit"
-                            class="rounded-2xl bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400">
+                        <button type="submit" class="tasks-button-primary">
                             Salvar alterações
                         </button>
                     </div>
                 </form>
-            </div>
+            @else
+                <div class="tasks-detail-placeholder">
+                    <p>Selecione uma tarefa para visualizar detalhes e editar status, prioridade, tags e descrição.</p>
+                    <p>Use o duplo clique em uma tarefa para abrir o painel de detalhes aqui ao lado.</p>
+                </div>
+            @endif
         </div>
-    @endif
-</section>
+    </aside>
+</div>
