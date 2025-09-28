@@ -1,110 +1,126 @@
-@php
-    $panelTitle = data_get($panel, 'title', '');
-    $panelCount = data_get($panel, 'count');
-    $inputPlaceholder = data_get($panel, 'inputPlaceholder', 'Add task');
-@endphp
-
 <main class="main panel">
     <div class="toolbar">
         <div class="title">
-            {{ $panelTitle }}
-            @if (!is_null($panelCount))
-                <span class="bubble">{{ $panelCount }}</span>
-            @endif
+            {{ $primaryGroupTitle }}
+            <span class="bubble">{{ $totalCount }}</span>
         </div>
         <div class="spacer"></div>
         <button class="icon-btn" title="Ordenar"><i data-lucide="sort-desc"></i></button>
         <button class="icon-btn" title="Opções"><i data-lucide="more-horizontal"></i></button>
     </div>
 
-    <div class="add-row">
-        <input class="add-input" placeholder="{{ $inputPlaceholder }}" />
-    </div>
+    <form class="add-row" wire:submit.prevent="createTask">
+        <input
+            wire:model.defer="newTaskTitle"
+            class="add-input"
+            type="text"
+            placeholder="{{ $inputPlaceholder }}"
+            data-behavior="livewire"
+            aria-label="Adicionar nova tarefa"
+        />
 
-    @foreach (data_get($panel, 'groups', []) as $groupIndex => $group)
-        @php
-            $groupExpanded = (bool) data_get($group, 'expanded', true);
-            $groupBodyStyle = $groupExpanded ? '' : 'display:none;';
-        @endphp
-        <section class="group" aria-expanded="{{ $groupExpanded ? 'true' : 'false' }}" wire:key="group-{{ $groupIndex }}">
-            <header class="group-header" data-toggle="group">
-                <i class="chev" data-lucide="chevron-down"></i>
-                <span class="group-title">{{ data_get($group, 'title', '') }}</span>
-                @if ($count = data_get($group, 'count'))
-                    <span class="group-count">{{ $count }}</span>
-                @endif
-            </header>
-            <div class="group-body" style="{{ $groupBodyStyle }}">
-                @foreach (data_get($group, 'subgroups', []) as $subIndex => $subgroup)
-                    @php
-                        $subExpanded = (bool) data_get($subgroup, 'expanded', true);
-                        $taskListStyle = $subExpanded ? '' : 'display:none;';
-                    @endphp
-                    <div class="subgroup" aria-expanded="{{ $subExpanded ? 'true' : 'false' }}" wire:key="subgroup-{{ $groupIndex }}-{{ $subIndex }}">
-                        <div class="subgroup-toggle" data-toggle="subgroup">
-                            <i class="chev" data-lucide="chevron-down"></i>
-                            <span class="name">{{ data_get($subgroup, 'name', '') }}</span>
-                            @if ($meta = data_get($subgroup, 'meta'))
-                                <span class="meta" style="margin-left:auto; color:var(--muted)">{{ $meta }}</span>
-                            @endif
-                        </div>
+        <select wire:model="newTaskListId" class="add-select" aria-label="Selecionar lista">
+            <option value="">Sem lista</option>
+            @foreach ($availableLists as $listOption)
+                <option value="{{ $listOption->id }}">{{ $listOption->name }}</option>
+            @endforeach
+        </select>
 
-                        <div class="task-list" style="{{ $taskListStyle }}">
-                            @if ($ghost = data_get($subgroup, 'ghost'))
-                                <div class="task ghost">
-                                    <div class="checkbox" aria-hidden="true"></div>
-                                    <div class="title-line">
-                                        <span class="title" style="opacity:.6">{{ data_get($ghost, 'title', 'No Title') }}</span>
-                                    </div>
-                                    @if ($ghostMeta = data_get($ghost, 'meta'))
-                                        <div class="meta">{{ $ghostMeta }}</div>
-                                    @endif
-                                </div>
-                            @endif
+        <button class="icon-btn" type="submit" title="Adicionar tarefa" wire:loading.attr="disabled">
+            <i data-lucide="plus"></i>
+        </button>
+    </form>
+    @error('newTaskTitle')
+        <p class="form-error">{{ $message }}</p>
+    @enderror
+    @error('newTaskListId')
+        <p class="form-error">{{ $message }}</p>
+    @enderror
 
-                            @foreach (data_get($subgroup, 'tasks', []) as $taskIndex => $task)
-                                @php
-                                    $hasSubtasks = filled(data_get($task, 'subtasks'));
-                                    $taskExpanded = (bool) data_get($task, 'expanded', true);
-                                @endphp
-                                @if ($hasSubtasks)
-                                    <div class="task has-subtasks" aria-expanded="{{ $taskExpanded ? 'true' : 'false' }}" wire:key="task-{{ $groupIndex }}-{{ $subIndex }}-{{ $taskIndex }}">
-                                        <button class="checkbox" aria-label="marcar"></button>
-                                        <div class="expander" title="Expandir/ocultar subtarefas"><i data-lucide="chevron-down"></i></div>
-                                        <div class="title-line"><span class="title">{{ data_get($task, 'title', '') }}</span></div>
-                                        @if ($meta = data_get($task, 'meta'))
-                                            <div class="meta">{{ $meta }}</div>
-                                        @endif
-                                    </div>
-                                    <div class="subtasks" style="{{ $taskExpanded ? '' : 'display:none;' }}">
-                                        @foreach (data_get($task, 'subtasks', []) as $subtaskIndex => $subtask)
-                                            <div class="subtask" wire:key="subtask-{{ $groupIndex }}-{{ $subIndex }}-{{ $taskIndex }}-{{ $subtaskIndex }}">
-                                                <button class="checkbox"></button>
-                                                <div class="title">{{ data_get($subtask, 'title', '') }}</div>
-                                                @if ($meta = data_get($subtask, 'meta'))
-                                                    <div class="meta">{{ $meta }}</div>
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                        <div class="add-subtask">
-                                            <i data-lucide="plus"></i>
-                                            <input type="text" placeholder="Add subtask" class="add-subtask-input" />
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="task" wire:key="task-{{ $groupIndex }}-{{ $subIndex }}-{{ $taskIndex }}">
-                                        <button class="checkbox" aria-label="marcar"></button>
-                                        <div class="title-line"><span class="title">{{ data_get($task, 'title', '') }}</span></div>
-                                        @if ($meta = data_get($task, 'meta'))
-                                            <div class="meta">{{ $meta }}</div>
-                                        @endif
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
+    <section class="group" aria-expanded="true">
+        <header class="group-header" data-toggle="group">
+            <i class="chev" data-lucide="chevron-down"></i>
+            <span class="group-title">{{ $primaryGroupTitle }}</span>
+            <span class="group-count">{{ $totalCount }}</span>
+        </header>
+        <div class="group-body">
+            @if ($unlistedMissions->isNotEmpty())
+                <div class="subgroup" aria-expanded="true" wire:key="subgroup-unlisted">
+                    <div class="subgroup-toggle" data-toggle="subgroup">
+                        <i class="chev" data-lucide="chevron-down"></i>
+                        <span class="name">Sem lista</span>
+                        <span class="meta" style="margin-left:auto; color:var(--muted)">
+                            {{ $unlistedMissions->count() }} tarefas
+                        </span>
                     </div>
-                @endforeach
-            </div>
-        </section>
-    @endforeach
+
+                    <div class="task-list">
+                        @foreach ($unlistedMissions as $mission)
+                            @php
+                                $isActive = $mission->id === $selectedMissionId;
+                            @endphp
+                            <div
+                                wire:key="mission-unlisted-{{ $mission->id }}"
+                                wire:click="selectMission({{ $mission->id }})"
+                                @class([
+                                    'task',
+                                    'done' => $mission->status === 'done',
+                                    'is-active' => $isActive,
+                                ])
+                            >
+                                <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
+                                <div class="title-line"><span class="title">{{ $mission->title }}</span></div>
+                                <div class="meta">Sem lista</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @foreach ($lists as $list)
+                <div class="subgroup" aria-expanded="true" wire:key="subgroup-list-{{ $list->id }}">
+                    <div class="subgroup-toggle" data-toggle="subgroup">
+                        <i class="chev" data-lucide="chevron-down"></i>
+                        <span class="name">{{ $list->name }}</span>
+                        <span class="meta" style="margin-left:auto; color:var(--muted)">
+                            {{ $list->missions->count() }} tarefas
+                        </span>
+                    </div>
+
+                    <div class="task-list">
+                        @forelse ($list->missions as $mission)
+                            @php
+                                $isActive = $mission->id === $selectedMissionId;
+                            @endphp
+                            <div
+                                wire:key="mission-list-{{ $mission->id }}"
+                                wire:click="selectMission({{ $mission->id }})"
+                                @class([
+                                    'task',
+                                    'done' => $mission->status === 'done',
+                                    'is-active' => $isActive,
+                                ])
+                            >
+                                <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
+                                <div class="title-line"><span class="title">{{ $mission->title }}</span></div>
+                                <div class="meta">{{ $list->name }}</div>
+                            </div>
+                        @empty
+                            <div class="task ghost">
+                                <div class="checkbox" aria-hidden="true"></div>
+                                <div class="title-line">
+                                    <span class="title" style="opacity:.6">Sem tarefas nesta lista</span>
+                                </div>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </section>
+    @if ($totalCount === 0)
+        <div class="empty-state">
+            <p>Nenhuma tarefa cadastrada ainda. Que tal criar a primeira?</p>
+        </div>
+    @endif
 </main>

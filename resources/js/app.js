@@ -159,7 +159,12 @@ function setupInputs(root = document) {
   // add main task
   const addInput = root.querySelector('.add-input');
   const taskList = root.querySelector('.task-list');
-  if (addInput && taskList && addInput.dataset.wired !== '1') {
+  if (
+    addInput &&
+    taskList &&
+    addInput.dataset.wired !== '1' &&
+    addInput.dataset.behavior !== 'livewire'
+  ) {
     addInput.dataset.wired = '1';
 
     addInput.addEventListener('keydown', (e) => {
@@ -196,10 +201,20 @@ document.addEventListener('DOMContentLoaded', () => boot(document));
 
 /* Livewire v3: re-hidratar ícones e re-wire inputs após navegação/morph */
 document.addEventListener('livewire:init', () => {
+  hydrateIcons();
+  setupInputs(document);
+
   document.addEventListener('livewire:navigated', () => {
     hydrateIcons();
     setupInputs(document);
   });
+
+  if (window.Livewire?.hook) {
+    window.Livewire.hook('message.processed', () => {
+      hydrateIcons();
+      setupInputs(document);
+    });
+  }
 });
 
 /* Livewire v2 (se precisar): descomente
@@ -211,13 +226,6 @@ document.addEventListener('livewire:load', () => {
 });
 */
 
-document.addEventListener("DOMContentLoaded", () => {
-    if (window.lucide) lucide.createIcons();
-
-    document.querySelectorAll(".btn-new").forEach(btn => {
-        btn.addEventListener("click", () => {
-            alert("Criar nova lista/workspace"); 
-            // Aqui você pode abrir um modal, formulário ou criar dinamicamente
-        });
-    });
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.lucide) lucide.createIcons();
 });
