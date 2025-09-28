@@ -5,9 +5,9 @@
         :avatar-label="data_get($rail, 'avatarLabel', 'Você')"
     />
 
-    <livewire:tasks.sidebar :current-list-id="$listId" />
+    <livewire:tasks.sidebar :current-list-id="$listId" :current-shortcut="$shortcut" />
 
-    <livewire:tasks.main-panel :current-list-id="$listId" />
+    <livewire:tasks.main-panel :current-list-id="$listId" :shortcut="$shortcut" />
 
     <livewire:tasks.details />
 </div>

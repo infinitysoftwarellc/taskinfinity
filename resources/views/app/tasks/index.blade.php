@@ -1,4 +1,4 @@
 {{-- resources/views/webapp/tasks/index.blade.php --}}
 <x-app-layout>
-    <livewire:tasks.board :list-id="$listId ?? null" />
+    <livewire:tasks.board :list-id="$listId ?? null" :shortcut="$shortcut ?? null" />
 </x-app-layout>

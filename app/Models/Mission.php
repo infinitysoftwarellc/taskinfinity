@@ -20,11 +20,13 @@ class Mission extends Model
         'status',
         'position',
         'xp_reward',
+        'due_at',
     ];
 
     protected $casts = [
         'labels_json' => 'array',
         'is_starred' => 'boolean',
+        'due_at' => 'datetime',
     ];
 
     public function user()

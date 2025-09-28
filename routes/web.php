@@ -32,6 +32,8 @@ use App\Http\Controllers\Tasks\CheckpointController;
 use App\Http\Controllers\Tasks\MissionController;
 use App\Http\Controllers\Tasks\TaskListController;
 use App\Models\TaskList;
+use App\Support\MissionShortcutFilter;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -50,9 +52,24 @@ require __DIR__.'/auth.php';
 Route::middleware('auth')->group(function () {
     Route::resource('lists', TaskListController::class);
 
-    Route::get('tasks/{taskList?}', function (?TaskList $taskList = null) {
+    Route::get('tasks/{taskList?}', function (Request $request, ?TaskList $taskList = null) {
+        $shortcut = $request->string('shortcut')->trim()->lower()->value();
+
+        if ($shortcut === '') {
+            $shortcut = null;
+        }
+
+        if ($shortcut && ! in_array($shortcut, MissionShortcutFilter::supported(), true)) {
+            $shortcut = null;
+        }
+
+        if ($taskList) {
+            $shortcut = null;
+        }
+
         return view('app.tasks.index', [
             'listId' => $taskList?->id,
+            'shortcut' => $shortcut,
         ]);
     })->name('tasks.index');
 

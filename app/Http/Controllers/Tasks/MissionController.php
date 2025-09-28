@@ -34,6 +34,7 @@ class MissionController extends Controller
             'status' => ['nullable', Rule::in(['active', 'done', 'archived'])],
             'position' => 'nullable|integer',
             'xp_reward' => 'nullable|integer',
+            'due_at' => 'nullable|date',
         ]);
 
         $data['user_id'] = $request->user()->id;
@@ -65,6 +66,7 @@ class MissionController extends Controller
             'status' => ['nullable', Rule::in(['active', 'done', 'archived'])],
             'position' => 'nullable|integer',
             'xp_reward' => 'nullable|integer',
+            'due_at' => 'nullable|date',
         ]);
 
         $mission->update($data);
