@@ -27,7 +27,7 @@
         <span class="title">SOFTWAREINFINITY</span>
         <span class="badge">36</span>
     </button>
-    <div class="workspace-content" id="tasks-workspace-content" style="padding-left:8px;">
+    <div class="workspace-content" id="tasks-workspace-content">
         <ul class="nav-list">
             <li><a class="nav-item" href="#"><i class="icon" data-lucide="list-todo"></i><span class="label">Tasks</span></a></li>
             <li><a class="nav-item" href="#"><i class="icon" data-lucide="flame"></i><span class="label">Habits</span></a></li>
@@ -40,10 +40,10 @@
 
     <h6>Tags</h6>
     <div class="tags">
-        <a class="tag" href="#"><span class="dot" style="background:#f87171"></span> <span>Bugs</span> <span class="count" style="margin-left:auto"></span></a>
-        <a class="tag" href="#"><span class="dot" style="background:#22d3ee"></span> <span>Melhorias</span></a>
+        <a class="tag" href="#"><span class="dot dot--salmon"></span> <span>Bugs</span> <span class="count"></span></a>
+        <a class="tag" href="#"><span class="dot dot--cyan"></span> <span>Melhorias</span></a>
     </div>
 
-    <h6 style="margin-top:14px"></h6>
+    <h6 class="heading-spaced"></h6>
     <div class="completed"><i class="icon" data-lucide="check-square"></i> Completed</div>
 </aside>

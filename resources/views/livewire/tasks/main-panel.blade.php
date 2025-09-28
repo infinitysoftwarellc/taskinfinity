@@ -21,13 +21,13 @@
                 <div class="subgroup-toggle" data-action="toggle-subgroup">
                     <i class="chev" data-lucide="chevron-down"></i>
                     <span class="name">aa</span>
-                    <span class="meta" style="margin-left:auto; color:var(--muted)">Inbox</span>
+                    <span class="meta meta--right">Inbox</span>
                 </div>
 
                 <div class="task-list">
                     <div class="task ghost">
                         <div class="checkbox" aria-hidden="true"></div>
-                        <div class="title-line"><span class="title" style="opacity:.6">No Title</span></div>
+                        <div class="title-line"><span class="title title--ghost">No Title</span></div>
                         <div class="meta">Inbox</div>
                     </div>
 
