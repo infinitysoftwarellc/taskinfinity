@@ -31,6 +31,7 @@ use App\Http\Controllers\Tasks\AttachmentController;
 use App\Http\Controllers\Tasks\CheckpointController;
 use App\Http\Controllers\Tasks\MissionController;
 use App\Http\Controllers\Tasks\TaskListController;
+use App\Models\TaskList;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -48,7 +49,12 @@ require __DIR__.'/auth.php';
 
 Route::middleware('auth')->group(function () {
     Route::resource('lists', TaskListController::class);
-    Route::view('tasks', 'app.tasks.index')->name('tasks.index');
+
+    Route::get('tasks/{taskList?}', function (?TaskList $taskList = null) {
+        return view('app.tasks.index', [
+            'listId' => $taskList?->id,
+        ]);
+    })->name('tasks.index');
 
     Route::resource('missions', MissionController::class);
     Route::resource('checkpoints', CheckpointController::class)->except(['create', 'edit']);

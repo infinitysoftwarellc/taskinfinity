@@ -8,8 +8,15 @@ class Board extends Component
 {
     public array $rail = [];
 
-    public function mount(): void
+    public ?int $listId = null;
+
+    public bool $isListView = false;
+
+    public function mount(?int $listId = null): void
     {
+        $this->listId = $listId;
+        $this->isListView = $listId !== null;
+
         $this->rail = [
             'avatarLabel' => 'Você',
             'primary' => [

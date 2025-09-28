@@ -8,7 +8,7 @@
         <ul class="nav-list">
             @forelse ($shortcuts as $index => $shortcut)
                 <li wire:key="shortcut-{{ $index }}">
-                    <a class="nav-item {{ ($shortcut['active'] ?? false) ? 'is-active' : '' }}" href="{{ $shortcut['href'] ?? '#' }}">
+                    <a wire:navigate class="nav-item {{ ($shortcut['active'] ?? false) ? 'is-active' : '' }}" href="{{ $shortcut['href'] ?? '#' }}">
                         <i class="icon" data-lucide="{{ $shortcut['icon'] ?? '' }}"></i>
                         <span class="label">{{ $shortcut['label'] ?? '' }}</span>
                         @if (($shortcut['count'] ?? 0) > 0)
@@ -31,9 +31,6 @@
             @if ($workspaceBadge)
                 <span class="badge">{{ $workspaceBadge }}</span>
             @endif
-        </button>
-        <button class="btn-new" type="button" title="Nova lista" wire:click.prevent="toggleListForm">
-            <i data-lucide="plus"></i>
         </button>
     </div>
 
@@ -75,7 +72,11 @@
         <ul class="nav-list">
             @forelse ($lists as $list)
                 <li wire:key="workspace-item-{{ $list->id }}">
-                    <a class="nav-item" href="#">
+                    <a
+                        wire:navigate
+                        class="nav-item {{ $currentListId === $list->id ? 'is-active' : '' }}"
+                        href="{{ route('tasks.index', ['taskList' => $list->id]) }}"
+                    >
                         <i class="icon" data-lucide="{{ $list->icon ?? 'list-todo' }}"></i>
                         <span class="label">{{ $list->name }}</span>
                         <span class="count">{{ $list->missions_count }}</span>
@@ -84,11 +85,14 @@
             @empty
                 <li class="muted">Nenhuma lista criada ainda.</li>
             @endforelse
+            <li>
+                <button class="nav-item nav-action" type="button" wire:click.prevent="toggleListForm">
+                    <i class="icon" data-lucide="plus"></i>
+                    <span class="label">Nova lista</span>
+                </button>
+            </li>
         </ul>
     </div>
-
-    <h6>Filters</h6>
-    <div class="filters-tip">{{ $filtersTip }}</div>
 
     <div class="sidebar-section-header">
         <h6>Tags</h6>

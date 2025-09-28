@@ -19,8 +19,16 @@ class Details extends Component
 
     public array $missionTags = [];
 
-    public function loadMission(int $missionId): void
+    public function loadMission(?int $missionId = null): void
     {
+        if (! $missionId) {
+            $this->missionId = null;
+            $this->mission = null;
+            $this->missionTags = [];
+
+            return;
+        }
+
         $user = Auth::user();
 
         if (! $user) {

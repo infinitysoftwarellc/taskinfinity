@@ -14,6 +14,8 @@ class Sidebar extends Component
 
     public string $workspaceTitle = 'SOFTWAREINFINITY';
 
+    public ?int $currentListId = null;
+
     public bool $showListForm = false;
 
     public string $newListName = '';
@@ -123,13 +125,13 @@ class Sidebar extends Component
                 'workspaceExpanded' => true,
                 'workspaceBadge' => 0,
                 'workspaceTitle' => $this->workspaceTitle,
-                'filtersTip' => 'Display tasks filtered by list, date, priority, tag, and more',
                 'lists' => collect(),
                 'tags' => collect(),
                 'completedLabel' => 'Completed',
                 'completedCount' => 0,
                 'showListForm' => $this->showListForm,
                 'showTagForm' => $this->showTagForm,
+                'currentListId' => $this->currentListId,
             ]);
         }
 
@@ -148,7 +150,13 @@ class Sidebar extends Component
             ->get();
 
         $shortcuts = [
-            ['icon' => 'infinity', 'label' => 'All', 'count' => $totalTasks, 'href' => '#', 'active' => true],
+            [
+                'icon' => 'infinity',
+                'label' => 'All',
+                'count' => $totalTasks,
+                'href' => route('tasks.index'),
+                'active' => $this->currentListId === null,
+            ],
             ['icon' => 'sun', 'label' => 'Today', 'count' => $todayTasks, 'href' => '#'],
             ['icon' => 'calendar-days', 'label' => 'Next 7 Days', 'count' => $nextSevenDaysTasks, 'href' => '#'],
         ];
@@ -165,13 +173,13 @@ class Sidebar extends Component
             'workspaceExpanded' => true,
             'workspaceBadge' => $workspaceBadge,
             'workspaceTitle' => $this->workspaceTitle,
-            'filtersTip' => 'Display tasks filtered by list, date, priority, tag, and more',
             'lists' => $lists,
             'tags' => $tags,
             'completedLabel' => 'Completed',
             'completedCount' => $completedTasks,
             'showListForm' => $this->showListForm,
             'showTagForm' => $this->showTagForm,
+            'currentListId' => $this->currentListId,
         ]);
     }
 }

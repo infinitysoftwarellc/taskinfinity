@@ -13,6 +13,11 @@ class MainPanel extends Component
     protected $listeners = ['tasks-updated' => '$refresh'];
 
     /**
+     * Lista atualmente exibida (null significa visão geral "All").
+     */
+    public ?int $currentListId = null;
+
+    /**
      * Nome da tarefa a ser criada a partir da barra "Adicionar".
      */
     public string $newTaskTitle = '';
@@ -31,6 +36,15 @@ class MainPanel extends Component
      * Tarefa atualmente selecionada no painel (para destacar e exibir detalhes).
      */
     public ?int $selectedMissionId = null;
+
+    public function mount(?int $currentListId = null): void
+    {
+        $this->currentListId = $currentListId;
+
+        if ($this->currentListId) {
+            $this->newTaskListId = $this->currentListId;
+        }
+    }
 
     public function createTask(): void
     {
@@ -55,6 +69,10 @@ class MainPanel extends Component
         );
 
         $listId = $validated['newTaskListId'] ?? null;
+
+        if ($listId === null && $this->currentListId) {
+            $listId = $this->currentListId;
+        }
 
         if ($listId !== null) {
             $belongsToUser = TaskList::where('id', $listId)
@@ -94,6 +112,7 @@ class MainPanel extends Component
 
         $mission = Mission::query()
             ->where('user_id', $user->id)
+            ->when($this->currentListId, fn ($query) => $query->where('list_id', $this->currentListId))
             ->find($missionId);
 
         if (! $mission) {
@@ -127,6 +146,9 @@ class MainPanel extends Component
                 'unlistedMissions' => collect(),
                 'lists' => collect(),
                 'availableLists' => collect(),
+                'selectedMissionId' => null,
+                'showListSelector' => true,
+                'listView' => false,
             ]);
         }
 
@@ -149,6 +171,7 @@ class MainPanel extends Component
         if ($this->selectedMissionId) {
             $ownsMission = Mission::query()
                 ->where('user_id', $user->id)
+                ->when($this->currentListId, fn ($query) => $query->where('list_id', $this->currentListId))
                 ->where('id', $this->selectedMissionId)
                 ->exists();
 
@@ -157,13 +180,44 @@ class MainPanel extends Component
             }
         }
 
+        $primaryGroupTitle = 'All';
+        $showListSelector = $this->currentListId === null;
+
+        if ($this->currentListId) {
+            $activeList = TaskList::query()
+                ->with(['missions' => fn ($query) => $query->orderBy('position')->orderBy('created_at')])
+                ->where('user_id', $user->id)
+                ->find($this->currentListId);
+
+            if ($activeList) {
+                $lists = collect([$activeList]);
+                $unlistedMissions = collect();
+                $totalCount = $activeList->missions->count();
+                $primaryGroupTitle = $activeList->name;
+            } else {
+                $this->currentListId = null;
+                $showListSelector = true;
+            }
+        }
+
+        if ($showListSelector) {
+            $primaryGroupTitle = 'All';
+        }
+
+        $availableLists = TaskList::query()
+            ->where('user_id', $user->id)
+            ->orderBy('name')
+            ->get();
+
         return view('livewire.tasks.main-panel', [
             'totalCount' => $totalCount,
-            'primaryGroupTitle' => 'All',
+            'primaryGroupTitle' => $primaryGroupTitle,
             'unlistedMissions' => $unlistedMissions,
             'lists' => $lists,
-            'availableLists' => $lists,
+            'availableLists' => $availableLists,
             'selectedMissionId' => $this->selectedMissionId,
+            'showListSelector' => $showListSelector,
+            'listView' => $this->currentListId !== null,
         ]);
     }
 }

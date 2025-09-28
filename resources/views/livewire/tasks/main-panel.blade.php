@@ -5,6 +5,9 @@
             <span class="bubble">{{ $totalCount }}</span>
         </div>
         <div class="spacer"></div>
+        @if ($listView)
+            <a wire:navigate href="{{ route('tasks.index') }}" class="toolbar-link">Ver todas as tarefas</a>
+        @endif
         <button class="icon-btn" title="Ordenar"><i data-lucide="sort-desc"></i></button>
         <button class="icon-btn" title="Opções"><i data-lucide="more-horizontal"></i></button>
     </div>
@@ -19,12 +22,14 @@
             aria-label="Adicionar nova tarefa"
         />
 
-        <select wire:model="newTaskListId" class="add-select" aria-label="Selecionar lista">
-            <option value="">Sem lista</option>
-            @foreach ($availableLists as $listOption)
-                <option value="{{ $listOption->id }}">{{ $listOption->name }}</option>
-            @endforeach
-        </select>
+        @if ($showListSelector)
+            <select wire:model="newTaskListId" class="add-select" aria-label="Selecionar lista">
+                <option value="">Sem lista</option>
+                @foreach ($availableLists as $listOption)
+                    <option value="{{ $listOption->id }}">{{ $listOption->name }}</option>
+                @endforeach
+            </select>
+        @endif
 
         <button class="icon-btn" type="submit" title="Adicionar tarefa" wire:loading.attr="disabled">
             <i data-lucide="plus"></i>
