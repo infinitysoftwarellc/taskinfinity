@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('timezone')->default('UTC');
+            $table->enum('theme_code', ['default', 'gamer', 'forest'])->default('default');
+            $table->dateTime('pro_until')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
