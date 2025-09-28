@@ -1,801 +1,435 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pomodoro Timer</title>
+  <title>Clone – Layout de Tarefas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Ícones Lucide via CDN -->
+  <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
   <style>
     :root{
-      --bg: #0f1115;
-      --panel: #12161e;
-      --panel-2: #0d1117;
-      --card: #141a23;
-      --border: #1b2230;
-      --text: #e6e8ee;
-      --muted: #91a0b6;
-      --brand: #3b82f6;
-      --brand-2: #5b8cff;
-      --ring: #2a3344;
-      --success: #22c55e;
+      --bg: #0b0d12;           /* fundo app */
+      --panel: #12151c;        /* cartões/painéis */
+      --panel-2: #0f1218;      /* painéis mais escuros */
+      --hover: #181c25;        /* hover rows */
+      --border: #1f2430;       /* borda translúcida */
+      --text: #e7ebf3;         /* texto principal */
+      --muted: #97a2b2;        /* texto secundário */
+      --muted-2:#6d7585;
+      --accent: #7aa2ff;       /* azul contadores */
+      --brand: #7aa2ff;        
+      --success:#2ecc71;
+      --warning:#ffcc66;
       --radius: 16px;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-    }
-    
-    *, *::before, *::after { box-sizing: border-box; }
-    
-    html, body { 
-      height: 100%; 
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      overflow-x: hidden;
+      --shadow: 0 10px 30px -12px rgba(0,0,0,.55);
     }
 
-    /* APP LAYOUT */
-    .app {
-      display: grid;
-      grid-template-columns: minmax(600px, 1fr) 400px;
-      gap: 20px;
-      min-height: 100vh;
-      padding: 24px;
-      max-width: 1400px;
-      margin: 0 auto;
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font: 14px/1.4 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, 'Helvetica Neue', Arial, 'Apple Color Emoji','Segoe UI Emoji';
     }
 
-    .left {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .app{ 
+      height:100vh; padding:12px; gap:12px; 
+      display:grid; grid-template-columns: 64px 280px 1fr 420px; grid-template-rows: 1fr; 
+      grid-template-areas: 'rail sidebar main details';
     }
 
-    .right {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+    /* Painéis base */
+    .panel{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); }
 
-    /* TOPBAR */
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
+    /* RAIL (menu lateral fino) */
+    .rail{ grid-area: rail; background: var(--panel-2); border:1px solid var(--border); border-radius: var(--radius); padding:8px 6px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .rail .avatar{ width:36px; height:36px; border-radius:12px; background:linear-gradient(135deg,#7aa2ff,#a78bfa); box-shadow: 0 0 0 2px #10141c; }
+    .rail .btn{ width:40px; height:40px; border-radius:12px; display:grid; place-items:center; border:1px solid var(--border); color:var(--muted); background:transparent; cursor:pointer; }
+    .rail .btn:hover{ background:var(--hover); color:var(--text); }
+    .rail .spacer{ flex:1; }
 
-    .title {
-      font-weight: 700;
-      font-size: 20px;
-      letter-spacing: 0.2px;
-    }
+    /* Sidebar */
+    .sidebar{ grid-area:sidebar; padding:12px; overflow:auto; }
+    .sidebar h6{ margin:14px 8px 6px; font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); font-weight:700; }
+    .nav-list{ list-style:none; margin:6px 0 10px; padding:0; }
 
-    .header-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+    .nav-item{ display:flex; align-items:center; gap:10px; padding:10px 10px; border-radius:12px; color:var(--text); text-decoration:none; }
+    .nav-item:hover{ background:var(--hover); }
+    .nav-item .icon{ width:18px; height:18px; color:var(--muted); }
+    .nav-item .label{ flex:1; }
+    .nav-item .count{ font-size:12px; font-weight:700; color:#cfe0ff; background: rgba(122,162,255,.12); border:1px solid rgba(122,162,255,.3); padding:.15rem .45rem; border-radius:999px; }
 
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
-      background: var(--panel);
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
+    .workspace{ display:flex; align-items:center; gap:8px; padding:8px 10px; cursor:pointer; border-radius:10px; }
+    .workspace:hover{ background:var(--hover); }
+    .workspace .chev{ width:16px; height:16px; color:var(--muted); transition: transform .2s ease; }
+    .workspace[aria-expanded="false"] .chev{ transform: rotate(-90deg); }
+    .workspace .title{ font-weight:600; font-size:13px; color:var(--text); }
+    .workspace .badge{ margin-left:auto; font-size:12px; color:#cfe0ff; background: rgba(122,162,255,.12); border:1px solid rgba(122,162,255,.3); padding:.15rem .45rem; border-radius:999px; }
 
-    .icon-btn:hover {
-      background: var(--card);
-      color: var(--text);
-    }
+    .filters-tip{ background:var(--panel-2); border:1px dashed var(--border); color:var(--muted); padding:10px; border-radius:12px; font-size:12px; line-height:1.3; }
 
-    /* MODE TABS */
-    .modes {
-      display: flex;
-      gap: 4px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      padding: 4px;
-      border-radius: 999px;
-      margin-right: 12px;
-    }
+    .tags{ display:flex; flex-direction:column; gap:6px; }
+    .tag{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; color:var(--text); text-decoration:none; }
+    .tag:hover{ background:var(--hover); }
+    .dot{ width:8px; height:8px; border-radius:999px; }
 
-    .mode {
-      padding: 8px 14px;
-      border-radius: 999px;
-      color: var(--muted);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 13px;
-      font-weight: 500;
-    }
+    .completed{ display:flex; align-items:center; gap:10px; padding:10px; border-radius:10px; color:var(--muted); }
+    .completed:hover{ background:var(--hover); color:var(--text); }
 
-    .mode.active {
-      background: linear-gradient(180deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
-      color: #cfe1ff;
-    }
+    /* Main */
+    .main{ grid-area:main; overflow:auto; display:flex; flex-direction:column; }
+    .toolbar{ display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); }
+    .title{ font-size:20px; font-weight:700; letter-spacing:.01em; }
+    .title .bubble{ margin-left:8px; font-size:12px; font-weight:700; color:#cfe0ff; background: rgba(122,162,255,.12); border:1px solid rgba(122,162,255,.3); padding:.15rem .5rem; border-radius:999px; }
+    .toolbar .spacer{ flex:1; }
+    .icon-btn{ display:inline-grid; place-items:center; width:28px; height:28px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; }
+    .icon-btn:hover{ background:var(--hover); color:var(--text); }
 
-    /* BREADCRUMB */
-    .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 13px;
-      margin-bottom: 4px;
-    }
+    .add-row{ padding:10px 16px; border-bottom:1px solid var(--border); }
+    .add-input{ width:100%; border:1px solid var(--border); background:var(--panel-2); color:var(--text); border-radius:12px; padding:10px 12px; outline:none; }
+    .add-input::placeholder{ color:var(--muted); }
 
-    .breadcrumb .chevron {
-      opacity: 0.6;
-      font-size: 12px;
-    }
+    .group{ padding:12px 0; }
+    .group-header{ display:flex; align-items:center; gap:10px; padding:6px 16px; user-select:none; cursor:pointer; color:var(--muted); font-weight:700; text-transform:none; }
+    .group-header .chev{ width:18px; height:18px; color:var(--muted-2); transition: transform .2s ease; }
+    .group[aria-expanded="false"] .chev{ transform: rotate(-90deg); }
+    .group-title{ font-size:12px; letter-spacing:.04em; text-transform:none; color:var(--muted); }
+    .group-count{ margin-left:6px; color:#cfe0ff; font-size:12px; background: rgba(122,162,255,.12); border:1px solid rgba(122,162,255,.3); padding:.15rem .45rem; border-radius:999px; }
 
-    /* TIME CONTROLS */
-    .time-controls {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 8px 0 20px 0;
-    }
+    .subgroup{ margin:4px 0 8px; }
+    .subgroup-toggle{ display:flex; align-items:center; gap:10px; padding:8px 16px; cursor:pointer; color:var(--text); }
+    .subgroup .chev{ width:16px; height:16px; color:var(--muted); transition: transform .2s ease; }
+    .subgroup[aria-expanded="false"] .chev{ transform: rotate(-90deg); }
+    .subgroup .name{ font-weight:600; }
 
-    .time-label {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 500;
-    }
+    .task-list{ display:flex; flex-direction:column; }
+    .task{ display:grid; grid-template-columns: 28px 1fr auto; align-items:center; gap:10px; padding:8px 16px; }
+    .task:hover{ background:var(--hover); }
+    .checkbox{ width:16px; height:16px; border-radius:4px; background:transparent; border:1px solid var(--border); position:relative; cursor:pointer; }
+    .checkbox.checked{ background:linear-gradient(135deg, var(--brand), #a78bfa); border-color:transparent; }
+    .checkbox.checked::after{ content:""; position:absolute; inset:2px 4px 4px 2px; border-right:2px solid white; border-bottom:2px solid white; transform: rotate(40deg); }
 
-    .stepper {
-      display: flex;
-      align-items: center;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      background: var(--panel);
-    }
+    .task .title-line{ display:flex; align-items:center; gap:8px; }
+    .task .title-line .title{ font-size:14px; font-weight:600; }
+    .task .meta{ color:var(--muted); font-size:12px; }
 
-    .stepper button {
-      width: 36px;
-      height: 36px;
-      background: transparent;
-      border: 0;
-      color: var(--text);
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      transition: background 0.2s ease;
-    }
+    .task.done .title{ color:var(--muted); text-decoration:line-through; font-weight:500; }
 
-    .stepper button:hover {
-      background: var(--card);
-    }
+    /* Subtarefas */
+    .task.has-subtasks{ grid-template-columns: 28px 16px 1fr auto; }
+    .expander{ width:16px; height:16px; display:grid; place-items:center; color:var(--muted); cursor:pointer; }
+    .expander svg{ width:16px; height:16px; transition: transform .2s ease; }
+    .task[aria-expanded="false"] .expander svg{ transform: rotate(-90deg); }
 
-    .stepper input {
-      width: 64px;
-      text-align: center;
-      background: var(--panel-2);
-      color: var(--text);
-      border: 0;
-      height: 36px;
-      font-size: 13px;
-      font-weight: 500;
-    }
+    .subtasks{ padding:0 16px 4px 60px; display:flex; flex-direction:column; gap:4px; }
+    .subtasks .subtask{ display:grid; grid-template-columns: 16px 1fr auto; align-items:center; gap:8px; padding:6px 0; }
+    .subtasks .checkbox{ width:14px; height:14px; border-radius:3px; }
+    .subtasks .title{ font-size:13px; font-weight:500; }
+    .subtasks .meta{ font-size:11px; color:var(--muted); }
+    .subtask.done .title{ text-decoration: line-through; color: var(--muted); }
+    .add-subtask{ margin:6px 0 8px; display:flex; gap:8px; align-items:center; }
+    .add-subtask input{ flex:1; border:1px solid var(--border); background:var(--panel-2); color:var(--text); border-radius:10px; padding:8px 10px; outline:none; font-size:13px; }
 
-    .stepper input:focus {
-      outline: none;
-      background: var(--card);
-    }
+    /* Details */
+    .details{ grid-area:details; overflow:auto; display:flex; flex-direction:column; }
+    .details .header{ display:flex; align-items:center; gap:8px; padding:14px 16px; border-bottom:1px solid var(--border); }
+    .details .header .right{ margin-left:auto; display:flex; gap:8px; }
 
-    .preset-chip {
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 12px;
-      font-weight: 500;
-    }
+    .empty{ padding:20px 16px; color:var(--muted); }
 
-    .preset-chip:hover {
-      background: var(--card);
-    }
+    /* Util */
+    .sep{ height:1px; background:var(--border); margin:10px 0; }
 
-    .preset-chip.active {
-      background: var(--brand);
-      border-color: transparent;
-      color: white;
-      box-shadow: 0 6px 16px rgba(59,130,246,0.35);
-    }
+    /* Scrollbar bonitinha (navegadores WebKit) */
+    *::-webkit-scrollbar{ width:10px; height:10px; }
+    *::-webkit-scrollbar-thumb{ background:#1b2230; border-radius:10px; border:2px solid #0e1219; }
+    *::-webkit-scrollbar-track{ background:transparent; }
 
-    /* TIMER CARD */
-    .timer-card {
-      flex: 1;
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 40px 24px;
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 32px;
-      min-height: 500px;
-    }
-
-    /* TIMER DIAL */
-    .dial {
-      --size: 280px;
-      --progress: 0;
-      position: relative;
-      width: var(--size);
-      height: var(--size);
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background: 
-        radial-gradient(closest-side, var(--panel-2) 82%, transparent 0),
-        conic-gradient(var(--brand) calc(var(--progress) * 1%), #263246 0);
-      transition: all 0.3s ease;
-    }
-
-    .dial::after {
-      content: "";
-      position: absolute;
-      inset: 12px;
-      border-radius: 50%;
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-    }
-
-    .time-display {
-      position: relative;
-      font-size: 42px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: var(--text);
-      z-index: 2;
-    }
-
-    /* CONTROLS */
-    .controls {
-      display: flex;
-      gap: 12px;
-    }
-
-    .btn {
-      min-width: 110px;
-      padding: 12px 20px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--text);
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn:hover {
-      background: var(--card);
-    }
-
-    .btn.primary {
-      background: var(--brand);
-      border-color: transparent;
-      color: white;
-      box-shadow: 0 6px 18px rgba(59,130,246,0.35);
-    }
-
-    .btn.primary:hover {
-      background: var(--brand-2);
-      transform: translateY(-1px);
-    }
-
-    /* SIDEBAR */
-    .sidebar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-
-    .sidebar-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .sidebar-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    /* OVERVIEW CARDS */
-    .overview {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .metric-card {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
-
-    .metric-label {
-      margin: 0 0 8px 0;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .metric-value {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .metric-value small {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 500;
-      margin-left: 2px;
-    }
-
-    /* FOCUS RECORD */
-    .focus-record {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: var(--shadow);
-    }
-
-    .record-date {
-      color: var(--muted);
-      font-size: 12px;
-      margin: 8px 0 16px 0;
-      font-weight: 500;
-    }
-
-    .timeline {
-      position: relative;
-      padding-left: 28px;
-    }
-
-    .timeline::before {
-      content: "";
-      position: absolute;
-      left: 12px;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: linear-gradient(180deg, #243045, #1a2234);
-      border-radius: 1px;
-    }
-
-    .timeline-item {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 0;
-      margin-bottom: 4px;
-    }
-
-    .timeline-dot {
-      position: absolute;
-      left: -16px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #7aa2ff, #2f4cbb);
-      box-shadow: 0 4px 8px rgba(59,130,246,0.25);
-    }
-
-    .timeline-time {
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .timeline-duration {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 1200px) {
-      .app {
-        grid-template-columns: 1fr;
-        padding: 16px;
-      }
-      
-      .right {
-        order: -1;
-      }
-      
-      .overview {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .app {
-        padding: 12px;
-        gap: 16px;
-      }
-      
-      .overview {
-        grid-template-columns: 1fr 1fr;
-      }
-      
-      .dial {
-        --size: 240px;
-      }
-      
-      .time-display {
-        font-size: 36px;
-      }
-      
-      .timer-card {
-        min-height: 400px;
-        padding: 32px 20px;
-      }
-    }
-
-    /* ANIMATIONS */
-    .timer-complete {
-      animation: pulse 1.4s ease-in-out;
-    }
-
-    @keyframes pulse {
-      0%, 100% { 
-        filter: none;
-        transform: scale(1);
-      }
-      50% { 
-        filter: drop-shadow(0 0 20px rgba(59,130,246,0.6));
-        transform: scale(1.02);
-      }
-    }
-
-    .running .dial {
-      box-shadow: 0 0 30px rgba(59,130,246,0.2);
-    }
+    /* Responsivo */
+    @media (max-width: 1200px){ .app{ grid-template-columns: 64px 240px 1fr 360px; } }
+    @media (max-width: 980px){ .app{ grid-template-columns: 64px 220px 1fr; grid-template-areas:'rail sidebar main' 'rail sidebar details'; grid-template-rows: 55% 45%; } }
+    @media (max-width: 720px){ .app{ grid-template-columns:1fr; grid-template-areas:'main'; } .sidebar, .details, .rail{ display:none; } }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="left">
-      <div class="topbar">
-        <div class="title">Pomodoro</div>
-        <div class="header-actions">
-          <div class="modes">
-            <button class="mode active" data-mode="pomo">Pomo</button>
-            <button class="mode" data-mode="stopwatch">Stopwatch</button>
-          </div>
-          <button class="icon-btn" title="Add">+</button>
-          <button class="icon-btn" title="More">⋯</button>
-        </div>
+    <!-- RAIL (menu lateral fino) -->
+    <aside class="rail">
+      <div class="avatar" title="Você"></div>
+      <button class="btn" title="All"><i data-lucide="list-checks"></i></button>
+      <button class="btn" title="Today"><i data-lucide="sun"></i></button>
+      <button class="btn" title="7 Days"><i data-lucide="calendar-days"></i></button>
+      <button class="btn" title="Inbox"><i data-lucide="inbox"></i></button>
+      <button class="btn" title="Summary"><i data-lucide="pie-chart"></i></button>
+      <div class="spacer"></div>
+      <button class="btn" title="Settings"><i data-lucide="settings"></i></button>
+    </aside>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar panel">
+      <h6>Atalhos</h6>
+      <nav>
+        <ul class="nav-list">
+          <li><a class="nav-item" href="#"><i class="icon" data-lucide="infinity"></i><span class="label">All</span><span class="count">38</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon" data-lucide="sun"></i><span class="label">Today</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon" data-lucide="calendar-days"></i><span class="label">Next 7 Days</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon" data-lucide="inbox"></i><span class="label">Inbox</span><span class="count">2</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon" data-lucide="pie-chart"></i><span class="label">Summary</span></a></li>
+        </ul>
+      </nav>
+
+      <div class="sep"></div>
+
+      <button class="workspace" aria-expanded="true" data-toggle="workspace">
+        <i class="chev" data-lucide="chevron-down"></i>
+        <span class="title">SOFTWAREINFINITY</span>
+        <span class="badge">36</span>
+      </button>
+      <div class="workspace-content" style="padding-left:8px;">
+        <ul class="nav-list">
+          <li><a class="nav-item" href="#"><i class="icon" data-lucide="list-todo"></i><span class="label">Tasks</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon" data-lucide="flame"></i><span class="label">Habits</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon" data-lucide="clock"></i><span class="label">Pomodoro</span></a></li>
+        </ul>
       </div>
 
-      <div class="breadcrumb">
-        <span>Focus</span> 
-        <span class="chevron">›</span>
+      <h6>Filters</h6>
+      <div class="filters-tip">Display tasks filtered by list, date, priority, tag, and more</div>
+
+      <h6>Tags</h6>
+      <div class="tags">
+        <a class="tag" href="#"><span class="dot" style="background:#f87171"></span> <span>Bugs</span> <span class="count" style="margin-left:auto"> </span></a>
+        <a class="tag" href="#"><span class="dot" style="background:#22d3ee"></span> <span>Melhorias</span></a>
       </div>
 
-      <div class="time-controls">
-        <span class="time-label">Pomodoro:</span>
-        <div class="stepper">
-          <button id="decrease" type="button">−</button>
-          <input id="minutes-input" type="number" min="1" max="120" value="25" />
-          <button id="increase" type="button">+</button>
-        </div>
-        <button class="preset-chip active" data-minutes="25">25m</button>
-        <button class="preset-chip" data-minutes="5">5m</button>
-        <button class="preset-chip" data-minutes="15">15m</button>
+      <h6 style="margin-top:14px"> </h6>
+      <div class="completed"><i class="icon" data-lucide="check-square"></i> Completed</div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main panel">
+      <div class="toolbar">
+        <div class="title">All <span class="bubble">38</span></div>
+        <div class="spacer"></div>
+        <button class="icon-btn" title="Ordenar"><i data-lucide="sort-desc"></i></button>
+        <button class="icon-btn" title="Opções"><i data-lucide="more-horizontal"></i></button>
       </div>
 
-      <div class="timer-card" id="timer-container">
-        <div class="dial" id="timer-dial">
-          <div class="time-display" id="time-display">25:00</div>
-        </div>
-        <div class="controls">
-          <button class="btn primary" id="start-btn">Start</button>
-          <button class="btn" id="reset-btn">Reset</button>
-        </div>
-      </div>
-    </div>
-
-    <aside class="right">
-      <div class="sidebar-header">
-        <h4 class="sidebar-title">Overview</h4>
-        <div class="sidebar-actions">
-          <button class="icon-btn" title="Add">+</button>
-          <button class="icon-btn" title="More">⋯</button>
-        </div>
+      <div class="add-row">
+        <input class="add-input" placeholder="Add task to 'Inbox'" />
       </div>
 
-      <div class="overview">
-        <div class="metric-card">
-          <h5 class="metric-label">Today's Pomo</h5>
-          <div class="metric-value" id="today-pomo">0</div>
+      <section class="group" aria-expanded="true">
+        <header class="group-header" data-toggle="group">
+          <i class="chev" data-lucide="chevron-down"></i>
+          <span class="group-title">No Date</span>
+          <span class="group-count">38</span>
+        </header>
+        <div class="group-body">
+
+          <div class="subgroup" aria-expanded="true">
+            <div class="subgroup-toggle" data-toggle="subgroup">
+              <i class="chev" data-lucide="chevron-down"></i>
+              <span class="name">aa</span>
+              <span class="meta" style="margin-left:auto; color:var(--muted)">Inbox</span>
+            </div>
+
+            <div class="task-list">
+              <!-- Linha fantasma "No Title" -->
+              <div class="task ghost">
+                <div class="checkbox" aria-hidden="true"></div>
+                <div class="title-line"><span class="title" style="opacity:.6">No Title</span></div>
+                <div class="meta">Inbox</div>
+              </div>
+
+              <!-- Tarefa com SUBTAREFAS -->
+              <div class="task has-subtasks" aria-expanded="true">
+                <button class="checkbox" aria-label="marcar"></button>
+                <div class="expander" title="Expandir/ocultar subtarefas"><i data-lucide="chevron-down"></i></div>
+                <div class="title-line"><span class="title">COLOCAR METAS</span></div>
+                <div class="meta">Task Infinity</div>
+              </div>
+              <div class="subtasks">
+                <div class="subtask">
+                  <button class="checkbox"></button>
+                  <div class="title">Definir metas trimestrais</div>
+                  <div class="meta">Inbox</div>
+                </div>
+                <div class="subtask">
+                  <button class="checkbox"></button>
+                  <div class="title">Mapear KPIs por lista</div>
+                  <div class="meta">Inbox</div>
+                </div>
+                <div class="add-subtask">
+                  <i data-lucide="plus"></i>
+                  <input type="text" placeholder="Add subtask" class="add-subtask-input"/>
+                </div>
+              </div>
+
+              <!-- Outras tarefas -->
+              <div class="task">
+                <button class="checkbox" aria-label="marcar"></button>
+                <div class="title-line"><span class="title">COLOCAR IA</span></div>
+                <div class="meta">Task Infinity</div>
+              </div>
+
+              <div class="task">
+                <button class="checkbox" aria-label="marcar"></button>
+                <div class="title-line"><span class="title">THEMA FLORESTAL</span></div>
+                <div class="meta">Task Infinity</div>
+              </div>
+
+              <div class="task">
+                <button class="checkbox" aria-label="marcar"></button>
+                <div class="title-line"><span class="title">THEMA GAMER</span></div>
+                <div class="meta">Task Infinity</div>
+              </div>
+
+              <div class="task">
+                <button class="checkbox" aria-label="marcar"></button>
+                <div class="title-line"><span class="title">ADICIONAR</span></div>
+                <div class="meta">Task Infinity</div>
+              </div>
+
+              <div class="task">
+                <button class="checkbox" aria-label="marcar"></button>
+                <div class="title-line"><span class="title">HABITOS</span></div>
+                <div class="meta">Task Infinity</div>
+              </div>
+
+              <div class="task">
+                <button class="checkbox" aria-label="marcar"></button>
+                <div class="title-line"><span class="title">POMODORO</span></div>
+                <div class="meta">Task Infinity</div>
+              </div>
+
+              <div class="task">
+                <button class="checkbox" aria-label="marcar"></button>
+                <div class="title-line"><span class="title">TUDO QUE FALTA</span></div>
+                <div class="meta">Task Infinity</div>
+              </div>
+
+            </div>
+          </div>
         </div>
-        <div class="metric-card">
-          <h5 class="metric-label">Today's Focus</h5>
-          <div class="metric-value" id="today-focus">0 <small>m</small></div>
-        </div>
-        <div class="metric-card">
-          <h5 class="metric-label">Total Pomo</h5>
-          <div class="metric-value">1496</div>
-        </div>
-        <div class="metric-card">
-          <h5 class="metric-label">Total Focus Duration</h5>
-          <div class="metric-value">493<small>h</small> 23<small>m</small></div>
+      </section>
+    </main>
+
+    <!-- DETAILS -->
+    <aside class="details panel">
+      <div class="header">
+        <div style="font-weight:700; color:var(--muted)">aa ›</div>
+        <div class="right">
+          <button class="icon-btn" title="Classificar por data"><i data-lucide="flag"></i></button>
+          <button class="icon-btn" title="Opções"><i data-lucide="more-horizontal"></i></button>
         </div>
       </div>
-
-      <div class="focus-record">
-        <div class="sidebar-header">
-          <h4 class="sidebar-title">Focus Record</h4>
-          <div class="sidebar-actions">
-            <button class="icon-btn" title="Add">+</button>
-            <button class="icon-btn" title="More">⋯</button>
-          </div>
-        </div>
-        
-        <div class="record-date" id="current-date">Sep 28</div>
-        <div class="timeline" id="timeline">
-          <!-- Timeline items will be added here -->
-        </div>
-        
-        <div class="record-date">Sep 27</div>
-        <div class="timeline">
-          <div class="timeline-item">
-            <span class="timeline-dot"></span>
-            <span class="timeline-time">19:38 – 19:55</span>
-            <span class="timeline-duration">17m</span>
-          </div>
-          <div class="timeline-item">
-            <span class="timeline-dot"></span>
-            <span class="timeline-time">19:17 – 19:37</span>
-            <span class="timeline-duration">20m</span>
-          </div>
-          <div class="timeline-item">
-            <span class="timeline-dot"></span>
-            <span class="timeline-time">18:57 – 19:17</span>
-            <span class="timeline-duration">20m</span>
-          </div>
-          <div class="timeline-item">
-            <span class="timeline-dot"></span>
-            <span class="timeline-time">18:36 – 18:56</span>
-            <span class="timeline-duration">20m</span>
-          </div>
-          <div class="timeline-item">
-            <span class="timeline-dot"></span>
-            <span class="timeline-time">18:15 – 18:35</span>
-            <span class="timeline-duration">20m</span>
-          </div>
-        </div>
+      <div class="empty">
+        <h3 style="margin:6px 0 6px; font-size:18px; color:#d7def0">What would you like to do?</h3>
+        <p>Selecione uma tarefa para ver os detalhes, adicionar notas, e muito mais.</p>
       </div>
     </aside>
   </div>
 
   <script>
-    class PomodoroTimer {
-      constructor() {
-        this.totalSeconds = 25 * 60;
-        this.remainingSeconds = this.totalSeconds;
-        this.isRunning = false;
-        this.interval = null;
-        this.startTime = null;
-        this.sessionHistory = [];
-        this.todayPomos = 0;
-        this.todayFocus = 0;
-        
-        this.initElements();
-        this.bindEvents();
-        this.render();
-        this.updateDate();
-        this.loadTodayStats();
-      }
+    // Inicializa os ícones Lucide
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
 
-      initElements() {
-        this.timeDisplay = document.getElementById('time-display');
-        this.timerDial = document.getElementById('timer-dial');
-        this.startBtn = document.getElementById('start-btn');
-        this.resetBtn = document.getElementById('reset-btn');
-        this.minutesInput = document.getElementById('minutes-input');
-        this.decreaseBtn = document.getElementById('decrease');
-        this.increaseBtn = document.getElementById('increase');
-        this.presetChips = document.querySelectorAll('.preset-chip');
-        this.timerContainer = document.getElementById('timer-container');
-        this.todayPomoEl = document.getElementById('today-pomo');
-        this.todayFocusEl = document.getElementById('today-focus');
-        this.timeline = document.getElementById('timeline');
-      }
-
-      bindEvents() {
-        this.startBtn.addEventListener('click', () => this.toggleTimer());
-        this.resetBtn.addEventListener('click', () => this.resetTimer());
-        this.decreaseBtn.addEventListener('click', () => this.adjustMinutes(-1));
-        this.increaseBtn.addEventListener('click', () => this.adjustMinutes(1));
-        this.minutesInput.addEventListener('change', () => this.setMinutes(parseInt(this.minutesInput.value)));
-        
-        this.presetChips.forEach(chip => {
-          chip.addEventListener('click', () => {
-            const minutes = parseInt(chip.dataset.minutes);
-            this.setMinutes(minutes);
-          });
-        });
-      }
-
-      formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-      }
-
-      render() {
-        this.timeDisplay.textContent = this.formatTime(this.remainingSeconds);
-        const progress = ((this.totalSeconds - this.remainingSeconds) / this.totalSeconds) * 100;
-        this.timerDial.style.setProperty('--progress', progress);
-      }
-
-      toggleTimer() {
-        if (this.isRunning) {
-          this.pauseTimer();
-        } else {
-          this.startTimer();
-        }
-      }
-
-      startTimer() {
-        this.isRunning = true;
-        this.startTime = Date.now();
-        this.startBtn.textContent = 'Pause';
-        this.timerContainer.classList.add('running');
-        
-        this.interval = setInterval(() => {
-          this.remainingSeconds = Math.max(0, this.remainingSeconds - 1);
-          this.render();
-          
-          if (this.remainingSeconds === 0) {
-            this.completeSession();
-          }
-        }, 1000);
-      }
-
-      pauseTimer() {
-        this.isRunning = false;
-        this.startBtn.textContent = 'Start';
-        this.timerContainer.classList.remove('running');
-        clearInterval(this.interval);
-      }
-
-      resetTimer() {
-        this.pauseTimer();
-        this.remainingSeconds = this.totalSeconds;
-        this.render();
-      }
-
-      completeSession() {
-        this.pauseTimer();
-        this.timerContainer.classList.add('timer-complete');
-        
-        // Record session
-        const duration = Math.floor(this.totalSeconds / 60);
-        this.recordSession(duration);
-        this.updateTodayStats(1, duration);
-        
-        setTimeout(() => {
-          this.timerContainer.classList.remove('timer-complete');
-          this.resetTimer();
-        }, 1400);
-      }
-
-      adjustMinutes(delta) {
-        const currentMinutes = parseInt(this.minutesInput.value);
-        const newMinutes = Math.max(1, Math.min(120, currentMinutes + delta));
-        this.setMinutes(newMinutes);
-      }
-
-      setMinutes(minutes) {
-        minutes = Math.max(1, Math.min(120, minutes));
-        this.minutesInput.value = minutes;
-        this.totalSeconds = minutes * 60;
-        
-        if (!this.isRunning) {
-          this.remainingSeconds = this.totalSeconds;
-          this.render();
-        }
-        
-        this.updatePresetChips(minutes);
-      }
-
-      updatePresetChips(activeMinutes) {
-        this.presetChips.forEach(chip => {
-          const chipMinutes = parseInt(chip.dataset.minutes);
-          chip.classList.toggle('active', chipMinutes === activeMinutes);
-        });
-      }
-
-      recordSession(duration) {
-        const now = new Date();
-        const endTime = now;
-        const startTime = new Date(endTime.getTime() - (duration * 60 * 1000));
-        
-        const session = {
-          start: startTime.toTimeString().slice(0, 5),
-          end: endTime.toTimeString().slice(0, 5),
-          duration: duration
-        };
-        
-        this.addToTimeline(session);
-      }
-
-      addToTimeline(session) {
-        const timelineItem = document.createElement('div');
-        timelineItem.className = 'timeline-item';
-        timelineItem.innerHTML = `
-          <span class="timeline-dot"></span>
-          <span class="timeline-time">${session.start} – ${session.end}</span>
-          <span class="timeline-duration">${session.duration}m</span>
-        `;
-        
-        this.timeline.insertBefore(timelineItem, this.timeline.firstChild);
-      }
-
-      updateTodayStats(pomos, focusMinutes) {
-        this.todayPomos += pomos;
-        this.todayFocus += focusMinutes;
-        
-        this.todayPomoEl.textContent = this.todayPomos;
-        this.todayFocusEl.innerHTML = `${this.todayFocus} <small>m</small>`;
-      }
-
-      loadTodayStats() {
-        // In a real app, this would load from storage
-        this.todayPomos = 1;
-        this.todayFocus = 6;
-        this.todayPomoEl.textContent = this.todayPomos;
-        this.todayFocusEl.innerHTML = `${this.todayFocus} <small>m</small>`;
-      }
-
-      updateDate() {
-        const today = new Date();
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const dateStr = `${monthNames[today.getMonth()]} ${today.getDate()}`;
-        document.getElementById('current-date').textContent = dateStr;
-      }
+    // Toggle helpers
+    function toggleSection(btn, content){
+      const expanded = btn.getAttribute('aria-expanded') !== 'false';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      content.style.display = expanded ? 'none' : '';
     }
 
-    // Initialize the timer when the page loads
-    document.addEventListener('DOMContentLoaded', () => {
-      new PomodoroTimer();
+    // Workspace collapse
+    const wsBtn = document.querySelector('[data-toggle="workspace"]');
+    const wsContent = document.querySelector('.workspace-content');
+    wsBtn?.addEventListener('click', () => toggleSection(wsBtn, wsContent));
+
+    // Group collapse
+    document.querySelectorAll('[data-toggle="group"]').forEach(h => {
+      h.addEventListener('click', () => {
+        const section = h.closest('.group');
+        const body = section.querySelector('.group-body');
+        const expanded = section.getAttribute('aria-expanded') !== 'false';
+        section.setAttribute('aria-expanded', String(!expanded));
+        body.style.display = expanded ? 'none' : '';
+      });
+    });
+
+    // Subgroup collapse
+    document.querySelectorAll('[data-toggle="subgroup"]').forEach(h => {
+      h.addEventListener('click', () => {
+        const sg = h.closest('.subgroup');
+        const list = sg.querySelector('.task-list');
+        const expanded = sg.getAttribute('aria-expanded') !== 'false';
+        sg.setAttribute('aria-expanded', String(!expanded));
+        list.style.display = expanded ? 'none' : '';
+      });
+    });
+
+    // Checkbox interactions (tarefas e subtarefas)
+    function wireCheckbox(scope){
+      scope.querySelectorAll('.checkbox').forEach(cb => {
+        cb.addEventListener('click', (e) => {
+          e.stopPropagation();
+          cb.classList.toggle('checked');
+          const row = cb.closest('.task, .subtask');
+          row?.classList.toggle('done');
+        });
+      });
+    }
+    wireCheckbox(document);
+
+    // Expander de subtarefas
+    document.querySelectorAll('.task.has-subtasks .expander').forEach(exp => {
+      exp.addEventListener('click', (e) => {
+        const task = exp.closest('.task.has-subtasks');
+        const next = task.nextElementSibling; // .subtasks logo abaixo
+        const open = task.getAttribute('aria-expanded') !== 'false';
+        task.setAttribute('aria-expanded', String(!open));
+        if(next?.classList.contains('subtasks')){
+          next.style.display = open ? 'none' : '';
+        }
+      });
+    });
+
+    // Adicionar subtask
+    document.querySelectorAll('.add-subtask-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' && input.value.trim()){
+          const container = input.closest('.subtasks');
+          const node = document.createElement('div');
+          node.className = 'subtask';
+          node.innerHTML = `<button class="checkbox"></button><div class="title"></div><div class="meta">Inbox</div>`;
+          node.querySelector('.title').textContent = input.value.trim();
+          container.insertBefore(node, input.closest('.add-subtask'));
+          input.value = '';
+          wireCheckbox(node);
+        }
+      });
+    });
+
+    // Demo: adicionar tarefa com Enter
+    const input = document.querySelector('.add-input');
+    const taskList = document.querySelector('.task-list');
+    input?.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' && input.value.trim()){ 
+        const row = document.createElement('div');
+        row.className = 'task';
+        row.innerHTML = `
+          <button class="checkbox" aria-label="marcar"></button>
+          <div class="title-line"><span class="title"></span></div>
+          <div class="meta">Inbox</div>`;
+        row.querySelector('.title').textContent = input.value.trim();
+        wireCheckbox(row);
+        taskList.prepend(row);
+        input.value='';
+      }
     });
   </script>
 </body>
