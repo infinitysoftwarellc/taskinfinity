@@ -165,7 +165,7 @@
                 <!-- DETAILS -->
                 <aside class="details panel">
                     <div class="header">
-                        <div style="font-weight:700; color:var(--muted)">aa ›</div>
+                        <div style="font-weight:700; color:var(--muted)">aa </div>
                         <div class="right">
                             <button class="icon-btn" title="Classificar por data"><i data-lucide="flag"></i></button>
                             <button class="icon-btn" title="Opções"><i data-lucide="more-horizontal"></i></button>
@@ -178,99 +178,5 @@
                 </aside>
             </div>
 
-    {{-- Scripts específicos da página --}}
-    @push('scripts')
-        <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                if (window.lucide) lucide.createIcons();
-
-                function toggleSection(btn, content){
-                    const expanded = btn.getAttribute('aria-expanded') !== 'false';
-                    btn.setAttribute('aria-expanded', String(!expanded));
-                    content.style.display = expanded ? 'none' : '';
-                }
-
-                const wsBtn = document.querySelector('[data-toggle="workspace"]');
-                const wsContent = document.querySelector('.workspace-content');
-                wsBtn?.addEventListener('click', () => toggleSection(wsBtn, wsContent));
-
-                document.querySelectorAll('[data-toggle="group"]').forEach(h => {
-                    h.addEventListener('click', () => {
-                        const section = h.closest('.group');
-                        const body = section.querySelector('.group-body');
-                        const expanded = section.getAttribute('aria-expanded') !== 'false';
-                        section.setAttribute('aria-expanded', String(!expanded));
-                        body.style.display = expanded ? 'none' : '';
-                    });
-                });
-
-                document.querySelectorAll('[data-toggle="subgroup"]').forEach(h => {
-                    h.addEventListener('click', () => {
-                        const sg = h.closest('.subgroup');
-                        const list = sg.querySelector('.task-list');
-                        const expanded = sg.getAttribute('aria-expanded') !== 'false';
-                        sg.setAttribute('aria-expanded', String(!expanded));
-                        list.style.display = expanded ? 'none' : '';
-                    });
-                });
-
-                function wireCheckbox(scope){
-                    scope.querySelectorAll('.checkbox').forEach(cb => {
-                        cb.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            cb.classList.toggle('checked');
-                            const row = cb.closest('.task, .subtask');
-                            row?.classList.toggle('done');
-                        });
-                    });
-                }
-                wireCheckbox(document);
-
-                document.querySelectorAll('.task.has-subtasks .expander').forEach(exp => {
-                    exp.addEventListener('click', (e) => {
-                        const task = exp.closest('.task.has-subtasks');
-                        const next = task.nextElementSibling; // .subtasks logo abaixo
-                        const open = task.getAttribute('aria-expanded') !== 'false';
-                        task.setAttribute('aria-expanded', String(!open));
-                        if(next?.classList.contains('subtasks')){
-                            next.style.display = open ? 'none' : '';
-                        }
-                    });
-                });
-
-                document.querySelectorAll('.add-subtask-input').forEach(input => {
-                    input.addEventListener('keydown', (e) => {
-                        if(e.key === 'Enter' && input.value.trim()){
-                            const container = input.closest('.subtasks');
-                            const node = document.createElement('div');
-                            node.className = 'subtask';
-                            node.innerHTML = `<button class="checkbox"></button><div class="title"></div><div class="meta">Inbox</div>`;
-                            node.querySelector('.title').textContent = input.value.trim();
-                            container.insertBefore(node, input.closest('.add-subtask'));
-                            input.value = '';
-                            wireCheckbox(node);
-                        }
-                    });
-                });
-
-                const input = document.querySelector('.add-input');
-                const taskList = document.querySelector('.task-list');
-                input?.addEventListener('keydown', (e) => {
-                    if(e.key === 'Enter' && input.value.trim()){
-                        const row = document.createElement('div');
-                        row.className = 'task';
-                        row.innerHTML = `
-                            <button class="checkbox" aria-label="marcar"></button>
-                            <div class="title-line"><span class="title"></span></div>
-                            <div class="meta">Inbox</div>`;
-                        row.querySelector('.title').textContent = input.value.trim();
-                        wireCheckbox(row);
-                        taskList.prepend(row);
-                        input.value='';
-                    }
-                });
-            });
-        </script>
-    @endpush
+    
 </x-app-layout>
