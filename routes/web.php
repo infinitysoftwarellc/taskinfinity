@@ -48,6 +48,8 @@ require __DIR__.'/auth.php';
 
 Route::middleware('auth')->group(function () {
     Route::resource('lists', TaskListController::class);
+    Route::view('tasks', 'app.tasks.index')->name('tasks.index');
+
     Route::resource('missions', MissionController::class);
     Route::resource('checkpoints', CheckpointController::class)->except(['create', 'edit']);
     Route::resource('attachments', AttachmentController::class)->except(['create', 'edit']);
