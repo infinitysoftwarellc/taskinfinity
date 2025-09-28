@@ -110,7 +110,7 @@ class MainPanel extends Component
         $this->selectedMissionId = $mission->id;
 
         $this->dispatch('tasks-updated');
-        $this->dispatch('task-selected', id: $mission->id);
+        $this->dispatch('task-selected', $mission->id);
     }
 
     public function selectMission(int $missionId): void
@@ -135,7 +135,7 @@ class MainPanel extends Component
         }
 
         $this->selectedMissionId = $mission->id;
-        $this->dispatch('task-selected', id: $mission->id);
+        $this->dispatch('task-selected', $mission->id);
     }
 
     private function nextPosition(int $userId, ?int $listId): int

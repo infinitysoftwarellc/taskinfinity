@@ -4,21 +4,18 @@ namespace App\Livewire\Tasks;
 
 use App\Models\Mission;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Details extends Component
 {
-    protected $listeners = [
-        'task-selected' => 'loadMission',
-        'tasks-updated' => 'refreshMission',
-    ];
-
     public ?int $missionId = null;
 
     public ?array $mission = null;
 
     public array $missionTags = [];
 
+    #[On('task-selected')]
     public function loadMission(?int $missionId = null): void
     {
         if (! $missionId) {
@@ -81,6 +78,7 @@ class Details extends Component
         }
     }
 
+    #[On('tasks-updated')]
     public function refreshMission(): void
     {
         if ($this->missionId) {
