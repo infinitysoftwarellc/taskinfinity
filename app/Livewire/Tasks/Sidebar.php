@@ -5,6 +5,7 @@ namespace App\Livewire\Tasks;
 use App\Models\Mission;
 use App\Models\Tag;
 use App\Models\TaskList;
+use App\Support\MissionShortcutFilter;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -15,6 +16,8 @@ class Sidebar extends Component
     public string $workspaceTitle = 'SOFTWAREINFINITY';
 
     public ?int $currentListId = null;
+
+    public ?string $currentShortcut = null;
 
     public bool $showListForm = false;
 
@@ -139,8 +142,26 @@ class Sidebar extends Component
 
         $totalTasks = (clone $missionQuery)->count();
         $completedTasks = (clone $missionQuery)->where('status', 'done')->count();
-        $todayTasks = 0; // placeholder para lógica futura
-        $nextSevenDaysTasks = 0; // placeholder para lógica futura
+
+        $timezone = $user->timezone ?? config('app.timezone');
+
+        $todayTasks = MissionShortcutFilter::apply(
+            (clone $missionQuery),
+            MissionShortcutFilter::TODAY,
+            $timezone
+        )->count();
+
+        $tomorrowTasks = MissionShortcutFilter::apply(
+            (clone $missionQuery),
+            MissionShortcutFilter::TOMORROW,
+            $timezone
+        )->count();
+
+        $nextSevenDaysTasks = MissionShortcutFilter::apply(
+            (clone $missionQuery),
+            MissionShortcutFilter::NEXT_SEVEN_DAYS,
+            $timezone
+        )->count();
 
         $lists = TaskList::query()
             ->withCount('missions')
@@ -155,10 +176,29 @@ class Sidebar extends Component
                 'label' => 'All',
                 'count' => $totalTasks,
                 'href' => route('tasks.index'),
-                'active' => $this->currentListId === null,
+                'active' => $this->currentListId === null && $this->currentShortcut === null,
             ],
-            ['icon' => 'sun', 'label' => 'Today', 'count' => $todayTasks, 'href' => '#'],
-            ['icon' => 'calendar-days', 'label' => 'Next 7 Days', 'count' => $nextSevenDaysTasks, 'href' => '#'],
+            [
+                'icon' => 'sun',
+                'label' => 'Today',
+                'count' => $todayTasks,
+                'href' => route('tasks.index', ['shortcut' => MissionShortcutFilter::TODAY]),
+                'active' => $this->currentShortcut === MissionShortcutFilter::TODAY,
+            ],
+            [
+                'icon' => 'sunrise',
+                'label' => 'Tomorrow',
+                'count' => $tomorrowTasks,
+                'href' => route('tasks.index', ['shortcut' => MissionShortcutFilter::TOMORROW]),
+                'active' => $this->currentShortcut === MissionShortcutFilter::TOMORROW,
+            ],
+            [
+                'icon' => 'calendar-days',
+                'label' => 'Next 7 Days',
+                'count' => $nextSevenDaysTasks,
+                'href' => route('tasks.index', ['shortcut' => MissionShortcutFilter::NEXT_SEVEN_DAYS]),
+                'active' => $this->currentShortcut === MissionShortcutFilter::NEXT_SEVEN_DAYS,
+            ],
         ];
 
         $workspaceBadge = $lists->sum('missions_count');

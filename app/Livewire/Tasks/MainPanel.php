@@ -4,6 +4,7 @@ namespace App\Livewire\Tasks;
 
 use App\Models\Mission;
 use App\Models\TaskList;
+use App\Support\MissionShortcutFilter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -37,12 +38,22 @@ class MainPanel extends Component
      */
     public ?int $selectedMissionId = null;
 
-    public function mount(?int $currentListId = null): void
+    public ?string $shortcut = null;
+
+    public function mount(?int $currentListId = null, ?string $shortcut = null): void
     {
         $this->currentListId = $currentListId;
 
         if ($this->currentListId) {
             $this->newTaskListId = $this->currentListId;
+        }
+
+        if ($shortcut && in_array($shortcut, MissionShortcutFilter::supported(), true)) {
+            $this->shortcut = $shortcut;
+        }
+
+        if ($this->currentListId) {
+            $this->shortcut = null;
         }
     }
 
@@ -113,6 +124,10 @@ class MainPanel extends Component
         $mission = Mission::query()
             ->where('user_id', $user->id)
             ->when($this->currentListId, fn ($query) => $query->where('list_id', $this->currentListId))
+            ->when(
+                $this->shortcut,
+                fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $user->timezone ?? config('app.timezone'))
+            )
             ->find($missionId);
 
         if (! $mission) {
@@ -152,8 +167,18 @@ class MainPanel extends Component
             ]);
         }
 
+        $timezone = $user->timezone ?? config('app.timezone');
+
         $lists = TaskList::query()
-            ->with(['missions' => fn ($query) => $query->orderBy('position')->orderBy('created_at')])
+            ->with([
+                'missions' => function ($query) use ($timezone) {
+                    $query->orderBy('position')->orderBy('created_at');
+
+                    if ($this->shortcut) {
+                        MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
+                    }
+                },
+            ])
             ->where('user_id', $user->id)
             ->orderBy('position')
             ->orderBy('name')
@@ -164,6 +189,7 @@ class MainPanel extends Component
             ->whereNull('list_id')
             ->orderBy('position')
             ->orderBy('created_at')
+            ->when($this->shortcut, fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $timezone))
             ->get();
 
         $totalCount = $lists->sum(fn ($list) => $list->missions->count()) + $unlistedMissions->count();
@@ -172,6 +198,7 @@ class MainPanel extends Component
             $ownsMission = Mission::query()
                 ->where('user_id', $user->id)
                 ->when($this->currentListId, fn ($query) => $query->where('list_id', $this->currentListId))
+                ->when($this->shortcut, fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $timezone))
                 ->where('id', $this->selectedMissionId)
                 ->exists();
 
@@ -180,12 +207,20 @@ class MainPanel extends Component
             }
         }
 
-        $primaryGroupTitle = 'All';
+        $primaryGroupTitle = $this->shortcut ? $this->labelForShortcut($this->shortcut) : 'All';
         $showListSelector = $this->currentListId === null;
 
         if ($this->currentListId) {
             $activeList = TaskList::query()
-                ->with(['missions' => fn ($query) => $query->orderBy('position')->orderBy('created_at')])
+                ->with([
+                    'missions' => function ($query) use ($timezone) {
+                        $query->orderBy('position')->orderBy('created_at');
+
+                        if ($this->shortcut) {
+                            MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
+                        }
+                    },
+                ])
                 ->where('user_id', $user->id)
                 ->find($this->currentListId);
 
@@ -201,7 +236,7 @@ class MainPanel extends Component
         }
 
         if ($showListSelector) {
-            $primaryGroupTitle = 'All';
+            $primaryGroupTitle = $this->shortcut ? $this->labelForShortcut($this->shortcut) : 'All';
         }
 
         $availableLists = TaskList::query()
@@ -219,5 +254,15 @@ class MainPanel extends Component
             'showListSelector' => $showListSelector,
             'listView' => $this->currentListId !== null,
         ]);
+    }
+
+    private function labelForShortcut(string $shortcut): string
+    {
+        return match ($shortcut) {
+            MissionShortcutFilter::TODAY => 'Today',
+            MissionShortcutFilter::TOMORROW => 'Tomorrow',
+            MissionShortcutFilter::NEXT_SEVEN_DAYS => 'Next 7 Days',
+            default => 'All',
+        };
     }
 }
