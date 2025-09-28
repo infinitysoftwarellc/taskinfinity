@@ -45,35 +45,35 @@ Route::view('profile', 'profile')
 
 require __DIR__.'/auth.php';
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('lists', TaskListController::class);
-    Route::apiResource('missions', MissionController::class);
-    Route::apiResource('checkpoints', CheckpointController::class)->except(['create', 'edit']);
-    Route::apiResource('attachments', AttachmentController::class)->except(['create', 'edit']);
+Route::middleware('auth')->group(function () {
+    Route::resource('lists', TaskListController::class);
+    Route::resource('missions', MissionController::class);
+    Route::resource('checkpoints', CheckpointController::class)->except(['create', 'edit']);
+    Route::resource('attachments', AttachmentController::class)->except(['create', 'edit']);
 
-    Route::apiResource('pomodoro-sessions', PomodoroSessionController::class)->except(['create', 'edit']);
-    Route::apiResource('pomodoro-pauses', PomodoroPauseController::class)->except(['create', 'edit']);
-    Route::apiResource('pomodoro-daily-stats', PomodoroDailyStatController::class)->except(['create', 'edit']);
+    Route::resource('pomodoro-sessions', PomodoroSessionController::class)->except(['create', 'edit']);
+    Route::resource('pomodoro-pauses', PomodoroPauseController::class)->except(['create', 'edit']);
+    Route::resource('pomodoro-daily-stats', PomodoroDailyStatController::class)->except(['create', 'edit']);
 
-    Route::apiResource('habits', HabitController::class);
-    Route::apiResource('habit-checkins', HabitCheckinController::class)->except(['create', 'edit']);
-    Route::apiResource('habit-monthly-stats', HabitMonthlyStatController::class)->except(['create', 'edit']);
-    Route::apiResource('habit-streaks', HabitStreakController::class)->only(['index', 'show', 'update']);
+    Route::resource('habits', HabitController::class);
+    Route::resource('habit-checkins', HabitCheckinController::class)->except(['create', 'edit']);
+    Route::resource('habit-monthly-stats', HabitMonthlyStatController::class)->except(['create', 'edit']);
+    Route::resource('habit-streaks', HabitStreakController::class)->only(['index', 'show', 'update']);
 
-    Route::apiResource('big-goals', BigGoalController::class);
-    Route::apiResource('goal-steps', GoalStepController::class)->except(['create', 'edit']);
-    Route::apiResource('rituals', RitualController::class);
-    Route::apiResource('ritual-entries', RitualEntryController::class)->except(['create', 'edit']);
+    Route::resource('big-goals', BigGoalController::class);
+    Route::resource('goal-steps', GoalStepController::class)->except(['create', 'edit']);
+    Route::resource('rituals', RitualController::class);
+    Route::resource('ritual-entries', RitualEntryController::class)->except(['create', 'edit']);
 
-    Route::apiResource('store-items', StoreItemController::class)->except(['index', 'show', 'create', 'edit']);
-    Route::apiResource('purchases', PurchaseController::class)->except(['create', 'edit']);
-    Route::apiResource('inventory', InventoryController::class)->except(['create', 'edit']);
+    Route::resource('store-items', StoreItemController::class)->except(['index', 'show', 'create', 'edit']);
+    Route::resource('purchases', PurchaseController::class)->except(['create', 'edit']);
+    Route::resource('inventory', InventoryController::class)->except(['create', 'edit']);
 
-    Route::apiResource('notifications', NotificationController::class)->except(['create', 'edit']);
-    Route::apiResource('ai-requests', AiRequestController::class)->except(['create', 'edit']);
+    Route::resource('notifications', NotificationController::class)->except(['create', 'edit']);
+    Route::resource('ai-requests', AiRequestController::class)->except(['create', 'edit']);
 
-    Route::apiResource('user-abilities', UserAbilityController::class)->except(['create', 'edit']);
-    Route::apiResource('user-achievements', UserAchievementController::class)->except(['create', 'edit']);
+    Route::resource('user-abilities', UserAbilityController::class)->except(['create', 'edit']);
+    Route::resource('user-achievements', UserAchievementController::class)->except(['create', 'edit']);
 
     Route::get('player-state', [PlayerStateController::class, 'show']);
     Route::put('player-state', [PlayerStateController::class, 'update']);
@@ -81,14 +81,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('economy-wallet', [EconomyWalletController::class, 'show']);
     Route::put('economy-wallet', [EconomyWalletController::class, 'update']);
 
-    Route::apiResource('xp-events', XpEventController::class)->only(['index', 'store', 'show']);
+    Route::resource('xp-events', XpEventController::class)->only(['index', 'store', 'show']);
 
-    Route::apiResource('user-theme-preferences', UserThemePreferenceController::class)->except(['create', 'edit']);
+    Route::resource('user-theme-preferences', UserThemePreferenceController::class)->except(['create', 'edit']);
 });
 
-Route::apiResource('abilities', AbilityController::class);
-Route::apiResource('achievements', AchievementController::class);
-Route::apiResource('sound-packs', SoundPackController::class);
-Route::apiResource('themes', ThemeController::class);
-Route::apiResource('plan-limits', PlanLimitController::class);
-Route::apiResource('store-items', StoreItemController::class)->only(['index', 'show']);
+Route::resource('abilities', AbilityController::class);
+Route::resource('achievements', AchievementController::class);
+Route::resource('sound-packs', SoundPackController::class);
+Route::resource('themes', ThemeController::class);
+Route::resource('plan-limits', PlanLimitController::class);
+Route::resource('store-items', StoreItemController::class)->only(['index', 'show']);
