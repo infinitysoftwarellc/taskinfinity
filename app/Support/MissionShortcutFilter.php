@@ -4,12 +4,19 @@ namespace App\Support;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Schema;
 
 class MissionShortcutFilter
 {
     public const TODAY = 'today';
     public const TOMORROW = 'tomorrow';
     public const NEXT_SEVEN_DAYS = 'next-seven-days';
+
+    /**
+     * @var array<string, bool>
+     */
+    private static array $dueAtColumnCache = [];
 
     /**
      * @return array<int, string>
@@ -23,8 +30,17 @@ class MissionShortcutFilter
         ];
     }
 
-    public static function apply(Builder $query, string $shortcut, string $timezone): Builder
+    /**
+     * @param  Builder|Relation  $query
+     */
+    public static function apply(Builder|Relation $query, string $shortcut, string $timezone): Builder|Relation
     {
+        $builder = $query instanceof Relation ? $query->getQuery() : $query;
+
+        if (! self::shouldApplyDueDateFilters($builder)) {
+            return $query;
+        }
+
         $range = self::dateRangeFor($shortcut, $timezone);
 
         if (! $range) {
@@ -33,9 +49,11 @@ class MissionShortcutFilter
 
         [$startUtc, $endUtc] = $range;
 
-        return $query
+        $builder
             ->whereNotNull('due_at')
             ->whereBetween('due_at', [$startUtc, $endUtc]);
+
+        return $query;
     }
 
     public static function dateRangeFor(string $shortcut, string $timezone): ?array
@@ -81,5 +99,16 @@ class MissionShortcutFilter
             $start->setTimezone('UTC')->toDateTimeString(),
             $end->setTimezone('UTC')->toDateTimeString(),
         ];
+    }
+
+    private static function shouldApplyDueDateFilters(Builder $query): bool
+    {
+        $table = $query->getModel()->getTable();
+
+        if (array_key_exists($table, self::$dueAtColumnCache)) {
+            return self::$dueAtColumnCache[$table];
+        }
+
+        return self::$dueAtColumnCache[$table] = Schema::hasColumn($table, 'due_at');
     }
 }
