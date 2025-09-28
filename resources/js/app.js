@@ -210,3 +210,14 @@ document.addEventListener('livewire:load', () => {
   });
 });
 */
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.lucide) lucide.createIcons();
+
+    document.querySelectorAll(".btn-new").forEach(btn => {
+        btn.addEventListener("click", () => {
+            alert("Criar nova lista/workspace"); 
+            // Aqui você pode abrir um modal, formulário ou criar dinamicamente
+        });
+    });
+});
