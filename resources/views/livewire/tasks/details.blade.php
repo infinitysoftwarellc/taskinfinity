@@ -8,6 +8,12 @@
                 @else
                     <span class="details-list muted">Sem lista</span>
                 @endif
+                @if ($mission['is_starred'])
+                    <span class="details-badge" title="Tarefa favorita">
+                        <i data-lucide="star"></i>
+                        Favorita
+                    </span>
+                @endif
             </div>
             <div class="right">
                 <button class="icon-btn" title="Editar">
@@ -38,6 +44,16 @@
 
             <div class="details-meta">
                 <div>
+                    <strong>Prazo</strong>
+                    <span>
+                        @if ($mission['due_at'])
+                            {{ $mission['due_at']->format('d/m/Y H:i') }}
+                        @else
+                            Sem prazo
+                        @endif
+                    </span>
+                </div>
+                <div>
                     <strong>Criada</strong>
                     <span>{{ optional($mission['created_at'])->format('d/m/Y H:i') }}</span>
                 </div>
@@ -47,7 +63,19 @@
                 </div>
                 <div>
                     <strong>Prioridade</strong>
-                    <span>{{ $mission['priority'] ?? '-' }}</span>
+                    <span>{{ $mission['priority_label'] }}</span>
+                </div>
+                <div>
+                    <strong>XP</strong>
+                    <span>{{ $mission['xp_reward'] }}</span>
+                </div>
+                <div>
+                    <strong>Subtarefas</strong>
+                    <span>{{ $mission['checkpoints_done'] }} / {{ $mission['checkpoints_total'] }}</span>
+                </div>
+                <div>
+                    <strong>Anexos</strong>
+                    <span>{{ $mission['attachments_count'] }}</span>
                 </div>
             </div>
         </div>

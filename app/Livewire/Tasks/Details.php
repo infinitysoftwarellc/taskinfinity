@@ -37,6 +37,11 @@ class Details extends Component
 
         $mission = Mission::query()
             ->with('list')
+            ->withCount([
+                'checkpoints',
+                'checkpoints as checkpoints_done_count' => fn ($query) => $query->where('is_done', true),
+                'attachments',
+            ])
             ->where('user_id', $user->id)
             ->find($missionId);
 
@@ -48,15 +53,24 @@ class Details extends Component
             return;
         }
 
+        $timezone = $user->timezone ?? config('app.timezone');
+
         $this->missionId = $mission->id;
         $this->mission = [
             'title' => $mission->title,
             'description' => $mission->description,
             'status' => $mission->status,
             'list' => $mission->list?->name,
-            'created_at' => $mission->created_at,
-            'updated_at' => $mission->updated_at,
+            'created_at' => $mission->created_at?->copy()->setTimezone($timezone),
+            'updated_at' => $mission->updated_at?->copy()->setTimezone($timezone),
+            'due_at' => $mission->due_at?->copy()->setTimezone($timezone),
             'priority' => $mission->priority,
+            'priority_label' => $this->priorityLabel($mission->priority),
+            'is_starred' => (bool) $mission->is_starred,
+            'xp_reward' => $mission->xp_reward,
+            'checkpoints_total' => $mission->checkpoints_count ?? 0,
+            'checkpoints_done' => $mission->checkpoints_done_count ?? 0,
+            'attachments_count' => $mission->attachments_count ?? 0,
         ];
 
         $labels = $mission->labels_json ?? [];
@@ -80,5 +94,15 @@ class Details extends Component
             'mission' => $this->mission,
             'missionTags' => $this->missionTags,
         ]);
+    }
+
+    private function priorityLabel(?int $priority): string
+    {
+        return match ($priority) {
+            3 => 'Alta',
+            2 => 'Média',
+            1 => 'Baixa',
+            default => 'Nenhuma',
+        };
     }
 }
