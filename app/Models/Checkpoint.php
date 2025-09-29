@@ -15,6 +15,8 @@ class Checkpoint extends Model
         'is_done',
         'position',
         'xp_reward',
+        'parent_id',
+        'parent_checkpoint_id',
     ];
 
     protected $casts = [
@@ -24,5 +26,15 @@ class Checkpoint extends Model
     public function mission()
     {
         return $this->belongsTo(Mission::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(self::class, 'parent_id');
     }
 }

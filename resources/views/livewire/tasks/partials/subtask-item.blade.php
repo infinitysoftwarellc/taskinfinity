@@ -29,6 +29,14 @@
             @endif
         </div>
         <div class="ti-subtask-actions" wire:click.stop>
+            <button
+                class="icon ghost"
+                type="button"
+                title="Adicionar subtarefa"
+                wire:click="openSubtaskForm({{ $item['id'] }})"
+            >
+                <i data-lucide="plus"></i>
+            </button>
             @include('livewire.tasks.partials.inline-menu')
         </div>
     </div>

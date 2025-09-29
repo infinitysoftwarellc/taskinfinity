@@ -58,7 +58,10 @@
                 @forelse ($allMissions as $mission)
                     @php
                         $isActive = $mission->id === $selectedMissionId;
-                        $subtasks = $mission->checkpoints ?? collect();
+                        $relationLoaded = method_exists($mission, 'relationLoaded') && $mission->relationLoaded('checkpointTree');
+                        $subtasksRelation = $relationLoaded ? $mission->getRelation('checkpointTree') : collect();
+                        $subtasks = collect($subtasksRelation);
+                        $hasSubtasks = $subtasks->isNotEmpty();
                     @endphp
 
                     <div
@@ -68,45 +71,67 @@
                             'task',
                             'done' => $mission->status === 'done',
                             'is-active' => $isActive,
-                            'has-subtasks' => $subtasks->isNotEmpty(),
+                            'has-subtasks' => $hasSubtasks,
                         ])
                     >
                         <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
                         <div class="title-line">
-                            <span class="title">{{ $mission->title }}</span>
+                            @if ($editingMissionId === $mission->id)
+                                <input
+                                    type="text"
+                                    class="inline-input"
+                                    data-mission-input="{{ $mission->id }}"
+                                    wire:model.defer="editingMissionTitle"
+                                    wire:keydown.enter.prevent="saveMissionEdit({{ $mission->id }})"
+                                    wire:keydown.shift.enter.prevent="missionShiftEnter({{ $mission->id }})"
+                                    wire:keydown.escape="cancelMissionEdit"
+                                    wire:blur="saveMissionEdit({{ $mission->id }})"
+                                />
+                            @else
+                                <span class="title" wire:click.stop="startMissionEdit({{ $mission->id }})">
+                                    {{ $mission->title ?: 'Sem título' }}
+                                </span>
+                            @endif
                         </div>
                         <div class="task-actions">
+                            <button
+                                type="button"
+                                class="task-quick-btn"
+                                title="Adicionar subtarefa (Shift + Enter)"
+                                wire:click.stop="createSubtaskForMission({{ $mission->id }})"
+                            >
+                                <i data-lucide="plus"></i>
+                            </button>
                             @include('livewire.tasks.partials.inline-menu')
                         </div>
                         {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
                     </div>
 
-                    @if ($subtasks->isNotEmpty())
-                        <div class="subtasks">
-                            @foreach ($subtasks as $subtask)
-                                <div
-                                    wire:key="mission-{{ $mission->id }}-subtask-{{ $subtask->id }}"
-                                    wire:click="selectSubtask({{ $mission->id }}, {{ $subtask->id }})"
-                                    @class([
-                                        'subtask',
-                                        'done' => $subtask->is_done,
-                                        'is-active' => $selectedSubtaskId === $subtask->id,
-                                    ])
-                                >
-                                    <button
-                                        class="checkbox {{ $subtask->is_done ? 'checked' : '' }}"
-                                        type="button"
-                                        aria-label="Marcar subtarefa"
-                                        wire:click.stop="toggleSubtaskCompletion({{ $mission->id }}, {{ $subtask->id }})"
-                                    ></button>
-                                    <span class="title">{{ $subtask->title ?: 'Sem título' }}</span>
-                                    <div class="subtask-actions" wire:click.stop>
-                                        @include('livewire.tasks.partials.inline-menu')
-                                    </div>
-                                </div>
+                    <div class="subtasks">
+                        @if ($hasSubtasks)
+                            @foreach ($subtasks as $node)
+                                @include('livewire.tasks.partials.main-panel-subtask', [
+                                    'item' => $node,
+                                    'depth' => 0,
+                                    'missionId' => $mission->id,
+                                    'selectedSubtaskId' => $selectedSubtaskId,
+                                    'editingSubtaskId' => $editingSubtaskId,
+                                ])
                             @endforeach
-                        </div>
-                    @endif
+                        @else
+                            <div class="subtasks-empty">
+                                <button
+                                    type="button"
+                                    class="subtasks-empty-btn"
+                                    wire:click.stop="createSubtaskForMission({{ $mission->id }})"
+                                >
+                                    <i data-lucide="plus"></i>
+                                    <span>Adicionar subtarefa</span>
+                                </button>
+                                <span class="subtask-hint">Shift + Enter para criar subtarefa</span>
+                            </div>
+                        @endif
+                    </div>
                 @empty
                     <div class="task ghost">
                         <div class="checkbox" aria-hidden="true"></div>

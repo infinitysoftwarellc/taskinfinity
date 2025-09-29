@@ -237,6 +237,84 @@ function setupInputs(root = document) {
   }
 }
 
+function focusInlineTarget(selector, attempts = 5) {
+  requestAnimationFrame(() => {
+    const el = document.querySelector(selector);
+    if (!el) {
+      if (attempts <= 0) return;
+      setTimeout(() => focusInlineTarget(selector, attempts - 1), 40);
+      return;
+    }
+
+    if (typeof el.focus === 'function') {
+      el.focus({ preventScroll: false });
+    }
+
+    if (typeof el.setSelectionRange === 'function') {
+      const len = el.value?.length ?? 0;
+      el.setSelectionRange(len, len);
+    } else if (el.isContentEditable) {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const selection = window.getSelection();
+      if (!selection) return;
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  });
+}
+
+function setupFocusListeners() {
+  if (document.__inline_focus_wired) return;
+  document.__inline_focus_wired = true;
+
+  window.addEventListener('focus-mission-input', (event) => {
+    const missionId = event.detail?.missionId;
+    if (!missionId) return;
+    focusInlineTarget(`[data-mission-input="${missionId}"]`);
+  });
+
+  window.addEventListener('focus-subtask-input', (event) => {
+    const subtaskId = event.detail?.subtaskId;
+    if (!subtaskId) return;
+    focusInlineTarget(`[data-subtask-input="${subtaskId}"]`);
+  });
+}
+
+function setupDetailsKeyboard() {
+  if (document.__details_keyboard_wired) return;
+  document.__details_keyboard_wired = true;
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || !event.shiftKey) return;
+
+    const target = event.target;
+    if (!target) return;
+    if (['INPUT', 'TEXTAREA'].includes(target.tagName)) return;
+    if (target.isContentEditable) return;
+
+    const details = target.closest('.ti-details');
+    if (!details) return;
+
+    const componentRoot = details.closest('[wire\\:id]');
+    if (!componentRoot) return;
+
+    const component = window.Livewire?.find(componentRoot.getAttribute('wire:id'));
+    if (!component) return;
+
+    const selectedId = details.getAttribute('data-selected-subtask');
+
+    event.preventDefault();
+
+    if (selectedId) {
+      component.call('openSubtaskForm', parseInt(selectedId, 10));
+    } else {
+      component.call('openSubtaskForm');
+    }
+  });
+}
+
 /* ────────────────────────────────────────────────────────────────── */
 /* BOOT: DOM pronto                                                   */
 /* ────────────────────────────────────────────────────────────────── */
@@ -244,6 +322,8 @@ function boot(root = document) {
   hydrateIcons();       // 1) troca <i> → <svg>
   setupDelegatedClick(); // 2) um único listener que sobrevive a trocas
   setupInputs(root);     // 3) inputs que criam itens dinamicamente
+  setupFocusListeners();
+  setupDetailsKeyboard();
 }
 
 /* DOMContentLoaded (primeiro carregamento) */

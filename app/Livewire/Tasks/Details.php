@@ -8,7 +8,9 @@ use App\Models\PomodoroSession;
 use App\Models\TaskList;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -37,6 +39,10 @@ class Details extends Component
 
     public string $newSubtaskTitle = '';
 
+    public ?int $newSubtaskParentId = null;
+
+    public ?string $newSubtaskParentLabel = null;
+
     public ?int $selectedSubtaskId = null;
 
     #[On('task-selected')]
@@ -50,6 +56,8 @@ class Details extends Component
             $this->showMoveListMenu = false;
             $this->showSubtaskForm = false;
             $this->newSubtaskTitle = '';
+            $this->newSubtaskParentId = null;
+            $this->newSubtaskParentLabel = null;
             $this->menuDate = null;
             $this->selectedSubtaskId = null;
 
@@ -84,6 +92,10 @@ class Details extends Component
         $timezone = $user->timezone ?? config('app.timezone');
 
         $this->missionId = $mission->id;
+        $checkpoints = collect($mission->checkpoints ?? []);
+
+        $subtasks = $this->buildCheckpointTree($checkpoints);
+
         $this->mission = [
             'id' => $mission->id,
             'title' => $mission->title,
@@ -102,14 +114,9 @@ class Details extends Component
             'checkpoints_total' => $mission->checkpoints_count ?? 0,
             'checkpoints_done' => $mission->checkpoints_done_count ?? 0,
             'attachments_count' => $mission->attachments_count ?? 0,
-            'subtasks' => ($mission->checkpoints ?? collect())->map(fn ($checkpoint) => [
-                'id' => $checkpoint->id,
-                'title' => $checkpoint->title,
-                'is_done' => (bool) $checkpoint->is_done,
-                'position' => $checkpoint->position,
-                'xp_reward' => $checkpoint->xp_reward,
-                'children' => [],
-            ])->values()->toArray(),
+            'subtasks' => $subtasks,
+            'active_subtask' => null,
+            'active_subtask_path' => [],
         ];
 
         $labels = $mission->labels_json ?? [];
@@ -128,16 +135,9 @@ class Details extends Component
         $this->showMoveListMenu = false;
         $this->showSubtaskForm = false;
         $this->newSubtaskTitle = '';
-        $this->selectedSubtaskId = $checkpointId;
-
-        if ($checkpointId !== null) {
-            $hasSubtask = collect($this->mission['subtasks'] ?? [])
-                ->contains(fn ($subtask) => ($subtask['id'] ?? null) === $checkpointId);
-
-            if (! $hasSubtask) {
-                $this->selectedSubtaskId = null;
-            }
-        }
+        $this->newSubtaskParentId = null;
+        $this->newSubtaskParentLabel = null;
+        $this->applyActiveSubtaskContext($checkpointId);
 
         $this->availableLists = TaskList::query()
             ->where('user_id', $user->id)
@@ -180,7 +180,11 @@ class Details extends Component
             return;
         }
 
-        $this->selectedSubtaskId = $checkpointId;
+        if (! empty($this->mission)) {
+            $this->applyActiveSubtaskContext($checkpointId);
+        } else {
+            $this->selectedSubtaskId = $checkpointId;
+        }
     }
 
     public function toggleCheckpoint(int $checkpointId): void
@@ -476,12 +480,15 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
-    public function openSubtaskForm(): void
+    public function openSubtaskForm(?int $parentId = null): void
     {
         if (! $this->missionId) {
             return;
         }
 
+        $this->newSubtaskParentId = $parentId;
+        $this->newSubtaskParentLabel = $parentId ? $this->resolveSubtaskTitle($parentId) : null;
+        $this->newSubtaskTitle = '';
         $this->showSubtaskForm = true;
     }
 
@@ -489,6 +496,8 @@ class Details extends Component
     {
         $this->showSubtaskForm = false;
         $this->newSubtaskTitle = '';
+        $this->newSubtaskParentId = null;
+        $this->newSubtaskParentLabel = null;
     }
 
     public function saveSubtask(): void
@@ -511,15 +520,23 @@ class Details extends Component
             return;
         }
 
-        Checkpoint::create([
+        $payload = [
             'mission_id' => $mission->id,
             'title' => $title,
-            'position' => $this->nextCheckpointPosition($mission->id),
+            'position' => $this->nextCheckpointPosition($mission->id, $this->newSubtaskParentId),
             'is_done' => false,
-        ]);
+        ];
+
+        if ($column = $this->checkpointParentColumn()) {
+            $payload[$column] = $this->newSubtaskParentId;
+        }
+
+        Checkpoint::create($payload);
 
         $this->newSubtaskTitle = '';
         $this->showSubtaskForm = false;
+        $this->newSubtaskParentId = null;
+        $this->newSubtaskParentLabel = null;
 
         $this->loadMission($mission->id);
         $this->dispatch('tasks-updated');
@@ -555,14 +572,10 @@ class Details extends Component
         $clone->updated_at = now();
         $clone->save();
 
-        foreach ($mission->checkpoints as $checkpoint) {
-            Checkpoint::create([
-                'mission_id' => $clone->id,
-                'title' => $checkpoint->title,
-                'position' => $checkpoint->position,
-                'is_done' => false,
-                'xp_reward' => $checkpoint->xp_reward,
-            ]);
+        $tree = $this->buildCheckpointTree(collect($mission->checkpoints ?? []));
+
+        if ($tree !== []) {
+            $this->replicateCheckpointBranch($tree, $clone->id, null);
         }
 
         $this->dispatch('tasks-updated');
@@ -642,6 +655,194 @@ class Details extends Component
             'sessionId' => $session->id,
             'missionId' => $mission->id,
         ]);
+    }
+
+    /**
+     * Monta uma árvore de subtarefas respeitando a ordem e o limite de profundidade.
+     */
+    private function buildCheckpointTree(Collection $checkpoints): array
+    {
+        if ($checkpoints->isEmpty()) {
+            return [];
+        }
+
+        $parentColumn = $this->checkpointParentColumn();
+
+        $grouped = $checkpoints->groupBy(function ($checkpoint) use ($parentColumn) {
+            $parentId = $parentColumn ? ($checkpoint->{$parentColumn} ?? null) : null;
+
+            return $parentId === null ? '__root__' : (string) $parentId;
+        });
+
+        return $this->buildCheckpointBranch($grouped, null, 0);
+    }
+
+    private function checkpointParentColumn(): ?string
+    {
+        static $parentColumn;
+
+        if ($parentColumn === null) {
+            if (Schema::hasColumn('checkpoints', 'parent_id')) {
+                $parentColumn = 'parent_id';
+            } elseif (Schema::hasColumn('checkpoints', 'parent_checkpoint_id')) {
+                $parentColumn = 'parent_checkpoint_id';
+            } else {
+                $parentColumn = '';
+            }
+        }
+
+        return $parentColumn !== '' ? $parentColumn : null;
+    }
+
+    private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth): array
+    {
+        $key = $parentId === null ? '__root__' : (string) $parentId;
+
+        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth) {
+            return [
+                'id' => $checkpoint->id,
+                'title' => $checkpoint->title,
+                'is_done' => (bool) $checkpoint->is_done,
+                'position' => $checkpoint->position,
+                'xp_reward' => $checkpoint->xp_reward,
+                'children' => $depth >= 6
+                    ? []
+                    : $this->buildCheckpointBranch($grouped, $checkpoint->id, $depth + 1),
+            ];
+        })->values()->toArray();
+    }
+
+    private function applyActiveSubtaskContext(?int $checkpointId): void
+    {
+        if (! is_array($this->mission)) {
+            $this->selectedSubtaskId = null;
+
+            return;
+        }
+
+        if ($checkpointId === null) {
+            $this->selectedSubtaskId = null;
+            $this->mission['active_subtask'] = null;
+            $this->mission['active_subtask_path'] = [];
+            $this->mission['parent_title'] = null;
+
+            return;
+        }
+
+        $trail = $this->findSubtaskTrail($this->mission['subtasks'] ?? [], $checkpointId);
+
+        if ($trail === null) {
+            $this->selectedSubtaskId = null;
+            $this->mission['active_subtask'] = null;
+            $this->mission['active_subtask_path'] = [];
+            $this->mission['parent_title'] = null;
+
+            return;
+        }
+
+        $this->selectedSubtaskId = $checkpointId;
+        $this->mission['active_subtask'] = $trail['node'];
+        $this->mission['active_subtask_path'] = $trail['ancestors'];
+        $this->mission['parent_title'] = $this->formatParentTitle($this->mission['title'] ?? '', $trail['ancestors']);
+    }
+
+    private function findSubtaskTrail(array $nodes, int $checkpointId, array $trail = []): ?array
+    {
+        foreach ($nodes as $node) {
+            $currentTrail = [...$trail, $node];
+
+            if (($node['id'] ?? null) === $checkpointId) {
+                return [
+                    'node' => $node,
+                    'ancestors' => $trail,
+                ];
+            }
+
+            if (! empty($node['children'])) {
+                $found = $this->findSubtaskTrail($node['children'], $checkpointId, $currentTrail);
+
+                if ($found !== null) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function findSubtaskInTree(array $nodes, int $checkpointId): ?array
+    {
+        $trail = $this->findSubtaskTrail($nodes, $checkpointId);
+
+        return $trail['node'] ?? null;
+    }
+
+    private function resolveSubtaskTitle(int $checkpointId): ?string
+    {
+        if (! is_array($this->mission)) {
+            return null;
+        }
+
+        $node = $this->findSubtaskInTree($this->mission['subtasks'] ?? [], $checkpointId);
+
+        if (! $node) {
+            return null;
+        }
+
+        $title = trim((string) ($node['title'] ?? ''));
+
+        return $title !== '' ? $title : 'Sem título';
+    }
+
+    private function formatParentTitle(?string $missionTitle, array $ancestors): ?string
+    {
+        $segments = [];
+
+        $missionTitle = trim((string) $missionTitle);
+        if ($missionTitle !== '') {
+            $segments[] = $missionTitle;
+        }
+
+        foreach ($ancestors as $node) {
+            $title = trim((string) ($node['title'] ?? ''));
+
+            if ($title !== '') {
+                $segments[] = $title;
+            }
+        }
+
+        if ($segments === []) {
+            return null;
+        }
+
+        return implode(' › ', $segments);
+    }
+
+    private function replicateCheckpointBranch(array $nodes, int $missionId, ?int $parentId, int $depth = 0): void
+    {
+        if ($depth >= 7) {
+            return;
+        }
+
+        foreach ($nodes as $node) {
+            $payload = [
+                'mission_id' => $missionId,
+                'title' => trim((string) ($node['title'] ?? '')),
+                'position' => $node['position'] ?? 0,
+                'is_done' => false,
+                'xp_reward' => $node['xp_reward'] ?? null,
+            ];
+
+            if ($column = $this->checkpointParentColumn()) {
+                $payload[$column] = $parentId;
+            }
+
+            $checkpoint = Checkpoint::create($payload);
+
+            if (! empty($node['children'])) {
+                $this->replicateCheckpointBranch($node['children'], $missionId, $checkpoint->id, $depth + 1);
+            }
+        }
     }
 
     private function buildCalendar(): array
@@ -750,11 +951,22 @@ class Details extends Component
             ->max('position') + 1;
     }
 
-    private function nextCheckpointPosition(int $missionId): int
+    private function nextCheckpointPosition(int $missionId, ?int $parentId = null): int
     {
-        return (int) Checkpoint::query()
-            ->where('mission_id', $missionId)
-            ->max('position') + 1;
+        $query = Checkpoint::query()
+            ->where('mission_id', $missionId);
+
+        if ($column = $this->checkpointParentColumn()) {
+            if ($parentId === null) {
+                $query->whereNull($column);
+            } else {
+                $query->where($column, $parentId);
+            }
+        }
+
+        $position = (int) $query->max('position');
+
+        return $position + 1;
     }
 
     private function duplicatedTitle(?string $title): string

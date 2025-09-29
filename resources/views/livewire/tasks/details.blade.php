@@ -1,14 +1,21 @@
-<aside @class([
-    'ti-details',
-    'is-done' => ($mission['status'] ?? null) === 'done',
-])>
+<aside
+    @class([
+        'ti-details',
+        'is-done' => ($mission['status'] ?? null) === 'done',
+    ])
+    data-selected-subtask="{{ $selectedSubtaskId ?? '' }}"
+    data-mission-id="{{ $mission ? ($mission['id'] ?? '') : '' }}"
+>
     @if ($mission)
         @if ($showDatePicker ?? false)
             <div class="ti-date-overlay" wire:click="closeDatePicker"></div>
         @endif
 
+        <div class="ti-details-wrapper">
+
         <!-- Top bar -->
-        <div class="ti-topbar">
+        <div class="ti-details-top">
+            <div class="ti-topbar">
             <div class="ti-topbar-left">
                 <button
                     class="ti-check {{ ($mission['status'] ?? null) === 'done' ? 'is-active' : '' }}"
@@ -131,14 +138,23 @@
                     </div>
                 </div>
             </div>
+            </div>
         </div>
+
+        <div class="ti-details-scroll">
 
         <div class="ti-divider"></div>
 
         <!-- Title + actions -->
         <div class="ti-header">
             <div class="ti-title-block">
-                @if (!empty($mission['parent_title']))
+                @php
+                    $activeSubtask = $mission['active_subtask'] ?? null;
+                @endphp
+                @if (!empty($activeSubtask))
+                    <span class="ti-parent" title="Tarefa pai">{{ $mission['parent_title'] ?? ($mission['title'] ?? '') }}</span>
+                    <h1 class="ti-title" title="{{ $activeSubtask['title'] ?? '' }}">{{ ($activeSubtask['title'] ?? '') !== '' ? $activeSubtask['title'] : 'Sem título' }}</h1>
+                @elseif (!empty($mission['parent_title']))
                     <span class="ti-parent" title="Tarefa pai">{{ $mission['parent_title'] ?? '' }}</span>
                     <h1 class="ti-title" title="{{ $mission['title'] }}">{{ $mission['title'] ?: 'Sem título' }}</h1>
                 @else
@@ -210,6 +226,9 @@
 
             @if ($showSubtaskForm)
                 <form class="ti-subtask-form" wire:submit.prevent="saveSubtask">
+                    @if ($newSubtaskParentLabel)
+                        <div class="ti-subtask-context">Dentro de <span>{{ $newSubtaskParentLabel }}</span></div>
+                    @endif
                     <input
                         type="text"
                         class="ti-subtask-input"
@@ -271,6 +290,8 @@
                 </button>
             </div>
         </footer>
+        </div>
+    </div>
     @else
         <div class="ti-empty">
             <h3>Selecione uma tarefa</h3>
