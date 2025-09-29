@@ -681,6 +681,8 @@ class MainPanel extends Component
                 ->find($this->currentListId);
 
             if ($activeList) {
+                $this->attachCheckpointTree($activeList->missions);
+
                 $lists = collect([$activeList]);
                 $unlistedMissions = collect();
                 $totalCount = $activeList->missions->count();

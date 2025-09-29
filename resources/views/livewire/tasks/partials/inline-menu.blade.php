@@ -1,4 +1,4 @@
-<div class="ti-inline-menu" data-menu>
+<div class="ti-inline-menu" data-menu wire:click.stop>
     <button class="icon ghost" type="button" title="Mais opções" data-menu-trigger>
         <i data-lucide="more-horizontal"></i>
     </button>
