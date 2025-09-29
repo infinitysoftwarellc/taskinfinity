@@ -67,6 +67,7 @@ class Details extends Component
             'description' => $mission->description,
             'status' => $mission->status,
             'list' => $mission->list?->name,
+            'parent_title' => null,
             'created_at' => $mission->created_at?->copy()->setTimezone($timezone),
             'updated_at' => $mission->updated_at?->copy()->setTimezone($timezone),
             'due_at' => $mission->due_at?->copy()->setTimezone($timezone),
