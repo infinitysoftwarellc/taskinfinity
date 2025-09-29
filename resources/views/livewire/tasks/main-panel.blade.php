@@ -75,7 +75,7 @@
                             >
                                 <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
                                 <div class="title-line"><span class="title">{{ $mission->title }}</span></div>
-                                <div class="meta">Sem lista</div>
+                                {{-- Ocultamos o rótulo da lista para evitar repetição visual --}}
                             </div>
                         @endforeach
                     </div>
@@ -108,7 +108,7 @@
                             >
                                 <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
                                 <div class="title-line"><span class="title">{{ $mission->title }}</span></div>
-                                <div class="meta">{{ $list->name }}</div>
+                                {{-- Ocultamos o rótulo da lista para evitar repetição visual --}}
                             </div>
                         @empty
                             <div class="task ghost">
