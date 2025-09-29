@@ -1,20 +1,4 @@
-// ---- IMPORTS PADRÃO DO SEU PROJETO (mantenha os que já existem) ----
-// import './bootstrap'
-
-// ---- LUCIDE (ESM via NPM) ----
-import { createIcons, icons } from 'lucide';
-
-/* ────────────────────────────────────────────────────────────────── */
-/* UTIL: hidratar ícones (chamar sempre que o DOM sofrer mudanças)   */
-/* ────────────────────────────────────────────────────────────────── */
-function hydrateIcons() {
-  try {
-    // IMPORTANTE: no ESM, passe { icons }, senão não renderiza
-    createIcons({ icons });
-  } catch (e) {
-    console.error('Falha ao renderizar Lucide:', e);
-  }
-}
+// ---- IMPORTS PADRÃO DO SEU PROJETO (mantenha os que 
 
 /* ────────────────────────────────────────────────────────────────── */
 /* UTIL: alternar seção com aria-expanded + display none             */
