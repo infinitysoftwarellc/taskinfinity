@@ -72,14 +72,22 @@ function onGenericToggles(target) {
     return true;
   }
 
-  // toggle workspace
-  const btnWs = target.closest('[data-click="toggle-workspace"], [data-toggle="workspace"]');
+  // toggle workspace — só para <button data-toggle="workspace">
+  const btnWs = target.closest('button[data-click="toggle-workspace"], button[data-toggle="workspace"]');
   if (btnWs) {
-    if (target.closest('.workspace-add')) return false;
-    const wsContent =
-      document.querySelector(btnWs.dataset.target) ||
-      document.querySelector('.workspace-content');
+    if (target.closest('.workspace-add')) return true; // não colapsar ao clicar no “+”
+
+    const container = btnWs.closest('.workspace');
+    let wsContent = container?.nextElementSibling;
+    if (!wsContent || !wsContent.classList?.contains('workspace-content')) {
+      wsContent =
+        document.querySelector(btnWs.dataset.target) ||
+        document.querySelector('.workspace-content');
+    }
+
     toggleSection(btnWs, wsContent);
+    const state = btnWs.getAttribute('aria-expanded') ?? 'false';
+    if (container) container.setAttribute('aria-expanded', state);
     return true;
   }
 

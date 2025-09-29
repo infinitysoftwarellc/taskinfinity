@@ -216,6 +216,10 @@ body {
     color: var(--text);
     border-color: rgba(122, 162, 255, 0.4);
 }
+.workspace-add i,
+.workspace-add svg {
+    pointer-events: none;
+}
 
 .workspace-tree {
     margin: 0;

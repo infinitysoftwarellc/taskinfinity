@@ -28,8 +28,13 @@
 
     <div class="sep"></div>
 
-    <div class="workspace" aria-expanded="{{ $workspaceExpanded ? 'true' : 'false' }}" data-toggle="workspace">
-        <button class="workspace-toggle" type="button">
+    <div class="workspace" aria-expanded="{{ $workspaceExpanded ? 'true' : 'false' }}">
+        <button
+            class="workspace-toggle"
+            type="button"
+            data-toggle="workspace"
+            aria-expanded="{{ $workspaceExpanded ? 'true' : 'false' }}"
+        >
             <i class="chev" data-lucide="chevron-down"></i>
             <span class="title">{{ $workspaceTitle ?? 'Workspace' }}</span>
             @if ($workspaceBadge)
@@ -40,7 +45,8 @@
             class="workspace-add"
             type="button"
             title="Nova lista"
-            wire:click.stop="openCreateModal('list')"
+            wire:click="openCreateModal('list')"
+            onclick="event.stopPropagation()"
         >
             <i data-lucide="plus"></i>
         </button>

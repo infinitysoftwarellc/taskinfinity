@@ -563,6 +563,10 @@ class Sidebar extends Component
             return;
         }
 
+        if ($this->newListFolder === '' || $this->newListFolder === 0) {
+            $this->newListFolder = null;
+        }
+
         $this->newListName = trim($this->newListName);
         $defaultView = array_key_first($this->viewTypes) ?? 'lista';
 
