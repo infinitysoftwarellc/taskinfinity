@@ -40,7 +40,7 @@
             class="workspace-add"
             type="button"
             title="Nova lista"
-            wire:click="openCreateModal('list')"
+            wire:click.stop="openCreateModal('list')"
         >
             <i data-lucide="plus"></i>
         </button>
@@ -69,7 +69,11 @@
             @endif
 
             <li>
-                <button class="nav-item nav-action" type="button" wire:click.prevent="openCreateModal('list')">
+                <button
+                    class="nav-item nav-action"
+                    type="button"
+                    wire:click.prevent.stop="openCreateModal('list')"
+                >
                     <i class="icon" data-lucide="plus"></i>
                     <span class="label">Nova lista ou pasta</span>
                 </button>
