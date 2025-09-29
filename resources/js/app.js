@@ -201,18 +201,15 @@ document.addEventListener('DOMContentLoaded', () => boot(document));
 
 /* Livewire v3: re-hidratar ícones e re-wire inputs após navegação/morph */
 document.addEventListener('livewire:init', () => {
-  hydrateIcons();
-  setupInputs(document);
+  boot(document);
 
   document.addEventListener('livewire:navigated', () => {
-    hydrateIcons();
-    setupInputs(document);
+    boot(document);
   });
 
   if (window.Livewire?.hook) {
-    window.Livewire.hook('message.processed', () => {
-      hydrateIcons();
-      setupInputs(document);
+    window.Livewire.hook('message.processed', (_message, component) => {
+      boot(component?.el ?? document);
     });
   }
 });

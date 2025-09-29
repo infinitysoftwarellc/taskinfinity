@@ -5,19 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TaskList extends Model
+class Folder extends Model
 {
     use HasFactory;
-
-    protected $table = 'lists';
 
     protected $fillable = [
         'user_id',
         'name',
-        'view_type',
         'color',
-        'icon',
-        'folder_id',
         'position',
         'is_pinned',
         'archived_at',
@@ -33,13 +28,8 @@ class TaskList extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function missions()
+    public function lists()
     {
-        return $this->hasMany(Mission::class, 'list_id');
-    }
-
-    public function folder()
-    {
-        return $this->belongsTo(Folder::class);
+        return $this->hasMany(TaskList::class);
     }
 }

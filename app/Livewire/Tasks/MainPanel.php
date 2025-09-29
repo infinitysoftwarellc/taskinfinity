@@ -86,8 +86,10 @@ class MainPanel extends Component
         }
 
         if ($listId !== null) {
-            $belongsToUser = TaskList::where('id', $listId)
+            $belongsToUser = TaskList::query()
+                ->where('id', $listId)
                 ->where('user_id', $user->id)
+                ->whereNull('archived_at')
                 ->exists();
 
             if (! $belongsToUser) {
@@ -180,6 +182,8 @@ class MainPanel extends Component
                 },
             ])
             ->where('user_id', $user->id)
+            ->whereNull('archived_at')
+            ->orderByDesc('is_pinned')
             ->orderBy('position')
             ->orderBy('name')
             ->get();
@@ -222,6 +226,7 @@ class MainPanel extends Component
                     },
                 ])
                 ->where('user_id', $user->id)
+                ->whereNull('archived_at')
                 ->find($this->currentListId);
 
             if ($activeList) {
@@ -241,6 +246,7 @@ class MainPanel extends Component
 
         $availableLists = TaskList::query()
             ->where('user_id', $user->id)
+            ->whereNull('archived_at')
             ->orderBy('name')
             ->get();
 

@@ -173,6 +173,7 @@ body {
     width: 100%;
     border-radius: 10px;
     transition: background 0.2s ease;
+    justify-content: space-between;
 }
 .workspace:hover {
     background: var(--hover);
@@ -197,6 +198,329 @@ body {
 }
 .workspace[aria-expanded="false"] .chev {
     transform: rotate(-90deg);
+}
+.workspace-add {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.workspace-add:hover {
+    background: rgba(122, 162, 255, 0.12);
+    color: var(--text);
+    border-color: rgba(122, 162, 255, 0.4);
+}
+
+.workspace-tree {
+    margin: 0;
+    padding: 0;
+}
+.workspace-item {
+    list-style: none;
+    margin-bottom: 4px;
+    position: relative;
+}
+.workspace-item.is-active > .workspace-row .nav-list-item {
+    box-shadow: inset 0 0 0 1px rgba(122, 162, 255, 0.4);
+}
+.workspace-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.workspace-row .nav-item {
+    flex: 1;
+    min-height: 38px;
+}
+.nav-folder {
+    cursor: default;
+    background: rgba(255, 255, 255, 0.02);
+}
+.nav-folder .color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.nav-folder .count {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+.nav-list-item .color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.nav-list-item .label {
+    flex: 1;
+}
+.workspace-children {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    border-left: 1px dashed rgba(255, 255, 255, 0.1);
+    list-style: none;
+}
+.workspace-children .workspace-item {
+    margin-bottom: 4px;
+}
+
+.workspace-empty {
+    margin: 6px 0 0 26px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.ti-list-actions {
+    position: relative;
+    opacity: 0;
+    transform: translateX(4px);
+    transition: opacity 0.15s ease, transform 0.2s ease;
+    pointer-events: none;
+}
+.workspace-item:hover > .workspace-row .ti-list-actions,
+.workspace-item:focus-within > .workspace-row .ti-list-actions {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+.ti-list-menu-button {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+.ti-list-menu-button:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+.ti-dropdown {
+    position: absolute;
+    top: 36px;
+    right: 0;
+    min-width: 160px;
+    background: var(--panel-2);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 20;
+}
+.ti-dropdown button {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.ti-dropdown button:hover {
+    background: rgba(122, 162, 255, 0.12);
+}
+.ti-dropdown button.is-danger {
+    color: #ff8a65;
+}
+.ti-dropdown button.is-danger:hover {
+    background: rgba(255, 138, 101, 0.12);
+}
+
+.ti-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 10, 16, 0.72);
+    backdrop-filter: blur(6px);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    z-index: 100;
+}
+.ti-modal {
+    width: min(520px, 100%);
+    background: var(--panel);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 26px 60px -32px rgba(0, 0, 0, 0.9);
+    outline: none;
+}
+.ti-modal-form {
+    display: flex;
+    flex-direction: column;
+}
+.ti-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 24px 16px;
+}
+.ti-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+.ti-modal-header p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+.ti-modal-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+.ti-modal-close:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+.ti-modal-body {
+    padding: 0 24px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.ti-modal-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ti-modal-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+}
+.ti-modal-control {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(11, 13, 18, 0.78);
+    color: var(--text);
+    font: inherit;
+}
+.ti-modal-control:focus {
+    outline: none;
+    border-color: rgba(122, 162, 255, 0.6);
+    box-shadow: 0 0 0 1px rgba(122, 162, 255, 0.35);
+}
+.ti-modal-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted-2);
+}
+.ti-modal-error {
+    margin: 0;
+    font-size: 12px;
+    color: #ff8a65;
+}
+.ti-type-toggle {
+    display: flex;
+    gap: 8px;
+}
+.ti-type-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(11, 13, 18, 0.78);
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.ti-type-option:hover {
+    color: var(--text);
+}
+.ti-type-option.is-active {
+    border-color: rgba(122, 162, 255, 0.6);
+    color: var(--text);
+    background: rgba(122, 162, 255, 0.15);
+}
+.ti-type-option .lucide {
+    width: 16px;
+    height: 16px;
+}
+.ti-color-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+.ti-color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: var(--swatch-color);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.ti-color-swatch:hover {
+    transform: scale(1.05);
+}
+.ti-color-swatch.is-selected {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px rgba(122, 162, 255, 0.4);
+}
+.ti-color-custom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+}
+.ti-color-input {
+    width: 0;
+    height: 0;
+    border: none;
+    padding: 0;
+    appearance: none;
+    opacity: 0;
+}
+.ti-color-preview {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--swatch-color, #7aa2ff);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+.ti-color-label {
+    font-size: 12px;
+    color: var(--muted);
+}
+.ti-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px 24px;
+    justify-content: flex-end;
 }
 .workspace .title {
     font-weight: 600;
