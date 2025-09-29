@@ -1,4 +1,20 @@
-// ---- IMPORTS PADRÃO DO SEU PROJETO (mantenha os que 
+import { createIcons, icons } from 'lucide';
+
+// ---- IMPORTS PADRÃO DO SEU PROJETO (mantenha os que precisar)
+
+function hydrateIcons(root = document) {
+  createIcons({
+    icons,
+    attrs: {
+      'stroke-width': 1.6,
+      width: 18,
+      height: 18,
+      focusable: 'false',
+      'aria-hidden': 'true',
+    },
+    root,
+  });
+}
 
 /* ────────────────────────────────────────────────────────────────── */
 /* UTIL: alternar seção com aria-expanded + display none             */
