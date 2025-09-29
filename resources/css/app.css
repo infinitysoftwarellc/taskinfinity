@@ -798,7 +798,8 @@ body {
   border-radius: var(--radius);
   color: var(--text);
   box-shadow: var(--shadow);
-  overflow:hidden;
+  overflow:visible;
+  position:relative;
   min-height: 420px;
 }
 
@@ -809,8 +810,88 @@ body {
   padding:6px 10px; border-radius:10px;
   background: #121522; border:1px solid #1e2230; color:#cdd7ff;
 }
+.ti-topbar .pill.is-active{border-color:var(--blue); box-shadow:0 0 0 1px rgba(122,162,255,.35); color:#fff;}
 .ti-topbar .pill i[data-lucide]{width:16px;height:16px;stroke-width:1.8}
 .ti-topbar .icon.ghost{opacity:.9}
+
+.ti-date-picker-container{position:relative;}
+.ti-date-popover{
+  position:absolute;
+  top:calc(100% + 12px);
+  left:0;
+  width:248px;
+  padding:16px 16px 12px;
+  border-radius:16px;
+  background:var(--panel-2);
+  border:1px solid rgba(124,139,210,.25);
+  box-shadow:0 22px 60px rgba(10,12,18,.6);
+  z-index:50;
+}
+.ti-date-popover::before{
+  content:"";
+  position:absolute;
+  top:-7px;
+  left:22px;
+  width:14px;
+  height:14px;
+  background:var(--panel-2);
+  border-left:1px solid rgba(124,139,210,.25);
+  border-top:1px solid rgba(124,139,210,.25);
+  transform:rotate(45deg);
+}
+.ti-date-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.ti-date-header .label{font:600 14px/1.3 'Inter',ui-sans-serif;color:#f1f4ff;text-transform:capitalize;}
+.ti-date-header .nav{
+  display:inline-grid;place-items:center;width:28px;height:28px;
+  border-radius:8px;border:1px solid rgba(124,139,210,.2);
+  background:#111425;color:#cbd3ff;
+  transition:.15s ease;
+}
+.ti-date-header .nav:hover{background:#18203a;border-color:rgba(124,139,210,.4);}
+.ti-date-header .nav i[data-lucide]{width:16px;height:16px;stroke-width:1.8;}
+
+.ti-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.ti-date-grid .weekday{font:600 11px/1.2 'Inter',ui-sans-serif;text-transform:uppercase;color:#7b82a6;text-align:center;padding-bottom:4px;letter-spacing:.5px;}
+.ti-date-grid .day{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:34px;border-radius:9px;
+  border:1px solid transparent;
+  background:transparent;color:#dbe2ff;
+  font:600 13px/1 'Inter',ui-sans-serif;
+  cursor:pointer;transition:.15s ease;
+}
+.ti-date-grid .day:hover{background:rgba(122,162,255,.12);border-color:rgba(122,162,255,.2);}
+.ti-date-grid .day.is-muted{color:#6f7898;}
+.ti-date-grid .day.is-today:not(.is-selected){border-color:rgba(122,162,255,.45);box-shadow:0 0 0 1px rgba(122,162,255,.15);}
+.ti-date-grid .day.is-selected{
+  background:linear-gradient(135deg, rgba(122,162,255,.9), rgba(98,139,255,1));
+  border-color:rgba(122,162,255,.8);
+  color:#0f1116;
+  box-shadow:0 12px 24px rgba(96,132,255,.35);
+}
+.ti-date-grid .day.is-selected.is-today{border-color:rgba(0,0,0,.0);}
+.ti-date-footer{display:flex;justify-content:flex-end;margin-top:14px;}
+.ti-date-footer .link{
+  background:transparent;
+  border:none;
+  color:#8fa2ff;
+  font:600 12px/1.2 'Inter',ui-sans-serif;
+  cursor:pointer;
+  padding:6px 8px;
+  border-radius:8px;
+  transition:.15s ease;
+}
+.ti-date-footer .link:hover{background:rgba(122,162,255,.12);color:#b9c7ff;}
+.ti-date-footer .link.disabled{opacity:.45;cursor:not-allowed;color:#6f7898;background:transparent;box-shadow:none;}
+.ti-date-footer .link.disabled:hover{background:transparent;color:#6f7898;}
+
+.ti-date-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(10,12,18,.35);
+  backdrop-filter:blur(1px);
+  z-index:40;
+}
 
 /* header */
 .ti-header{display:flex; align-items:center; justify-content:space-between; padding:6px 14px 12px;}

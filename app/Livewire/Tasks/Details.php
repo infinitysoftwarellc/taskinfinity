@@ -3,7 +3,10 @@
 namespace App\Livewire\Tasks;
 
 use App\Models\Mission;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -14,6 +17,12 @@ class Details extends Component
     public ?array $mission = null;
 
     public array $missionTags = [];
+
+    public bool $showDatePicker = false;
+
+    public ?string $pickerCursorDate = null;
+
+    public ?string $pickerSelectedDate = null;
 
     #[On('task-selected')]
     public function loadMission(?int $missionId = null): void
@@ -76,6 +85,12 @@ class Details extends Component
         } else {
             $this->missionTags = [];
         }
+
+        $this->pickerSelectedDate = $mission->due_at?->copy()->setTimezone($timezone)?->format('Y-m-d');
+        $this->pickerCursorDate = $this->pickerSelectedDate
+            ? CarbonImmutable::createFromFormat('Y-m-d', $this->pickerSelectedDate, $timezone)->startOfMonth()->format('Y-m-d')
+            : CarbonImmutable::now($timezone)->startOfMonth()->format('Y-m-d');
+        $this->showDatePicker = false;
     }
 
     #[On('tasks-updated')]
@@ -91,6 +106,7 @@ class Details extends Component
         return view('livewire.tasks.details', [
             'mission' => $this->mission,
             'missionTags' => $this->missionTags,
+            'pickerCalendar' => $this->mission ? $this->buildCalendar() : null,
         ]);
     }
 
@@ -102,5 +118,188 @@ class Details extends Component
             1 => 'Baixa',
             default => 'Nenhuma',
         };
+    }
+
+    public function toggleDatePicker(): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $this->showDatePicker = ! $this->showDatePicker;
+
+        if ($this->showDatePicker) {
+            $this->resolveCursor($this->userTimezone());
+        }
+    }
+
+    public function closeDatePicker(): void
+    {
+        $this->showDatePicker = false;
+    }
+
+    public function movePicker(int $offset): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $timezone = $this->userTimezone();
+        $cursor = $this->resolveCursor($timezone)->addMonths($offset);
+        $this->pickerCursorDate = $cursor->startOfMonth()->format('Y-m-d');
+    }
+
+    public function selectDueDate(?string $date): void
+    {
+        if (! $this->missionId || ! $date) {
+            return;
+        }
+
+        $timezone = $this->userTimezone();
+
+        try {
+            $selectedLocal = CarbonImmutable::createFromFormat('Y-m-d', $date, $timezone);
+        } catch (\Throwable) {
+            return;
+        }
+
+        $mission = Mission::query()
+            ->where('user_id', Auth::id())
+            ->find($this->missionId);
+
+        if (! $mission) {
+            return;
+        }
+
+        $mission->due_at = $selectedLocal->setTimezone(config('app.timezone'));
+        $mission->save();
+
+        $this->pickerSelectedDate = $selectedLocal->format('Y-m-d');
+        $this->pickerCursorDate = $selectedLocal->startOfMonth()->format('Y-m-d');
+        $this->closeDatePicker();
+
+        $this->loadMission($mission->id);
+        $this->dispatch('tasks-updated');
+    }
+
+    public function clearDueDate(): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $mission = Mission::query()
+            ->where('user_id', Auth::id())
+            ->find($this->missionId);
+
+        if (! $mission) {
+            return;
+        }
+
+        $mission->due_at = null;
+        $mission->save();
+
+        $timezone = $this->userTimezone();
+        $this->pickerSelectedDate = null;
+        $this->pickerCursorDate = CarbonImmutable::now($timezone)->startOfMonth()->format('Y-m-d');
+
+        $this->closeDatePicker();
+
+        $this->loadMission($mission->id);
+        $this->dispatch('tasks-updated');
+    }
+
+    private function buildCalendar(): array
+    {
+        $timezone = $this->userTimezone();
+        $cursor = $this->resolveCursor($timezone);
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+        $selected = null;
+
+        if ($this->pickerSelectedDate) {
+            try {
+                $selected = CarbonImmutable::createFromFormat('Y-m-d', $this->pickerSelectedDate, $timezone);
+            } catch (\Throwable) {
+                $selected = null;
+            }
+        }
+
+        $start = $cursor->startOfWeek(CarbonInterface::MONDAY);
+        $end = $cursor->endOfMonth()->endOfWeek(CarbonInterface::SUNDAY);
+
+        $date = $start;
+        $weeks = [];
+        $week = [];
+
+        while ($date <= $end) {
+            $week[] = [
+                'date' => $date->format('Y-m-d'),
+                'label' => $date->format('j'),
+                'isCurrentMonth' => $date->month === $cursor->month,
+                'isToday' => $date->isSameDay($today),
+                'isSelected' => $selected ? $date->isSameDay($selected) : false,
+            ];
+
+            if (count($week) === 7) {
+                $weeks[] = $week;
+                $week = [];
+            }
+
+            $date = $date->addDay();
+        }
+
+        if ($week !== []) {
+            $weeks[] = $week;
+        }
+
+        $label = $cursor
+            ->locale(app()->getLocale() ?? 'en')
+            ->translatedFormat('F Y');
+
+        return [
+            'label' => Str::title($label),
+            'weeks' => $weeks,
+            'weekDays' => $this->weekDays(),
+            'hasSelected' => (bool) $this->pickerSelectedDate,
+        ];
+    }
+
+    private function resolveCursor(string $timezone): CarbonImmutable
+    {
+        if ($this->pickerCursorDate) {
+            try {
+                return CarbonImmutable::createFromFormat('Y-m-d', $this->pickerCursorDate, $timezone)->startOfMonth();
+            } catch (\Throwable) {
+                // fallback below
+            }
+        }
+
+        if ($this->pickerSelectedDate) {
+            try {
+                $cursor = CarbonImmutable::createFromFormat('Y-m-d', $this->pickerSelectedDate, $timezone)->startOfMonth();
+                $this->pickerCursorDate = $cursor->format('Y-m-d');
+
+                return $cursor;
+            } catch (\Throwable) {
+                // fallback below
+            }
+        }
+
+        $cursor = CarbonImmutable::now($timezone)->startOfMonth();
+        $this->pickerCursorDate = $cursor->format('Y-m-d');
+
+        return $cursor;
+    }
+
+    private function userTimezone(): string
+    {
+        $user = Auth::user();
+
+        return $user?->timezone ?? config('app.timezone');
+    }
+
+    private function weekDays(): array
+    {
+        return ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
     }
 }

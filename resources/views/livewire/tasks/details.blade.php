@@ -1,18 +1,93 @@
 <aside class="ti-details">
     @if ($mission)
+        @if ($showDatePicker ?? false)
+            <div class="ti-date-overlay" wire:click="closeDatePicker"></div>
+        @endif
+
         <!-- Top bar -->
         <div class="ti-topbar">
             <div class="left">
-                <button class="pill" type="button" title="Adicionar datas">
-                    <i data-lucide="calendar"></i>
-                    <span>
-                      @if ($mission['due_at'])
-                         {{ $mission['due_at']->format('d/m/Y') }}
-                      @else
-                         Adicionar datas
-                      @endif
-                    </span>
-                </button>
+                <div class="ti-date-picker-container" wire:keydown.escape.window="closeDatePicker">
+                    <button
+                        class="pill {{ ($showDatePicker ?? false) ? 'is-active' : '' }}"
+                        type="button"
+                        title="Adicionar data"
+                        wire:click="toggleDatePicker"
+                    >
+                        <i data-lucide="calendar"></i>
+                        <span>
+                          @if ($mission['due_at'])
+                             {{ $mission['due_at']->format('d/m/Y') }}
+                          @else
+                             Adicionar data
+                          @endif
+                        </span>
+                    </button>
+
+                    @if (($showDatePicker ?? false) && $pickerCalendar)
+                        <div class="ti-date-popover" wire:click.stop>
+                            <div class="ti-date-header">
+                                <button
+                                    class="nav"
+                                    type="button"
+                                    title="Mês anterior"
+                                    wire:click="movePicker(-1)"
+                                >
+                                    <i data-lucide="chevron-left"></i>
+                                </button>
+                                <span class="label">{{ $pickerCalendar['label'] ?? '' }}</span>
+                                <button
+                                    class="nav"
+                                    type="button"
+                                    title="Próximo mês"
+                                    wire:click="movePicker(1)"
+                                >
+                                    <i data-lucide="chevron-right"></i>
+                                </button>
+                            </div>
+
+                            <div class="ti-date-grid">
+                                @foreach ($pickerCalendar['weekDays'] ?? [] as $weekDay)
+                                    <span class="weekday">{{ $weekDay }}</span>
+                                @endforeach
+
+                                @foreach ($pickerCalendar['weeks'] ?? [] as $weekIndex => $week)
+                                    @foreach ($week as $dayIndex => $day)
+                                        @php
+                                            $classes = [];
+                                            if (!($day['isCurrentMonth'] ?? false)) {
+                                                $classes[] = 'is-muted';
+                                            }
+                                            if ($day['isToday'] ?? false) {
+                                                $classes[] = 'is-today';
+                                            }
+                                            if ($day['isSelected'] ?? false) {
+                                                $classes[] = 'is-selected';
+                                            }
+                                            $classAttr = implode(' ', $classes);
+                                        @endphp
+                                        <button
+                                            class="day {{ $classAttr }}"
+                                            type="button"
+                                            wire:key="calendar-day-{{ $weekIndex }}-{{ $dayIndex }}-{{ $day['date'] }}"
+                                            wire:click="selectDueDate('{{ $day['date'] }}')"
+                                        >
+                                            {{ $day['label'] ?? '' }}
+                                        </button>
+                                    @endforeach
+                                @endforeach
+                            </div>
+
+                            <div class="ti-date-footer">
+                                @if ($pickerCalendar['hasSelected'] ?? false)
+                                    <button class="link" type="button" wire:click="clearDueDate">Remover data</button>
+                                @else
+                                    <button class="link disabled" type="button" disabled>Sem data definida</button>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                </div>
             </div>
             <div class="right">
                 <button class="icon ghost" type="button" title="Flag"><i data-lucide="flag"></i></button>
