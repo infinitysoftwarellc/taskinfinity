@@ -37,8 +37,10 @@ class Details extends Component
 
     public string $newSubtaskTitle = '';
 
+    public ?int $selectedSubtaskId = null;
+
     #[On('task-selected')]
-    public function loadMission(?int $missionId = null): void
+    public function loadMission(?int $missionId = null, ?int $checkpointId = null): void
     {
         if (! $missionId) {
             $this->missionId = null;
@@ -49,6 +51,7 @@ class Details extends Component
             $this->showSubtaskForm = false;
             $this->newSubtaskTitle = '';
             $this->menuDate = null;
+            $this->selectedSubtaskId = null;
 
             return;
         }
@@ -125,6 +128,16 @@ class Details extends Component
         $this->showMoveListMenu = false;
         $this->showSubtaskForm = false;
         $this->newSubtaskTitle = '';
+        $this->selectedSubtaskId = $checkpointId;
+
+        if ($checkpointId !== null) {
+            $hasSubtask = collect($this->mission['subtasks'] ?? [])
+                ->contains(fn ($subtask) => ($subtask['id'] ?? null) === $checkpointId);
+
+            if (! $hasSubtask) {
+                $this->selectedSubtaskId = null;
+            }
+        }
 
         $this->availableLists = TaskList::query()
             ->where('user_id', $user->id)
@@ -146,8 +159,55 @@ class Details extends Component
     public function refreshMission(): void
     {
         if ($this->missionId) {
-            $this->loadMission($this->missionId);
+            $activeSubtask = $this->selectedSubtaskId;
+            $this->loadMission($this->missionId, $activeSubtask);
         }
+    }
+
+    public function selectCheckpoint(int $checkpointId): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $exists = Checkpoint::query()
+            ->where('id', $checkpointId)
+            ->where('mission_id', $this->missionId)
+            ->whereHas('mission', fn ($query) => $query->where('user_id', Auth::id()))
+            ->exists();
+
+        if (! $exists) {
+            return;
+        }
+
+        $this->selectedSubtaskId = $checkpointId;
+    }
+
+    public function toggleCheckpoint(int $checkpointId): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $checkpoint = Checkpoint::query()
+            ->where('id', $checkpointId)
+            ->whereHas('mission', fn ($query) => $query
+                ->where('id', $this->missionId)
+                ->where('user_id', Auth::id()))
+            ->first();
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        $checkpoint->is_done = ! $checkpoint->is_done;
+        $checkpoint->save();
+
+        $desiredSubtask = $checkpoint->id;
+
+        $this->loadMission($this->missionId, $desiredSubtask);
+
+        $this->dispatch('tasks-updated');
     }
 
     public function render()
@@ -156,6 +216,7 @@ class Details extends Component
             'mission' => $this->mission,
             'missionTags' => $this->missionTags,
             'pickerCalendar' => $this->mission ? $this->buildCalendar() : null,
+            'selectedSubtaskId' => $this->selectedSubtaskId,
         ]);
     }
 
@@ -536,7 +597,7 @@ class Details extends Component
         $this->menuDate = null;
 
         $this->dispatch('tasks-updated');
-        $this->dispatch('task-selected', null);
+        $this->dispatch('task-selected', null, null);
     }
 
     public function startPomodoro(): void

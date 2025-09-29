@@ -919,27 +919,44 @@ body {
 }
 .subtasks .subtask {
     display: grid;
-    grid-template-columns: 16px 1fr auto;
+    grid-template-columns: 18px 1fr auto;
     align-items: center;
     gap: 8px;
-    padding: 6px 0;
+    padding: 6px 8px;
+    border-radius: 8px;
+    transition: background .15s ease, box-shadow .15s ease;
+    cursor: pointer;
+}
+.subtasks .subtask:hover {
+    background: rgba(16, 18, 32, .9);
+    box-shadow: inset 0 0 0 1px rgba(24, 32, 60, .55);
+}
+.subtasks .subtask.is-active {
+    background: rgba(122, 162, 255, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(122, 162, 255, 0.35);
 }
 .subtasks .checkbox {
     width: 14px;
     height: 14px;
     border-radius: 3px;
 }
+.subtasks .checkbox.checked {
+    background: linear-gradient(135deg, var(--brand), #8b5cf6);
+    border-color: transparent;
+}
 .subtasks .title {
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
+    color: var(--text);
 }
-.subtasks .meta {
-    font-size: 11px;
-    color: var(--muted);
-}
-.subtask.done .title {
+.subtasks .subtask.done .title {
     text-decoration: line-through;
     color: var(--muted);
+}
+.subtasks .subtask-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 .add-subtask {
     margin: 6px 0 8px;
@@ -1443,21 +1460,30 @@ body {
 .ti-subtask-item { list-style: none; }
 .ti-subtask-row {
     display: grid;
-    grid-template-columns: 22px 1fr auto;
+    grid-template-columns: 20px 1fr auto;
     align-items: center;
     gap: 10px;
-    padding: 6px 8px;
+    padding: 6px 10px;
     border-radius: 10px;
-    transition: .15s ease;
+    transition: background .15s ease, box-shadow .15s ease;
+    cursor: pointer;
 }
 .ti-subtask-row:hover {
     background: rgba(17, 20, 33, .9);
     box-shadow: inset 0 0 0 1px rgba(28, 34, 58, .55);
 }
+.ti-subtask-row.is-active {
+    background: rgba(122, 162, 255, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(122, 162, 255, 0.35);
+}
 .ti-subtask-row.is-done .ti-subtask-title,
 .ti-subtask-row.done .ti-subtask-title {
     color: var(--muted);
     text-decoration: line-through;
+}
+.ti-subtask-row .checkbox.checked {
+    background: linear-gradient(135deg, var(--brand), #8b5cf6);
+    border-color: transparent;
 }
 .ti-subtask-main {
     display: flex;
@@ -1481,6 +1507,11 @@ body {
     gap: 6px;
     border-left: 1px dashed rgba(43, 52, 82, .8);
     padding-left: 12px;
+}
+.ti-subtask-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 /* Add subtask button */

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Tasks;
 
+use App\Models\Checkpoint;
 use App\Models\Mission;
 use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
@@ -37,6 +38,11 @@ class MainPanel extends Component
      * Tarefa atualmente selecionada no painel (para destacar e exibir detalhes).
      */
     public ?int $selectedMissionId = null;
+
+    /**
+     * Subtarefa atualmente selecionada.
+     */
+    public ?int $selectedSubtaskId = null;
 
     public ?string $shortcut = null;
 
@@ -110,9 +116,10 @@ class MainPanel extends Component
         $this->reset(['newTaskTitle']);
 
         $this->selectedMissionId = $mission->id;
+        $this->selectedSubtaskId = null;
 
         $this->dispatch('tasks-updated');
-        $this->dispatch('task-selected', $mission->id);
+        $this->dispatch('task-selected', $mission->id, null);
     }
 
     public function selectMission(int $missionId): void
@@ -137,7 +144,84 @@ class MainPanel extends Component
         }
 
         $this->selectedMissionId = $mission->id;
-        $this->dispatch('task-selected', $mission->id);
+        $this->selectedSubtaskId = null;
+        $this->dispatch('task-selected', $mission->id, null);
+    }
+
+    public function selectSubtask(int $missionId, int $checkpointId): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $mission = Mission::query()
+            ->where('user_id', $user->id)
+            ->when($this->currentListId, fn ($query) => $query->where('list_id', $this->currentListId))
+            ->when(
+                $this->shortcut,
+                fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $user->timezone ?? config('app.timezone'))
+            )
+            ->find($missionId);
+
+        if (! $mission) {
+            return;
+        }
+
+        $checkpoint = Checkpoint::query()
+            ->where('id', $checkpointId)
+            ->where('mission_id', $mission->id)
+            ->exists();
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        $this->selectedMissionId = $mission->id;
+        $this->selectedSubtaskId = $checkpointId;
+
+        $this->dispatch('task-selected', $mission->id, $checkpointId);
+    }
+
+    public function toggleSubtaskCompletion(int $missionId, int $checkpointId): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $checkpoint = Checkpoint::query()
+            ->where('id', $checkpointId)
+            ->whereHas('mission', function ($query) use ($user, $missionId) {
+                $query->where('id', $missionId)
+                    ->where('user_id', $user->id)
+                    ->when(
+                        $this->currentListId,
+                        fn ($inner) => $inner->where('list_id', $this->currentListId)
+                    );
+
+                if ($this->shortcut) {
+                    MissionShortcutFilter::apply($query, $this->shortcut, $user->timezone ?? config('app.timezone'));
+                }
+            })
+            ->first();
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        $checkpoint->is_done = ! $checkpoint->is_done;
+        $checkpoint->save();
+
+        if ($this->selectedMissionId !== $missionId) {
+            $this->selectedMissionId = $missionId;
+        }
+
+        $this->selectedSubtaskId = $checkpoint->id;
+
+        $this->dispatch('tasks-updated');
     }
 
     private function nextPosition(int $userId, ?int $listId): int
@@ -180,6 +264,7 @@ class MainPanel extends Component
                         MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
                     }
                 },
+                'missions.checkpoints' => fn ($query) => $query->orderBy('position')->orderBy('created_at'),
             ])
             ->where('user_id', $user->id)
             ->whereNull('archived_at')
@@ -193,6 +278,7 @@ class MainPanel extends Component
             ->whereNull('list_id')
             ->orderBy('position')
             ->orderBy('created_at')
+            ->with(['checkpoints' => fn ($query) => $query->orderBy('position')->orderBy('created_at')])
             ->when($this->shortcut, fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $timezone))
             ->get();
 
@@ -208,6 +294,18 @@ class MainPanel extends Component
 
             if (! $ownsMission) {
                 $this->selectedMissionId = null;
+                $this->selectedSubtaskId = null;
+            }
+        }
+
+        if ($this->selectedSubtaskId !== null) {
+            $hasSubtask = Checkpoint::query()
+                ->where('id', $this->selectedSubtaskId)
+                ->whereHas('mission', fn ($query) => $query->where('user_id', $user->id))
+                ->exists();
+
+            if (! $hasSubtask) {
+                $this->selectedSubtaskId = null;
             }
         }
 
@@ -224,6 +322,7 @@ class MainPanel extends Component
                             MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
                         }
                     },
+                    'missions.checkpoints' => fn ($query) => $query->orderBy('position')->orderBy('created_at'),
                 ])
                 ->where('user_id', $user->id)
                 ->whereNull('archived_at')
@@ -257,6 +356,7 @@ class MainPanel extends Component
             'lists' => $lists,
             'availableLists' => $availableLists,
             'selectedMissionId' => $this->selectedMissionId,
+            'selectedSubtaskId' => $this->selectedSubtaskId,
             'showListSelector' => $showListSelector,
             'listView' => $this->currentListId !== null,
         ]);

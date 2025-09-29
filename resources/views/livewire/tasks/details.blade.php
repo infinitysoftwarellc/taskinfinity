@@ -40,10 +40,6 @@
                             </span>
                         </button>
 
-                        <button class="pill reminder" type="button" title="Adicionar lembrete">
-                            <i data-lucide="alarm-clock"></i>
-                            <span>Adicionar lembrete</span>
-                        </button>
                     </div>
 
                     @if (($showDatePicker ?? false) && $pickerCalendar)
@@ -186,15 +182,6 @@
             </div>
         </div>
 
-        <div class="ti-divider"></div>
-
-        <div class="ti-illustrations">
-            <img src="https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=640&q=60" alt="Moodboard escuro" loading="lazy">
-            <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=640&q=60" alt="Interface em telas" loading="lazy">
-        </div>
-
-        <div class="ti-divider"></div>
-
         <!-- Subtasks -->
         <section class="ti-subtasks">
             @php
@@ -210,7 +197,11 @@
             @if (count($subtasks))
                 <ul class="ti-subtask-list" role="list">
                     @foreach ($subtasks as $st)
-                        @include('livewire.tasks.partials.subtask-item', ['item' => $st, 'depth' => 0])
+                        @include('livewire.tasks.partials.subtask-item', [
+                            'item' => $st,
+                            'depth' => 0,
+                            'selectedSubtaskId' => $selectedSubtaskId,
+                        ])
                     @endforeach
                 </ul>
             @else

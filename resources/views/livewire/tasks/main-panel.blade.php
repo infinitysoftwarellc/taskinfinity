@@ -58,6 +58,7 @@
                 @forelse ($allMissions as $mission)
                     @php
                         $isActive = $mission->id === $selectedMissionId;
+                        $subtasks = $mission->checkpoints ?? collect();
                     @endphp
 
                     <div
@@ -67,6 +68,7 @@
                             'task',
                             'done' => $mission->status === 'done',
                             'is-active' => $isActive,
+                            'has-subtasks' => $subtasks->isNotEmpty(),
                         ])
                     >
                         <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
@@ -78,6 +80,33 @@
                         </div>
                         {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
                     </div>
+
+                    @if ($subtasks->isNotEmpty())
+                        <div class="subtasks">
+                            @foreach ($subtasks as $subtask)
+                                <div
+                                    wire:key="mission-{{ $mission->id }}-subtask-{{ $subtask->id }}"
+                                    wire:click="selectSubtask({{ $mission->id }}, {{ $subtask->id }})"
+                                    @class([
+                                        'subtask',
+                                        'done' => $subtask->is_done,
+                                        'is-active' => $selectedSubtaskId === $subtask->id,
+                                    ])
+                                >
+                                    <button
+                                        class="checkbox {{ $subtask->is_done ? 'checked' : '' }}"
+                                        type="button"
+                                        aria-label="Marcar subtarefa"
+                                        wire:click.stop="toggleSubtaskCompletion({{ $mission->id }}, {{ $subtask->id }})"
+                                    ></button>
+                                    <span class="title">{{ $subtask->title ?: 'Sem título' }}</span>
+                                    <div class="subtask-actions" wire:click.stop>
+                                        @include('livewire.tasks.partials.inline-menu')
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 @empty
                     <div class="task ghost">
                         <div class="checkbox" aria-hidden="true"></div>
