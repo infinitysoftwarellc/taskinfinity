@@ -229,3 +229,25 @@ document.addEventListener('livewire:load', () => {
 document.addEventListener('DOMContentLoaded', () => {
   if (window.lucide) lucide.createIcons();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.lucide) lucide.createIcons();
+
+  // Toggle dos grupos de subtarefas
+  document.querySelectorAll('[data-toggle="group"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') !== 'false';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      const list = document.getElementById(btn.getAttribute('aria-controls'));
+      if (!list) return;
+      if (expanded) {
+        list.style.display = 'none';
+        btn.innerHTML = '<i data-lucide="chevron-right"></i>';
+      } else {
+        list.style.display = '';
+        btn.innerHTML = '<i data-lucide="chevron-down"></i>';
+      }
+      if (window.lucide) lucide.createIcons();
+    });
+  });
+});

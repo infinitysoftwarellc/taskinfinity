@@ -1,88 +1,67 @@
-<aside class="details panel">
+<aside class="ti-details">
     @if ($mission)
-        <div class="details-header">
-            <div>
-                <span class="details-status {{ $mission['status'] }}">{{ ucfirst($mission['status']) }}</span>
-                @if ($mission['list'])
-                    <span class="details-list">{{ $mission['list'] }}</span>
-                @else
-                    <span class="details-list muted">Sem lista</span>
-                @endif
-                @if ($mission['is_starred'])
-                    <span class="details-badge" title="Tarefa favorita">
-                        <i data-lucide="star"></i>
-                        Favorita
+        <!-- Top bar -->
+        <div class="ti-topbar">
+            <div class="left">
+                <button class="pill" type="button" title="Due Date">
+                    <i data-lucide="calendar"></i>
+                    <span>
+                      @if ($mission['due_at'])
+                         {{ $mission['due_at']->format('d/m/Y') }}
+                      @else
+                         Due Date
+                      @endif
                     </span>
-                @endif
+                </button>
             </div>
             <div class="right">
-                <button class="icon-btn" title="Editar">
-                    <i data-lucide="pencil"></i>
-                </button>
-                <button class="icon-btn" title="Mais opções">
-                    <i data-lucide="more-horizontal"></i>
-                </button>
+                <button class="icon ghost" type="button" title="Flag"><i data-lucide="flag"></i></button>
             </div>
         </div>
 
-        <div class="details-body">
-            <h2 class="details-title">{{ $mission['title'] }}</h2>
+        <!-- Title + actions -->
+        <div class="ti-header">
+            <h2 class="ti-title" title="{{ $mission['title'] }}">{{ $mission['title'] ?: 'No Title' }}</h2>
+            <div class="actions">
+                <button class="icon ghost" title="Editar"><i data-lucide="pencil"></i></button>
+                <button class="icon ghost" title="Mais opções"><i data-lucide="more-horizontal"></i></button>
+            </div>
+        </div>
 
-            @if (!empty($missionTags))
-                <div class="details-tags">
-                    @foreach ($missionTags as $tag)
-                        <span class="details-tag">{{ $tag }}</span>
+        <div class="ti-divider"></div>
+
+        <!-- Subtasks -->
+        <section class="ti-subtasks">
+            @php
+                // $mission['subtasks'] = [
+                //   ['id'=>1,'title'=>'s','done'=>false,'children'=>[
+                //       ['id'=>2,'title'=>'S','done'=>false,'children'=>[]],
+                //       ['id'=>3,'title'=>'No Title','done'=>false,'children'=>[]],
+                //   ]],
+                // ];
+                $subtasks = $mission['subtasks'] ?? [];
+            @endphp
+
+            @if (count($subtasks))
+                <ul class="ti-list" role="list">
+                    @foreach ($subtasks as $st)
+                        @include('components.subtask-item', ['item'=>$st, 'depth'=>0])
                     @endforeach
-                </div>
-            @endif
-
-            @if (!empty($mission['description']))
-                <p class="details-description">{{ $mission['description'] }}</p>
+                </ul>
             @else
-                <p class="details-description muted">Sem descrição adicionada.</p>
+                <p class="muted" style="margin:8px 0 0;">Sem subtarefas</p>
             @endif
 
-            <div class="details-meta">
-                <div>
-                    <strong>Prazo</strong>
-                    <span>
-                        @if ($mission['due_at'])
-                            {{ $mission['due_at']->format('d/m/Y H:i') }}
-                        @else
-                            Sem prazo
-                        @endif
-                    </span>
-                </div>
-                <div>
-                    <strong>Criada</strong>
-                    <span>{{ optional($mission['created_at'])->format('d/m/Y H:i') }}</span>
-                </div>
-                <div>
-                    <strong>Atualizada</strong>
-                    <span>{{ optional($mission['updated_at'])->format('d/m/Y H:i') }}</span>
-                </div>
-                <div>
-                    <strong>Prioridade</strong>
-                    <span>{{ $mission['priority_label'] }}</span>
-                </div>
-                <div>
-                    <strong>XP</strong>
-                    <span>{{ $mission['xp_reward'] }}</span>
-                </div>
-                <div>
-                    <strong>Subtarefas</strong>
-                    <span>{{ $mission['checkpoints_done'] }} / {{ $mission['checkpoints_total'] }}</span>
-                </div>
-                <div>
-                    <strong>Anexos</strong>
-                    <span>{{ $mission['attachments_count'] }}</span>
-                </div>
-            </div>
-        </div>
+            <button class="add-subtask" type="button"
+                {{-- wire:click="openNewSubtask({{ $mission['id'] }})" --}}
+            >
+                <i data-lucide="plus"></i> Add Subtask
+            </button>
+        </section>
     @else
-        <div class="details-empty">
+        <div class="ti-empty">
             <h3>Selecione uma tarefa</h3>
-            <p>Escolha uma tarefa no painel principal para visualizar detalhes, notas e etiquetas.</p>
+            <p>Escolha uma tarefa para ver detalhes e subtarefas.</p>
         </div>
     @endif
 </aside>

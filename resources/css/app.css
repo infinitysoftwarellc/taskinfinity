@@ -785,3 +785,99 @@ body {
 .btn-new:hover {
     color: #ffffff;
 }
+
+:root{
+  --bg:#15171c; --panel:#0f1116; --panel-2:#0b0d12;
+  --text:#e8eaee; --muted:#9aa3b2; --border:#232632;
+  --brand:#7aa2ff; --blue:#7aa2ff;
+  --radius:16px; --r:12px; --shadow:0 10px 40px rgba(0,0,0,.45);
+}
+.ti-details{
+  background: var(--panel);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+  min-height: 420px;
+}
+
+/* topbar */
+.ti-topbar{display:flex; align-items:center; justify-content:space-between; padding:12px 14px;}
+.ti-topbar .pill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 10px; border-radius:10px;
+  background: #121522; border:1px solid #1e2230; color:#cdd7ff;
+}
+.ti-topbar .pill i[data-lucide]{width:16px;height:16px;stroke-width:1.8}
+.ti-topbar .icon.ghost{opacity:.9}
+
+/* header */
+.ti-header{display:flex; align-items:center; justify-content:space-between; padding:6px 14px 12px;}
+.ti-title{margin:0; font: 700 20px/1.25 ui-sans-serif, system-ui; letter-spacing:.2px;}
+.ti-header .actions{display:flex; gap:6px;}
+
+.icon.ghost{
+  display:inline-grid; place-items:center;
+  width:32px;height:32px;border-radius:8px;
+  background:transparent;border:1px solid transparent;color:#c7cbe0;
+  transition:.15s ease;
+}
+.icon.ghost:hover{background:#0f1320;border-color:#212535}
+.icon.ghost i[data-lucide]{width:18px;height:18px;stroke-width:1.8}
+
+.ti-divider{height:1px;background:#1d2130;}
+
+/* subtasks */
+.ti-subtasks{padding:10px 10px 14px 8px;}
+.ti-list{list-style:none;margin:0;padding:0}
+.ti-item{position:relative;padding-left:8px}
+.ti-item .row{
+  display:grid; grid-template-columns: 24px 26px 1fr; align-items:center;
+  gap:6px; padding:6px 6px; border-radius:10px;
+}
+.ti-item .row:hover{background:var(--panel-2)}
+/* connector lines for nesting */
+.ti-item::before{
+  content:""; position:absolute; left:11px; top:0; bottom:-6px; width:1px;
+  background:#23283a; opacity:.8;
+}
+.ti-item[data-depth="0"]::before{display:none;} /* no line at root */
+
+.caret{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;border:1px solid transparent;background:transparent;color:#8fa1ff}
+.caret:hover{background:#12162a;border-color:#1f2440}
+.caret.placeholder{visibility:hidden}
+
+.checkbox{position:relative; display:inline-grid; place-items:center; width:22px;height:22px;}
+.checkbox input{appearance:none; width:0; height:0; position:absolute; opacity:0}
+.checkbox .box{
+  width:18px;height:18px;border-radius:5px;border:2px solid var(--blue);
+  display:inline-block; box-sizing:border-box;
+}
+.checkbox input:checked + .box{
+  background: var(--blue);
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 2px #0f1116;
+}
+
+.title{font: 600 14px/1.4 ui-sans-serif, system-ui; color:var(--text)}
+.title:empty::after{content:"No Title"; color:var(--muted)}
+
+.children{margin-left:28px; padding-left:8px; border-left:1px dashed #262b3f}
+
+/* Add subtask button */
+.add-subtask{
+  margin-top:6px; margin-left:36px;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 8px; border-radius:8px; border:1px dashed #2a3150;
+  background:transparent; color:#a8b5ff; cursor:pointer;
+}
+.add-subtask:hover{background:#101430;border-style:solid}
+
+/* empty */
+.ti-empty{padding:28px 18px; text-align:center}
+.ti-empty h3{margin:0 0 6px}
+.ti-empty p{margin:0; color:var(--muted)}
+
+/* lucide sizes */
+.ti-details i[data-lucide]{width:18px;height:18px;stroke-width:1.8}
