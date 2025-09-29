@@ -43,86 +43,50 @@
     @enderror
 
     <section class="group" aria-expanded="true">
-        <header class="group-header" data-toggle="group">
-            <i class="chev" data-lucide="chevron-down"></i>
-            <span class="group-title">{{ $primaryGroupTitle }}</span>
-            <span class="group-count">{{ $totalCount }}</span>
-        </header>
+
         <div class="group-body">
-            @if ($unlistedMissions->isNotEmpty())
-                <div class="subgroup" aria-expanded="true" wire:key="subgroup-unlisted">
-                    <div class="subgroup-toggle" data-toggle="subgroup">
-                        <i class="chev" data-lucide="chevron-down"></i>
-                        <span class="name">Sem lista</span>
-                        <span class="meta" style="margin-left:auto; color:var(--muted)">
-                            {{ $unlistedMissions->count() }} tarefas
-                        </span>
-                    </div>
+            @php
+                // Junta todas as tarefas (sem e com lista) numa coleção única
+                $allMissions = collect($unlistedMissions ?? [])
+                    ->concat(($lists ?? collect())->flatMap->missions)
+                    // Opcional: ordena por created_at desc (remova se não quiser)
+                    ->sortByDesc(fn($m) => $m->created_at ?? $m->id)
+                    ->values();
+            @endphp
 
-                    <div class="task-list">
-                        @foreach ($unlistedMissions as $mission)
-                            @php
-                                $isActive = $mission->id === $selectedMissionId;
-                            @endphp
-                            <div
-                                wire:key="mission-unlisted-{{ $mission->id }}"
-                                wire:click="selectMission({{ $mission->id }})"
-                                @class([
-                                    'task',
-                                    'done' => $mission->status === 'done',
-                                    'is-active' => $isActive,
-                                ])
-                            >
-                                <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
-                                <div class="title-line"><span class="title">{{ $mission->title }}</span></div>
-                                {{-- Ocultamos o rótulo da lista para evitar repetição visual --}}
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
+            <div class="task-list">
+                @forelse ($allMissions as $mission)
+                    @php
+                        $isActive = $mission->id === $selectedMissionId;
+                    @endphp
 
-            @foreach ($lists as $list)
-                <div class="subgroup" aria-expanded="true" wire:key="subgroup-list-{{ $list->id }}">
-                    <div class="subgroup-toggle" data-toggle="subgroup">
-                        <i class="chev" data-lucide="chevron-down"></i>
-                        <span class="name">{{ $list->name }}</span>
-                        <span class="meta" style="margin-left:auto; color:var(--muted)">
-                            {{ $list->missions->count() }} tarefas
-                        </span>
+                    <div
+                        wire:key="mission-flat-{{ $mission->id }}"
+                        wire:click="selectMission({{ $mission->id }})"
+                        @class([
+                            'task',
+                            'done' => $mission->status === 'done',
+                            'is-active' => $isActive,
+                        ])
+                    >
+                        <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
+                        <div class="title-line">
+                            <span class="title">{{ $mission->title }}</span>
+                        </div>
+                        {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
                     </div>
-
-                    <div class="task-list">
-                        @forelse ($list->missions as $mission)
-                            @php
-                                $isActive = $mission->id === $selectedMissionId;
-                            @endphp
-                            <div
-                                wire:key="mission-list-{{ $mission->id }}"
-                                wire:click="selectMission({{ $mission->id }})"
-                                @class([
-                                    'task',
-                                    'done' => $mission->status === 'done',
-                                    'is-active' => $isActive,
-                                ])
-                            >
-                                <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
-                                <div class="title-line"><span class="title">{{ $mission->title }}</span></div>
-                                {{-- Ocultamos o rótulo da lista para evitar repetição visual --}}
-                            </div>
-                        @empty
-                            <div class="task ghost">
-                                <div class="checkbox" aria-hidden="true"></div>
-                                <div class="title-line">
-                                    <span class="title" style="opacity:.6">Sem tarefas nesta lista</span>
-                                </div>
-                            </div>
-                        @endforelse
+                @empty
+                    <div class="task ghost">
+                        <div class="checkbox" aria-hidden="true"></div>
+                        <div class="title-line">
+                            <span class="title" style="opacity:.6">Sem tarefas</span>
+                        </div>
                     </div>
-                </div>
-            @endforeach
+                @endforelse
+            </div>
         </div>
     </section>
+
     @if ($totalCount === 0)
         <div class="empty-state">
             <p>Nenhuma tarefa cadastrada ainda. Que tal criar a primeira?</p>
