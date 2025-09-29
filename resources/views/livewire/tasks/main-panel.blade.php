@@ -73,6 +73,9 @@
                         <div class="title-line">
                             <span class="title">{{ $mission->title }}</span>
                         </div>
+                        <div class="task-actions">
+                            @include('livewire.tasks.partials.inline-menu')
+                        </div>
                         {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
                     </div>
                 @empty

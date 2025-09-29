@@ -41,6 +41,35 @@ function onTaskExpanderClick(target) {
 }
 
 /* ────────────────────────────────────────────────────────────────── */
+/* MENUS FLOTANTES                                                    */
+/* ────────────────────────────────────────────────────────────────── */
+function closeAllMenus(except) {
+  document.querySelectorAll('[data-menu].is-open').forEach((menu) => {
+    if (!except || menu !== except) {
+      menu.classList.remove('is-open');
+    }
+  });
+}
+
+function onMenuToggle(target) {
+  const trigger = target.closest('[data-menu-trigger]');
+  if (!trigger) return false;
+
+  const container = trigger.closest('[data-menu]');
+  if (!container) return false;
+
+  const isOpen = container.classList.contains('is-open');
+  closeAllMenus(container);
+  if (!isOpen) {
+    container.classList.add('is-open');
+  } else {
+    container.classList.remove('is-open');
+  }
+
+  return true;
+}
+
+/* ────────────────────────────────────────────────────────────────── */
 /* DELEGAÇÃO: toggles com data-click                                  */
 /*  - [data-click="toggle-sidebar"]                                   */
 /*  - [data-click="toggle-workspace"]                                 */
@@ -110,9 +139,21 @@ function setupDelegatedClick() {
   document.addEventListener('click', (e) => {
     const t = e.target;
 
+    if (!t.closest('[data-menu]')) {
+      closeAllMenus();
+    }
+
     // ordem: específicos → genéricos
     if (onCheckboxClick(t)) return;
     if (onTaskExpanderClick(t)) return;
+    if (onMenuToggle(t)) return;
+
+    const menuItem = t.closest('[data-menu-item]');
+    if (menuItem) {
+      closeAllMenus();
+      return;
+    }
+
     if (onGenericToggles(t)) return;
   });
 }

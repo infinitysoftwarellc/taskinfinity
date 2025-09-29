@@ -43,6 +43,7 @@ class Details extends Component
 
         $mission = Mission::query()
             ->with('list')
+            ->with(['checkpoints' => fn ($query) => $query->orderBy('position')->orderBy('created_at')])
             ->withCount([
                 'checkpoints',
                 'checkpoints as checkpoints_done_count' => fn ($query) => $query->where('is_done', true),
@@ -78,6 +79,14 @@ class Details extends Component
             'checkpoints_total' => $mission->checkpoints_count ?? 0,
             'checkpoints_done' => $mission->checkpoints_done_count ?? 0,
             'attachments_count' => $mission->attachments_count ?? 0,
+            'subtasks' => ($mission->checkpoints ?? collect())->map(fn ($checkpoint) => [
+                'id' => $checkpoint->id,
+                'title' => $checkpoint->title,
+                'is_done' => (bool) $checkpoint->is_done,
+                'position' => $checkpoint->position,
+                'xp_reward' => $checkpoint->xp_reward,
+                'children' => [],
+            ])->values()->toArray(),
         ];
 
         $labels = $mission->labels_json ?? [];

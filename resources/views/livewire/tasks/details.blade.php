@@ -146,17 +146,7 @@
                         <i data-lucide="more-horizontal"></i>
                     </button>
                     <div class="ti-menu-dropdown" role="menu">
-                        <button class="ti-menu-item" type="button" role="menuitem">Adicionar subtarefa</button>
-                        @if (!empty($mission['parent_title']))
-                            <button class="ti-menu-item" type="button" role="menuitem">Vincular tarefa pai</button>
-                        @endif
-                        <button class="ti-menu-item" type="button" role="menuitem">Fixar</button>
-                        <button class="ti-menu-item" type="button" role="menuitem">Não vou fazer</button>
-                        <button class="ti-menu-item" type="button" role="menuitem">Gerenciar tags</button>
-                        <button class="ti-menu-item" type="button" role="menuitem">Upload de anexo</button>
-                        <button class="ti-menu-item" type="button" role="menuitem">Iniciar Pomodoro</button>
-                        <button class="ti-menu-item" type="button" role="menuitem">Duplicar</button>
-                        <button class="ti-menu-item danger" type="button" role="menuitem">Excluir</button>
+                        @include('livewire.tasks.partials.menu-content')
                     </div>
                 </div>
             </div>
@@ -208,9 +198,9 @@
             @endphp
 
             @if (count($subtasks))
-                <ul class="ti-list" role="list">
+                <ul class="ti-subtask-list" role="list">
                     @foreach ($subtasks as $st)
-                        @include('components.subtask-item', ['item'=>$st, 'depth'=>0])
+                        @include('livewire.tasks.partials.subtask-item', ['item' => $st, 'depth' => 0])
                     @endforeach
                 </ul>
             @else
