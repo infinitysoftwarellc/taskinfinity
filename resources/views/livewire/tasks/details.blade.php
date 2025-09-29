@@ -3,13 +3,13 @@
         <!-- Top bar -->
         <div class="ti-topbar">
             <div class="left">
-                <button class="pill" type="button" title="Due Date">
+                <button class="pill" type="button" title="Adicionar datas">
                     <i data-lucide="calendar"></i>
                     <span>
                       @if ($mission['due_at'])
                          {{ $mission['due_at']->format('d/m/Y') }}
                       @else
-                         Due Date
+                         Adicionar datas
                       @endif
                     </span>
                 </button>
