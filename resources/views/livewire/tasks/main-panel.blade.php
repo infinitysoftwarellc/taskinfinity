@@ -93,7 +93,7 @@
                                 </span>
                             @endif
                         </div>
-                        <div class="task-actions">
+                        <div class="task-actions" wire:click.stop>
                             <button
                                 type="button"
                                 class="task-quick-btn"
