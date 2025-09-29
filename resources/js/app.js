@@ -75,6 +75,7 @@ function onGenericToggles(target) {
   // toggle workspace
   const btnWs = target.closest('[data-click="toggle-workspace"], [data-toggle="workspace"]');
   if (btnWs) {
+    if (target.closest('.workspace-add')) return false;
     const wsContent =
       document.querySelector(btnWs.dataset.target) ||
       document.querySelector('.workspace-content');
@@ -224,14 +225,8 @@ document.addEventListener('livewire:load', () => {
 */
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.lucide) lucide.createIcons();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.lucide) lucide.createIcons();
-
   // Toggle dos grupos de subtarefas
-  document.querySelectorAll('[data-toggle="group"]').forEach(btn => {
+  document.querySelectorAll('[data-toggle="group"]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const expanded = btn.getAttribute('aria-expanded') !== 'false';
       btn.setAttribute('aria-expanded', String(!expanded));
@@ -244,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         list.style.display = '';
         btn.innerHTML = '<i data-lucide="chevron-down"></i>';
       }
-      if (window.lucide) lucide.createIcons();
+      hydrateIcons();
     });
   });
 });
