@@ -21,9 +21,47 @@
     $canAddSibling = $siblingsCount < $maxSubtasks;
     $timezone = $userTimezone ?? (auth()->user()?->timezone ?? config('app.timezone'));
     $dueDate = null;
+    $dueLabel = null;
+    $dueClass = 'subtask-due';
 
     if (($item['due_at'] ?? null) instanceof \Carbon\CarbonInterface) {
-        $dueDate = $item['due_at']->copy()->setTimezone($timezone)->format('Y-m-d');
+        $dueAt = $item['due_at']->copy()->setTimezone($timezone);
+        $dueDate = $dueAt->format('Y-m-d');
+
+        $dueDay = $dueAt->copy()->startOfDay();
+        $today = \Illuminate\Support\Carbon::now($timezone)->startOfDay();
+        $tomorrow = $today->copy()->addDay();
+        $monthAbbr = [
+            1 => 'Jan',
+            2 => 'Fev',
+            3 => 'Mar',
+            4 => 'Abr',
+            5 => 'Mai',
+            6 => 'Jun',
+            7 => 'Jul',
+            8 => 'Ago',
+            9 => 'Set',
+            10 => 'Out',
+            11 => 'Nov',
+            12 => 'Dez',
+        ];
+
+        if ($dueDay->equalTo($today)) {
+            $dueLabel = 'Hoje';
+            $dueClass .= ' is-today';
+        } elseif ($dueDay->equalTo($tomorrow)) {
+            $dueLabel = 'Amanhã';
+            $dueClass .= ' is-tomorrow';
+        } elseif ($dueDay->lessThan($today)) {
+            $monthKey = (int) $dueDay->format('n');
+            $monthLabel = $monthAbbr[$monthKey] ?? $dueDay->format('M');
+            $dueLabel = $dueDay->format('d') . ' ' . $monthLabel;
+            $dueClass .= ' is-overdue';
+        } else {
+            $monthKey = (int) $dueDay->format('n');
+            $monthLabel = $monthAbbr[$monthKey] ?? $dueDay->format('M');
+            $dueLabel = $dueDay->format('d') . ' ' . $monthLabel;
+        }
     }
 @endphp
 
@@ -94,6 +132,9 @@
                 <i class="fa-solid fa-turn-down" aria-hidden="true"></i>
             </button>
         @endif
+        @if ($dueLabel)
+            <span class="{{ $dueClass }}">{{ $dueLabel }}</span>
+        @endif
         @include('livewire.tasks.partials.inline-menu', [
             'context' => 'main',
             'missionId' => $missionId,
@@ -114,6 +155,7 @@
                 'editingSubtaskId' => $editingSubtaskId,
                 'siblingsCount' => $childrenCount,
                 'maxSubtasks' => $maxSubtasks,
+                'userTimezone' => $userTimezone,
             ])
         @endforeach
         @if (! $canAddChild)
