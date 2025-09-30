@@ -50,11 +50,9 @@
 
         <div class="group-body">
             @php
-                // Junta todas as tarefas (sem e com lista) numa coleção única
+                // Junta todas as tarefas (sem e com lista) numa coleção única preservando a ordem atual
                 $allMissions = collect($unlistedMissions ?? [])
                     ->concat(($lists ?? collect())->flatMap->missions)
-                    // Opcional: ordena por created_at desc (remova se não quiser)
-                    ->sortByDesc(fn($m) => $m->created_at ?? $m->id)
                     ->values();
                 $maxSubtasks = $maxSubtasks ?? 7;
             @endphp
@@ -78,7 +76,7 @@
                 ];
             @endphp
 
-            <div class="task-list">
+            <div class="task-list" data-sortable-tasks>
                 @forelse ($allMissions as $mission)
                     @php
                         $isActive = $mission->id === $selectedMissionId;
@@ -115,7 +113,12 @@
                         }
                     @endphp
 
-                    <div class="task-block" wire:key="mission-flat-{{ $mission->id }}">
+                    <div
+                        class="task-block"
+                        wire:key="mission-flat-{{ $mission->id }}"
+                        data-mission-id="{{ $mission->id }}"
+                        data-list-id="{{ $mission->list_id ?? '' }}"
+                    >
                         <div
                             wire:click="selectMission({{ $mission->id }})"
                             @class([
@@ -175,7 +178,12 @@
                             {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
                         </div>
 
-                        <div class="subtasks">
+                        <div
+                            class="subtasks"
+                            data-subtask-container
+                            data-mission-id="{{ $mission->id }}"
+                            data-parent-id=""
+                        >
                             @if ($hasSubtasks)
                                 @foreach ($subtasks as $node)
                                     @include('livewire.tasks.partials.main-panel-subtask', [

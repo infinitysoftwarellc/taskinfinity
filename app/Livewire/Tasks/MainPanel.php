@@ -8,6 +8,7 @@ use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -512,6 +513,119 @@ class MainPanel extends Component
         }
 
         $this->createSubtaskForMission($missionId);
+    }
+
+    public function reorderMissions(array $ordered): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $items = collect($ordered)
+            ->map(function ($item) {
+                if (! is_array($item)) {
+                    return null;
+                }
+
+                $id = isset($item['id']) ? (int) $item['id'] : null;
+
+                if (! $id) {
+                    return null;
+                }
+
+                $listId = null;
+
+                if (array_key_exists('list_id', $item)) {
+                    $raw = $item['list_id'];
+                    $listId = $raw === null || $raw === '' ? null : (int) $raw;
+                }
+
+                return [
+                    'id' => $id,
+                    'list_id' => $listId,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        DB::transaction(function () use ($items, $user) {
+            $items
+                ->groupBy(fn ($item) => $item['list_id'] ?? '__null__')
+                ->each(function ($group, $key) use ($user) {
+                    $listId = $key === '__null__' ? null : (int) $key;
+                    $position = 1;
+
+                    foreach ($group as $item) {
+                        Mission::query()
+                            ->where('user_id', $user->id)
+                            ->where('id', $item['id'])
+                            ->update(['position' => $position++]);
+                    }
+                });
+        });
+
+        $this->dispatch('tasks-updated');
+    }
+
+    public function reorderSubtasks(int $missionId, array $data): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $mission = Mission::query()
+            ->where('user_id', $user->id)
+            ->find($missionId);
+
+        if (! $mission) {
+            return;
+        }
+
+        $movedId = isset($data['moved_id']) ? (int) $data['moved_id'] : null;
+        $toParentId = $this->normalizeParentId($data['to_parent_id'] ?? null);
+        $fromParentId = $this->normalizeParentId($data['from_parent_id'] ?? null);
+
+        $toOrder = collect($data['to_order'] ?? [])
+            ->map(fn ($item) => isset($item['id']) ? (int) $item['id'] : null)
+            ->filter()
+            ->values();
+
+        $fromOrder = collect($data['from_order'] ?? [])
+            ->map(fn ($item) => isset($item['id']) ? (int) $item['id'] : null)
+            ->filter()
+            ->values();
+
+        $parentColumn = $this->checkpointParentColumn();
+
+        DB::transaction(function () use ($missionId, $movedId, $toParentId, $fromParentId, $toOrder, $fromOrder, $parentColumn) {
+            if ($movedId && $parentColumn && $toParentId !== $fromParentId) {
+                $query = Checkpoint::query()
+                    ->where('mission_id', $missionId)
+                    ->where('id', $movedId);
+
+                if ($toParentId === null) {
+                    $query->update([$parentColumn => null]);
+                } else {
+                    $query->update([$parentColumn => $toParentId]);
+                }
+            }
+
+            $this->syncCheckpointOrder($missionId, $toParentId, $toOrder);
+
+            if ($fromParentId !== $toParentId) {
+                $this->syncCheckpointOrder($missionId, $fromParentId, $fromOrder);
+            }
+        });
+
+        $this->dispatch('tasks-updated');
     }
 
     public function startSubtaskEdit(int $checkpointId): void
@@ -1042,6 +1156,42 @@ class MainPanel extends Component
             ->first();
     }
 
+    private function normalizeParentId($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private function syncCheckpointOrder(int $missionId, ?int $parentId, Collection $order): void
+    {
+        if ($order->isEmpty()) {
+            return;
+        }
+
+        $parentColumn = $this->checkpointParentColumn();
+
+        $position = 1;
+
+        foreach ($order as $checkpointId) {
+            $query = Checkpoint::query()
+                ->where('mission_id', $missionId)
+                ->where('id', $checkpointId);
+
+            if ($parentColumn) {
+                if ($parentId === null) {
+                    $query->whereNull($parentColumn);
+                } else {
+                    $query->where($parentColumn, $parentId);
+                }
+            }
+
+            $query->update(['position' => $position++]);
+        }
+    }
+
     private function checkpointParentColumn(): ?string
     {
         static $column;
@@ -1120,10 +1270,11 @@ class MainPanel extends Component
     {
         $key = $parentId === null ? '__root__' : (string) $parentId;
 
-        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth) {
+        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth, $parentId) {
             return [
                 'id' => $checkpoint->id,
                 'mission_id' => $checkpoint->mission_id,
+                'parent_id' => $parentId,
                 'title' => $checkpoint->title,
                 'is_done' => (bool) $checkpoint->is_done,
                 'position' => $checkpoint->position,

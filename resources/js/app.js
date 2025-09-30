@@ -1,3 +1,5 @@
+import Sortable from 'sortablejs';
+
 // ---- IMPORTS PADRÃO DO SEU PROJETO (mantenha os que precisar)
 
 /* ────────────────────────────────────────────────────────────────── */
@@ -256,6 +258,140 @@ function setupDelegatedClick() {
     },
     { capture: true }
   );
+}
+
+function findLivewireComponent(element) {
+  if (!element) return null;
+
+  const root = element.closest('[wire\\:id]');
+  if (!root) return null;
+
+  return window.Livewire?.find(root.getAttribute('wire:id')) ?? null;
+}
+
+function parseNullableInt(value) {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function collectSubtaskOrder(container) {
+  return Array.from(container.children || [])
+    .filter((child) => child.matches?.('[data-subtask-node]'))
+    .map((child) => {
+      const id = parseInt(child.dataset.subtaskId || '', 10);
+      return Number.isNaN(id) ? null : { id };
+    })
+    .filter(Boolean);
+}
+
+function setupSortableTasks(root = document) {
+  const containers = root.querySelectorAll('[data-sortable-tasks]:not([data-sortable-ready])');
+
+  containers.forEach((container) => {
+    const component = findLivewireComponent(container);
+    if (!component) {
+      return;
+    }
+
+    const sortable = new Sortable(container, {
+      animation: 150,
+      draggable: '[data-mission-id]',
+      handle: '.task',
+      group: { name: 'missions' },
+      onEnd: () => {
+        const ordered = Array.from(container.querySelectorAll('[data-mission-id]'))
+          .map((item) => {
+            const id = parseInt(item.dataset.missionId || '', 10);
+            if (Number.isNaN(id)) return null;
+
+            return {
+              id,
+              list_id: parseNullableInt(item.dataset.listId),
+            };
+          })
+          .filter(Boolean);
+
+        if (!ordered.length) {
+          return;
+        }
+
+        component.call('reorderMissions', ordered);
+      },
+    });
+
+    container.dataset.sortableReady = '1';
+    container.__sortable = sortable;
+  });
+}
+
+function setupSortableSubtasks(root = document) {
+  const containers = root.querySelectorAll('[data-subtask-container]:not([data-sortable-ready])');
+
+  containers.forEach((container) => {
+    const missionId = parseNullableInt(container.dataset.missionId);
+
+    if (!missionId) {
+      container.dataset.sortableReady = '1';
+      return;
+    }
+
+    const component = findLivewireComponent(container);
+    if (!component) {
+      return;
+    }
+
+    const isDetailsContainer =
+      container.classList.contains('ti-subtask-list') ||
+      container.classList.contains('ti-subtask-children');
+
+    const sortable = new Sortable(container, {
+      animation: 160,
+      group: { name: `subtasks-${missionId}`, pull: true, put: true },
+      draggable: '[data-subtask-node]',
+      handle: isDetailsContainer ? '.ti-subtask-row' : '.subtask',
+      onEnd: (evt) => {
+        const movedEl = evt.item;
+        const movedId = parseInt(movedEl?.dataset?.subtaskId || '', 10);
+
+        if (!movedId) {
+          return;
+        }
+
+        const toContainer = evt.to.closest('[data-subtask-container]');
+        const fromContainer = evt.from.closest('[data-subtask-container]');
+
+        if (!toContainer || !fromContainer) {
+          return;
+        }
+
+        const toOrder = collectSubtaskOrder(toContainer);
+        const fromOrder = fromContainer === toContainer ? toOrder : collectSubtaskOrder(fromContainer);
+
+        const toParentId = parseNullableInt(toContainer.dataset.parentId);
+        const fromParentId = parseNullableInt(fromContainer.dataset.parentId);
+
+        const payload = {
+          moved_id: movedId,
+          to_parent_id: toParentId,
+          from_parent_id: fromParentId,
+          to_order: toOrder,
+        };
+
+        if (fromContainer !== toContainer) {
+          payload.from_order = fromOrder;
+        }
+
+        component.call('reorderSubtasks', missionId, payload);
+      },
+    });
+
+    container.dataset.sortableReady = '1';
+    container.__sortable = sortable;
+  });
 }
 
 /* ────────────────────────────────────────────────────────────────── */
@@ -517,6 +653,8 @@ function initQuillEditors(root = document) {
 function boot(root = document) {
   setupDelegatedClick(); // 2) um único listener que sobrevive a trocas
   setupInputs(root);     // 3) inputs que criam itens dinamicamente
+  setupSortableTasks(root);
+  setupSortableSubtasks(root);
   setupFocusListeners();
   setupDetailsKeyboard();
   initQuillEditors(root);
