@@ -168,17 +168,39 @@ class Details extends Component
     }
 
     #[On('tasks-inline-action')]
-    public function handleInlineAction(?int $missionId = null, string $action = '', ?string $value = null): void
+    public function handleInlineAction(?int $missionId = null, string $action = '', ?string $value = null, ?int $checkpointId = null): void
     {
         if (! $missionId) {
             return;
         }
 
-        if ($this->missionId !== $missionId) {
-            $this->loadMission($missionId);
+        $shouldReload = $this->missionId !== $missionId
+            || ($checkpointId !== null && $this->selectedSubtaskId !== $checkpointId);
+
+        if ($shouldReload) {
+            $this->loadMission($missionId, $checkpointId);
         }
 
         if ($this->missionId !== $missionId) {
+            return;
+        }
+
+        if ($checkpointId !== null) {
+            switch ($action) {
+                case 'due-shortcut':
+                    if ($value !== null) {
+                        $this->applySubtaskShortcut($checkpointId, $value);
+                    }
+
+                    break;
+                case 'set-date':
+                    if ($value) {
+                        $this->selectSubtaskDueDate($checkpointId, $value);
+                    }
+
+                    break;
+            }
+
             return;
         }
 
@@ -466,6 +488,12 @@ class Details extends Component
         $timezone = $this->userTimezone();
         $today = CarbonImmutable::now($timezone)->startOfDay();
 
+        if ($this->selectedSubtaskId) {
+            $this->applySubtaskShortcut($this->selectedSubtaskId, $shortcut);
+
+            return;
+        }
+
         $target = match ($shortcut) {
             'today' => $today,
             'tomorrow' => $today->addDay(),
@@ -486,6 +514,12 @@ class Details extends Component
     public function applyMenuDate(): void
     {
         if (! $this->missionId || ! $this->menuDate) {
+            return;
+        }
+
+        if ($this->selectedSubtaskId) {
+            $this->selectSubtaskDueDate($this->selectedSubtaskId, $this->menuDate);
+
             return;
         }
 
@@ -565,6 +599,58 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    public function clearSubtaskDueDate(int $checkpointId): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $checkpoint = $this->resolveCheckpoint($checkpointId);
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        if (! $this->updateCheckpointDueDate($checkpoint, null)) {
+            return;
+        }
+
+        $this->menuDate = null;
+
+        $this->loadMission($this->missionId, $checkpointId);
+        $this->dispatch('tasks-updated');
+    }
+
+    public function selectSubtaskDueDate(int $checkpointId, string $date): void
+    {
+        if (! $this->missionId || $date === '') {
+            return;
+        }
+
+        $timezone = $this->userTimezone();
+
+        try {
+            $selectedLocal = CarbonImmutable::createFromFormat('Y-m-d', $date, $timezone);
+        } catch (\Throwable) {
+            return;
+        }
+
+        $checkpoint = $this->resolveCheckpoint($checkpointId);
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        if (! $this->updateCheckpointDueDate($checkpoint, $selectedLocal)) {
+            return;
+        }
+
+        $this->menuDate = $selectedLocal->format('Y-m-d');
+
+        $this->loadMission($this->missionId, $checkpointId);
+        $this->dispatch('tasks-updated');
+    }
+
     public function toggleStar(): void
     {
         if (! $this->missionId) {
@@ -583,6 +669,48 @@ class Details extends Component
         $mission->save();
 
         $this->loadMission($mission->id);
+        $this->dispatch('tasks-updated');
+    }
+
+    private function applySubtaskShortcut(int $checkpointId, string $shortcut): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $checkpoint = $this->resolveCheckpoint($checkpointId);
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        if ($shortcut === 'clear') {
+            $this->clearSubtaskDueDate($checkpointId);
+
+            return;
+        }
+
+        $timezone = $this->userTimezone();
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+
+        $target = match ($shortcut) {
+            'today' => $today,
+            'tomorrow' => $today->addDay(),
+            'next7' => $today->addDays(7),
+            default => null,
+        };
+
+        if (! $target) {
+            return;
+        }
+
+        if (! $this->updateCheckpointDueDate($checkpoint, $target)) {
+            return;
+        }
+
+        $this->menuDate = $target->format('Y-m-d');
+
+        $this->loadMission($this->missionId, $checkpointId);
         $this->dispatch('tasks-updated');
     }
 
@@ -919,6 +1047,7 @@ class Details extends Component
             $this->mission['active_subtask'] = null;
             $this->mission['active_subtask_path'] = [];
             $this->mission['parent_title'] = null;
+            $this->menuDate = $this->pickerSelectedDate;
 
             return;
         }
@@ -930,6 +1059,7 @@ class Details extends Component
             $this->mission['active_subtask'] = null;
             $this->mission['active_subtask_path'] = [];
             $this->mission['parent_title'] = null;
+            $this->menuDate = $this->pickerSelectedDate;
 
             return;
         }
@@ -938,6 +1068,15 @@ class Details extends Component
         $this->mission['active_subtask'] = $trail['node'];
         $this->mission['active_subtask_path'] = $trail['ancestors'];
         $this->mission['parent_title'] = $this->formatParentTitle($this->mission['title'] ?? '', $trail['ancestors']);
+
+        $activeNode = $trail['node'] ?? null;
+        $dueAt = $activeNode['due_at'] ?? null;
+
+        if ($dueAt instanceof CarbonInterface) {
+            $this->menuDate = $dueAt->format('Y-m-d');
+        } else {
+            $this->menuDate = null;
+        }
     }
 
     private function findSubtaskTrail(array $nodes, int $checkpointId, array $trail = []): ?array
@@ -1037,6 +1176,48 @@ class Details extends Component
                 $this->replicateCheckpointBranch($node['children'], $missionId, $checkpoint->id, $depth + 1);
             }
         }
+    }
+
+    private function resolveCheckpoint(int $checkpointId): ?Checkpoint
+    {
+        if (! $this->missionId) {
+            return null;
+        }
+
+        return Checkpoint::query()
+            ->where('id', $checkpointId)
+            ->whereHas('mission', fn ($query) => $query
+                ->where('id', $this->missionId)
+                ->where('user_id', Auth::id())
+            )
+            ->first();
+    }
+
+    private function updateCheckpointDueDate(Checkpoint $checkpoint, ?CarbonImmutable $localDate): bool
+    {
+        $current = $checkpoint->due_at;
+
+        if ($localDate === null) {
+            if ($current === null) {
+                return false;
+            }
+
+            $checkpoint->due_at = null;
+            $checkpoint->save();
+
+            return true;
+        }
+
+        $serverDate = $localDate->setTimezone(config('app.timezone'));
+
+        if ($current && $current->equalTo($serverDate)) {
+            return false;
+        }
+
+        $checkpoint->due_at = $serverDate;
+        $checkpoint->save();
+
+        return true;
     }
 
     private function buildCalendar(): array
