@@ -1,6 +1,5 @@
 <?php
 
-// This Livewire class manages completed behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Models\Mission;
@@ -9,12 +8,21 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
+/**
+ * Componente que exibe a visão de tarefas concluídas.
+ */
 class Completed extends Component
 {
     protected $listeners = ['tasks-updated' => '$refresh'];
 
+    /**
+     * Configuração da barra lateral exibida nessa visão.
+     */
     public array $rail = [];
 
+    /**
+     * Define a estrutura do rail com os atalhos usados na página.
+     */
     public function mount(): void
     {
         $this->rail = [
@@ -32,6 +40,9 @@ class Completed extends Component
         ];
     }
 
+    /**
+     * Monta os dados necessários para renderizar as tarefas concluídas.
+     */
     public function render()
     {
         $user = Auth::user();
@@ -64,6 +75,9 @@ class Completed extends Component
         ]);
     }
 
+    /**
+     * Agrupa missões por data de conclusão para montar as seções da página.
+     */
     private function groupMissionsByCompletionDate(Collection $missions, string $timezone): Collection
     {
         $dated = [];
@@ -110,6 +124,9 @@ class Completed extends Component
         return collect(array_merge($datedValues, $undatedValues));
     }
 
+    /**
+     * Formata o título exibido para cada grupo de tarefas concluídas.
+     */
     private function formatDateHeading(?CarbonInterface $date): string
     {
         if (! $date) {

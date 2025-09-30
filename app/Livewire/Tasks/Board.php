@@ -1,21 +1,39 @@
 <?php
 
-// This Livewire class manages board behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Support\MissionShortcutFilter;
 use Livewire\Component;
 
+/**
+ * Componente responsável por renderizar a "board" da página de tarefas.
+ * Ele costura o painel principal, a barra lateral e os atalhos de filtro.
+ */
 class Board extends Component
 {
+    /**
+     * Estrutura da barra lateral exibida na board.
+     */
     public array $rail = [];
 
+    /**
+     * Identificador da lista atual (quando a página é filtrada por uma lista).
+     */
     public ?int $listId = null;
 
+    /**
+     * Indica se a board está sendo exibida em contexto de lista específica.
+     */
     public bool $isListView = false;
 
+    /**
+     * Atalho selecionado (Hoje, 7 dias, etc.).
+     */
     public ?string $shortcut = null;
 
+    /**
+     * Inicializa o componente com possíveis filtros de lista e atalho.
+     */
     public function mount(?int $listId = null, ?string $shortcut = null): void
     {
         $this->listId = $listId;
@@ -44,6 +62,9 @@ class Board extends Component
         ];
     }
 
+    /**
+     * Renderiza a board conectando com a view Blade da página de tarefas.
+     */
     public function render()
     {
         return view('livewire.tasks.board');

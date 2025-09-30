@@ -1,6 +1,5 @@
 <?php
 
-// This Livewire class manages details behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Models\Checkpoint;
@@ -17,42 +16,97 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
+/**
+ * Componente que controla o painel de detalhes da página de tarefas.
+ * Responsável por carregar uma missão, gerenciar subtarefas e ações rápidas.
+ */
 class Details extends Component
 {
     public const MAX_SUBTASKS = MainPanel::MAX_SUBTASKS;
 
+    /**
+     * Identificador da missão atualmente carregada.
+     */
     public ?int $missionId = null;
 
+    /**
+     * Dados estruturados da missão apresentada no painel.
+     */
     public ?array $mission = null;
 
+    /**
+     * Tags associadas à missão carregada.
+     */
     public array $missionTags = [];
 
+    /**
+     * Controle de exibição do seletor de data principal.
+     */
     public bool $showDatePicker = false;
 
+    /**
+     * Data usada como cursor no calendário do seletor.
+     */
     public ?string $pickerCursorDate = null;
 
+    /**
+     * Data atualmente selecionada pelo usuário no calendário.
+     */
     public ?string $pickerSelectedDate = null;
 
+    /**
+     * Data escolhida através do menu contextual de datas.
+     */
     public ?string $menuDate = null;
 
+    /**
+     * Controla a abertura do menu de mover missão para outra lista.
+     */
     public bool $showMoveListMenu = false;
 
+    /**
+     * Listas disponíveis para mover a missão.
+     */
     public array $availableLists = [];
 
+    /**
+     * Controla a abertura do formulário de nova subtarefa.
+     */
     public bool $showSubtaskForm = false;
 
+    /**
+     * Título digitado ao criar uma nova subtarefa.
+     */
     public string $newSubtaskTitle = '';
 
+    /**
+     * Identificador do possível pai da subtarefa em criação.
+     */
     public ?int $newSubtaskParentId = null;
 
+    /**
+     * Rótulo exibido para o pai da subtarefa em criação.
+     */
     public ?string $newSubtaskParentLabel = null;
 
+    /**
+     * Subtarefa atualmente selecionada na árvore.
+     */
     public ?int $selectedSubtaskId = null;
 
+    /**
+     * Indica se o editor de descrição está ativo.
+     */
     public bool $isEditingDescription = false;
 
+    /**
+     * Conteúdo temporário da descrição durante a edição.
+     */
     public string $descriptionDraft = '';
 
+    /**
+     * Carrega missão e subtarefas quando o usuário seleciona um item na lista.
+     */
     #[On('task-selected')]
     public function loadMission(?int $missionId = null, ?int $checkpointId = null): void
     {
@@ -170,6 +224,9 @@ class Details extends Component
     }
 
     #[On('tasks-inline-action')]
+    /**
+     * Trata ações rápidas vindas do painel principal (atalhos de datas, prioridade etc.).
+     */
     public function handleInlineAction(?int $missionId = null, string $action = '', ?string $value = null, ?int $checkpointId = null): void
     {
         if (! $missionId) {
@@ -255,6 +312,9 @@ class Details extends Component
         }
     }
 
+    /**
+     * Inicia a edição do campo de descrição.
+     */
     public function startDescriptionEdit(): void
     {
         if (! $this->missionId || ! is_array($this->mission)) {
@@ -265,6 +325,9 @@ class Details extends Component
         $this->descriptionDraft = (string) ($this->mission['description'] ?? '');
     }
 
+    /**
+     * Cancela a edição da descrição e descarta alterações.
+     */
     public function cancelDescriptionEdit(): void
     {
         $this->isEditingDescription = false;
@@ -273,6 +336,9 @@ class Details extends Component
             : '';
     }
 
+    /**
+     * Persiste a nova descrição da missão.
+     */
     public function saveDescription(): void
     {
         if (! $this->missionId) {
@@ -311,6 +377,9 @@ class Details extends Component
     }
 
     #[On('tasks-updated')]
+    /**
+     * Recarrega os dados da missão mantendo a seleção atual.
+     */
     public function refreshMission(): void
     {
         if ($this->missionId) {
@@ -319,6 +388,9 @@ class Details extends Component
         }
     }
 
+    /**
+     * Seleciona uma subtarefa específica dentro da árvore.
+     */
     public function selectCheckpoint(int $checkpointId): void
     {
         if (! $this->missionId) {
@@ -342,6 +414,9 @@ class Details extends Component
         }
     }
 
+    /**
+     * Alterna o estado de conclusão de uma subtarefa.
+     */
     public function toggleCheckpoint(int $checkpointId): void
     {
         if (! $this->missionId) {
@@ -369,6 +444,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Reordena subtarefas após drag and drop no painel de detalhes.
+     */
     public function reorderSubtasks(int $missionId, array $data): void
     {
         $user = Auth::user();
@@ -426,6 +504,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Remove uma subtarefa específica da missão em foco.
+     */
     public function deleteSubtask(int $checkpointId): void
     {
         if (! $this->missionId) {
@@ -455,6 +536,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Renderiza a view com os dados da missão selecionada.
+     */
     public function render()
     {
         return view('livewire.tasks.details', [
@@ -466,6 +550,9 @@ class Details extends Component
         ]);
     }
 
+    /**
+     * Retorna o texto amigável para prioridade da missão.
+     */
     private function priorityLabel(?int $priority): string
     {
         return match ($priority) {
@@ -476,6 +563,9 @@ class Details extends Component
         };
     }
 
+    /**
+     * Abre ou fecha o calendário principal de data de entrega.
+     */
     public function toggleDatePicker(): void
     {
         if (! $this->missionId) {
@@ -489,11 +579,17 @@ class Details extends Component
         }
     }
 
+    /**
+     * Fecha o calendário de data de entrega.
+     */
     public function closeDatePicker(): void
     {
         $this->showDatePicker = false;
     }
 
+    /**
+     * Alterna o status de conclusão da missão em destaque.
+     */
     public function toggleCompletion(): void
     {
         if (! $this->missionId) {
@@ -515,6 +611,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Atualiza a prioridade da missão.
+     */
     public function setPriority(?int $priority): void
     {
         if (! $this->missionId) {
@@ -538,6 +637,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Aplica um atalho rápido de data para a missão.
+     */
     public function applyDueShortcut(string $shortcut): void
     {
         if (! $this->missionId) {
@@ -570,6 +672,9 @@ class Details extends Component
         $this->selectDueDate($target->format('Y-m-d'));
     }
 
+    /**
+     * Salva a data escolhida no menu contextual do calendário.
+     */
     public function applyMenuDate(): void
     {
         if (! $this->missionId || ! $this->menuDate) {
@@ -585,6 +690,9 @@ class Details extends Component
         $this->selectDueDate($this->menuDate);
     }
 
+    /**
+     * Navega entre meses dentro do seletor de datas.
+     */
     public function movePicker(int $offset): void
     {
         if (! $this->missionId) {
@@ -596,6 +704,9 @@ class Details extends Component
         $this->pickerCursorDate = $cursor->startOfMonth()->format('Y-m-d');
     }
 
+    /**
+     * Seleciona manualmente uma data de vencimento.
+     */
     public function selectDueDate(?string $date): void
     {
         if (! $this->missionId || ! $date) {
@@ -630,6 +741,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Remove qualquer data de vencimento aplicada à missão.
+     */
     public function clearDueDate(): void
     {
         if (! $this->missionId) {
@@ -658,6 +772,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Limpa a data de entrega de uma subtarefa específica.
+     */
     public function clearSubtaskDueDate(int $checkpointId): void
     {
         if (! $this->missionId) {
@@ -680,6 +797,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Define uma nova data de entrega para a subtarefa escolhida.
+     */
     public function selectSubtaskDueDate(int $checkpointId, string $date): void
     {
         if (! $this->missionId || $date === '') {
@@ -710,6 +830,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Marca ou desmarca a missão como favorita.
+     */
     public function toggleStar(): void
     {
         if (! $this->missionId) {
@@ -731,6 +854,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Aplica atalhos de data às subtarefas.
+     */
     private function applySubtaskShortcut(int $checkpointId, string $shortcut): void
     {
         if (! $this->missionId) {
@@ -773,6 +899,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Abre ou fecha o menu de mover missão entre listas.
+     */
     public function toggleMoveListMenu(): void
     {
         if (! $this->missionId) {
@@ -782,11 +911,17 @@ class Details extends Component
         $this->showMoveListMenu = ! $this->showMoveListMenu;
     }
 
+    /**
+     * Fecha explicitamente o menu de mover missão.
+     */
     public function closeMoveListMenu(): void
     {
         $this->showMoveListMenu = false;
     }
 
+    /**
+     * Move a missão atual para outra lista escolhida.
+     */
     public function moveToList(?int $listId): void
     {
         if (! $this->missionId) {
@@ -828,6 +963,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Prepara o formulário para criar uma nova subtarefa (opcionalmente com pai).
+     */
     public function openSubtaskForm(?int $parentId = null): void
     {
         if (! $this->missionId) {
@@ -848,6 +986,9 @@ class Details extends Component
         $this->showSubtaskForm = true;
     }
 
+    /**
+     * Cancela a criação de subtarefa e limpa o formulário.
+     */
     public function cancelSubtaskForm(): void
     {
         $this->showSubtaskForm = false;
@@ -856,6 +997,9 @@ class Details extends Component
         $this->newSubtaskParentLabel = null;
     }
 
+    /**
+     * Persiste a nova subtarefa criada no painel de detalhes.
+     */
     public function saveSubtask(): void
     {
         if (! $this->missionId) {
@@ -907,6 +1051,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Limpa o destaque atual de subtarefa.
+     */
     public function clearSelectedSubtask(): void
     {
         if (! $this->missionId) {
@@ -918,6 +1065,9 @@ class Details extends Component
         $this->dispatch('task-selected', $this->missionId, null);
     }
 
+    /**
+     * Duplica a missão atual incluindo subtarefas.
+     */
     public function duplicateMission(): void
     {
         if (! $this->missionId) {
@@ -957,6 +1107,9 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Remove definitivamente a missão em edição.
+     */
     public function deleteMission(): void
     {
         if (! $this->missionId) {
@@ -989,6 +1142,9 @@ class Details extends Component
         $this->dispatch('task-selected', null, null);
     }
 
+    /**
+     * Cria uma sessão de Pomodoro vinculada à missão atual.
+     */
     public function startPomodoro(): void
     {
         if (! $this->missionId) {
@@ -1036,6 +1192,9 @@ class Details extends Component
     /**
      * Monta uma árvore de subtarefas respeitando a ordem e o limite de profundidade.
      */
+    /**
+     * Constrói a árvore hierárquica de subtarefas para exibição.
+     */
     private function buildCheckpointTree(Collection $checkpoints, ?string $timezone = null): array
     {
         if ($checkpoints->isEmpty()) {
@@ -1055,6 +1214,9 @@ class Details extends Component
         return $this->buildCheckpointBranch($grouped, null, 0, $timezone);
     }
 
+    /**
+     * Normaliza o identificador do pai recebido do frontend.
+     */
     private function normalizeParentId($value): ?int
     {
         if ($value === null || $value === '') {
@@ -1064,6 +1226,9 @@ class Details extends Component
         return (int) $value;
     }
 
+    /**
+     * Informa qual coluna representa o relacionamento pai nas subtarefas.
+     */
     private function checkpointParentColumn(): ?string
     {
         static $parentColumn;
@@ -1081,6 +1246,9 @@ class Details extends Component
         return $parentColumn !== '' ? $parentColumn : null;
     }
 
+    /**
+     * Monta recursivamente um ramo de subtarefas.
+     */
     private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth, string $timezone): array
     {
         $key = $parentId === null ? '__root__' : (string) $parentId;
@@ -1104,6 +1272,9 @@ class Details extends Component
         })->values()->toArray();
     }
 
+    /**
+     * Atualiza a ordenação das subtarefas após interação do usuário.
+     */
     private function syncCheckpointOrder(int $missionId, ?int $parentId, Collection $order): void
     {
         if ($order->isEmpty()) {
@@ -1131,6 +1302,9 @@ class Details extends Component
         }
     }
 
+    /**
+     * Ajusta o contexto da subtarefa ativa para destacar a navegação.
+     */
     private function applyActiveSubtaskContext(?int $checkpointId): void
     {
         if (! is_array($this->mission)) {
@@ -1176,6 +1350,9 @@ class Details extends Component
         }
     }
 
+    /**
+     * Localiza o caminho (ancestrais) de uma subtarefa na árvore.
+     */
     private function findSubtaskTrail(array $nodes, int $checkpointId, array $trail = []): ?array
     {
         foreach ($nodes as $node) {
@@ -1200,6 +1377,9 @@ class Details extends Component
         return null;
     }
 
+    /**
+     * Busca uma subtarefa específica dentro da árvore montada.
+     */
     private function findSubtaskInTree(array $nodes, int $checkpointId): ?array
     {
         $trail = $this->findSubtaskTrail($nodes, $checkpointId);
@@ -1207,6 +1387,9 @@ class Details extends Component
         return $trail['node'] ?? null;
     }
 
+    /**
+     * Descobre o título atual de uma subtarefa.
+     */
     private function resolveSubtaskTitle(int $checkpointId): ?string
     {
         if (! is_array($this->mission)) {
@@ -1224,6 +1407,9 @@ class Details extends Component
         return $title !== '' ? $title : 'Sem título';
     }
 
+    /**
+     * Gera o rótulo do pai ao abrir o formulário de subtarefa.
+     */
     private function formatParentTitle(?string $missionTitle, array $ancestors): ?string
     {
         $segments = [];
@@ -1248,6 +1434,9 @@ class Details extends Component
         return implode(' › ', $segments);
     }
 
+    /**
+     * Duplicação recursiva das subtarefas ao clonar missões.
+     */
     private function replicateCheckpointBranch(array $nodes, int $missionId, ?int $parentId, int $depth = 0): void
     {
         if ($depth >= 7) {
@@ -1275,6 +1464,9 @@ class Details extends Component
         }
     }
 
+    /**
+     * Recupera uma subtarefa garantindo que pertence ao usuário logado.
+     */
     private function resolveCheckpoint(int $checkpointId): ?Checkpoint
     {
         if (! $this->missionId) {
@@ -1290,6 +1482,9 @@ class Details extends Component
             ->first();
     }
 
+    /**
+     * Atualiza a data de entrega de uma subtarefa específica.
+     */
     private function updateCheckpointDueDate(Checkpoint $checkpoint, ?CarbonImmutable $localDate): bool
     {
         $current = $checkpoint->due_at;
@@ -1317,6 +1512,9 @@ class Details extends Component
         return true;
     }
 
+    /**
+     * Constrói os dados do calendário exibido no seletor de datas.
+     */
     private function buildCalendar(): array
     {
         $timezone = $this->userTimezone();
@@ -1372,6 +1570,9 @@ class Details extends Component
         ];
     }
 
+    /**
+     * Determina o cursor de datas usado no calendário.
+     */
     private function resolveCursor(string $timezone): CarbonImmutable
     {
         if ($this->pickerCursorDate) {
@@ -1399,6 +1600,9 @@ class Details extends Component
         return $cursor;
     }
 
+    /**
+     * Retorna o fuso horário preferido do usuário autenticado.
+     */
     private function userTimezone(): string
     {
         $user = Auth::user();
@@ -1406,11 +1610,17 @@ class Details extends Component
         return $user?->timezone ?? config('app.timezone');
     }
 
+    /**
+     * Lista abreviada dos dias da semana para o calendário.
+     */
     private function weekDays(): array
     {
         return ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
     }
 
+    /**
+     * Calcula a próxima posição disponível para duplicar missões.
+     */
     private function nextMissionPosition(int $userId, ?int $listId): int
     {
         return (int) Mission::query()
@@ -1423,6 +1633,9 @@ class Details extends Component
             ->max('position') + 1;
     }
 
+    /**
+     * Sanitiza o HTML da descrição antes de salvar.
+     */
     private function normalizeDescriptionHtml(string $html): ?string
     {
         $trimmed = trim($html);
@@ -1450,6 +1663,9 @@ class Details extends Component
         return trim($sanitized);
     }
 
+    /**
+     * Determina a próxima posição para inserir uma subtarefa.
+     */
     private function nextCheckpointPosition(int $missionId, ?int $parentId = null): int
     {
         $query = Checkpoint::query()
@@ -1468,6 +1684,9 @@ class Details extends Component
         return $position + 1;
     }
 
+    /**
+     * Verifica se o limite de subtarefas foi atingido.
+     */
     private function reachedSubtaskLimit(int $missionId, ?int $parentId = null): bool
     {
         $query = Checkpoint::query()->where('mission_id', $missionId);
@@ -1483,6 +1702,9 @@ class Details extends Component
         return $query->count() >= self::MAX_SUBTASKS;
     }
 
+    /**
+     * Cria um título amigável ao duplicar subtarefas ou missões.
+     */
     private function duplicatedTitle(?string $title): string
     {
         $base = trim((string) $title);

@@ -1,6 +1,5 @@
 <?php
 
-// This controller orchestrates HTTP requests for the tasks area related to mission.
 namespace App\Http\Controllers\Tasks;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;
@@ -9,10 +8,16 @@ use App\Models\Mission;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+/**
+ * Controlador HTTP responsável pelos endpoints de missões (tarefas) da página Tasks.
+ */
 class MissionController extends Controller
 {
     use InteractsWithUserModels;
 
+    /**
+     * Lista todas as missões do usuário autenticado para a Tasks page.
+     */
     public function index(Request $request)
     {
         $missions = Mission::where('user_id', $request->user()->id)
@@ -22,6 +27,9 @@ class MissionController extends Controller
         return response()->json($missions);
     }
 
+    /**
+     * Cria uma nova missão com base nos dados enviados pela interface.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -45,6 +53,9 @@ class MissionController extends Controller
         return response()->json($mission, 201);
     }
 
+    /**
+     * Retorna detalhes completos de uma missão específica.
+     */
     public function show(Request $request, Mission $mission)
     {
         $this->guardUserModel($mission, $request);
@@ -52,6 +63,9 @@ class MissionController extends Controller
         return response()->json($mission->load(['checkpoints', 'attachments']));
     }
 
+    /**
+     * Atualiza os campos editáveis de uma missão existente.
+     */
     public function update(Request $request, Mission $mission)
     {
         $this->guardUserModel($mission, $request);
@@ -75,6 +89,9 @@ class MissionController extends Controller
         return response()->json($mission);
     }
 
+    /**
+     * Exclui uma missão pertencente ao usuário.
+     */
     public function destroy(Request $request, Mission $mission)
     {
         $this->guardUserModel($mission, $request);

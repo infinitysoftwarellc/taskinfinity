@@ -1,6 +1,5 @@
 <?php
 
-// This Livewire class manages main panel behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Models\Checkpoint;
@@ -15,10 +14,17 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
+/**
+ * Componente que representa a lista principal de tarefas da página Tasks.
+ * Lida com criação, seleção, ações inline e ordenação de missões e subtarefas.
+ */
 class MainPanel extends Component
 {
     public const MAX_SUBTASKS = 7;
 
+    /**
+     * Eventos do Livewire que mantêm o painel sincronizado com outras áreas.
+     */
     protected $listeners = [
         'tasks-updated' => '$refresh',
         'task-selected' => 'syncSelectedMission',
@@ -72,12 +78,18 @@ class MainPanel extends Component
 
     public ?string $shortcut = null;
 
+    /**
+     * Sincroniza a seleção de missão/subtarefa ao receber eventos externos.
+     */
     public function syncSelectedMission(?int $missionId = null, ?int $checkpointId = null): void
     {
         $this->selectedMissionId = $missionId;
         $this->selectedSubtaskId = $checkpointId;
     }
 
+    /**
+     * Inicializa o painel principal com filtros ativos.
+     */
     public function mount(?int $currentListId = null, ?string $shortcut = null): void
     {
         $this->currentListId = $currentListId;
@@ -95,6 +107,9 @@ class MainPanel extends Component
         }
     }
 
+    /**
+     * Cria uma nova missão na lista selecionada.
+     */
     public function createTask(): void
     {
         $user = Auth::user();
@@ -154,6 +169,9 @@ class MainPanel extends Component
         $this->dispatch('task-selected', $mission->id, null);
     }
 
+    /**
+     * Define qual missão está ativa no painel e dispara eventos para detalhes.
+     */
     public function selectMission(int $missionId): void
     {
         $user = Auth::user();
@@ -182,6 +200,9 @@ class MainPanel extends Component
         $this->startMissionEdit($mission->id, $mission);
     }
 
+    /**
+     * Processa ações rápidas (datas, criação de subtarefa etc.) direto da lista.
+     */
     public function runInlineAction(int $missionId, string $action, ?string $value = null, ?int $checkpointId = null): void
     {
         $user = Auth::user();
@@ -275,6 +296,9 @@ class MainPanel extends Component
         $this->dispatch('tasks-inline-action', $mission->id, $action, $value, null);
     }
 
+    /**
+     * Seleciona uma subtarefa vinculada a determinada missão.
+     */
     public function selectSubtask(int $missionId, int $checkpointId): void
     {
         $user = Auth::user();
@@ -313,6 +337,9 @@ class MainPanel extends Component
         $this->startSubtaskEdit($checkpointId);
     }
 
+    /**
+     * Alterna o status de conclusão de uma subtarefa direto da lista principal.
+     */
     public function toggleSubtaskCompletion(int $missionId, int $checkpointId): void
     {
         $user = Auth::user();
@@ -353,6 +380,9 @@ class MainPanel extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Remove uma subtarefa sem precisar abrir o painel detalhado.
+     */
     public function deleteSubtask(int $missionId, int $checkpointId): void
     {
         $user = Auth::user();
@@ -398,6 +428,9 @@ class MainPanel extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Ativa o modo de edição inline para uma missão.
+     */
     public function startMissionEdit(int $missionId, ?Mission $model = null): void
     {
         $user = Auth::user();
@@ -424,12 +457,18 @@ class MainPanel extends Component
         $this->dispatch('focus-mission-input', missionId: $mission->id);
     }
 
+    /**
+     * Cancela a edição de missão e limpa o estado temporário.
+     */
     public function cancelMissionEdit(): void
     {
         $this->editingMissionId = null;
         $this->editingMissionTitle = '';
     }
 
+    /**
+     * Salva alterações no título da missão (com opção de criar outra em sequência).
+     */
     public function saveMissionEdit(int $missionId, bool $createAnother = false): void
     {
         $user = Auth::user();
@@ -471,6 +510,9 @@ class MainPanel extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Cria uma nova missão logo abaixo da missão fornecida.
+     */
     public function createMissionAfter(int $missionId): void
     {
         $user = Auth::user();
@@ -507,6 +549,9 @@ class MainPanel extends Component
         $this->dispatch('focus-mission-input', missionId: $mission->id);
     }
 
+    /**
+     * Atalho que cria uma subtarefa ao pressionar Shift+Enter na missão.
+     */
     public function missionShiftEnter(int $missionId): void
     {
         if ($this->editingMissionId === $missionId) {
@@ -516,6 +561,9 @@ class MainPanel extends Component
         $this->createSubtaskForMission($missionId);
     }
 
+    /**
+     * Persiste a nova ordem de missões após drag and drop no painel.
+     */
     public function reorderMissions(array $ordered): void
     {
         $user = Auth::user();
@@ -629,6 +677,9 @@ class MainPanel extends Component
         $this->dispatch('tasks-updated');
     }
 
+    /**
+     * Inicia a edição inline de uma subtarefa existente.
+     */
     public function startSubtaskEdit(int $checkpointId): void
     {
         $user = Auth::user();
@@ -650,6 +701,9 @@ class MainPanel extends Component
         $this->dispatch('focus-subtask-input', subtaskId: $checkpoint->id);
     }
 
+    /**
+     * Cancela a edição de subtarefa e restaura o estado padrão.
+     */
     public function cancelSubtaskEdit(): void
     {
         $this->editingSubtaskId = null;
@@ -657,6 +711,9 @@ class MainPanel extends Component
         $this->editingSubtaskMissionId = null;
     }
 
+    /**
+     * Salva a subtarefa editada e permite criar irmãs ou filhas rapidamente.
+     */
     public function saveSubtaskEdit(int $checkpointId, bool $createSibling = false, bool $createChild = false): void
     {
         $user = Auth::user();
@@ -704,6 +761,9 @@ class MainPanel extends Component
         $this->selectedMissionId = $missionId;
     }
 
+    /**
+     * Cria rapidamente uma subtarefa básica para a missão informada.
+     */
     public function createSubtaskForMission(int $missionId): void
     {
         $user = Auth::user();
@@ -750,6 +810,9 @@ class MainPanel extends Component
         $this->dispatch('focus-subtask-input', subtaskId: $subtask->id);
     }
 
+    /**
+     * Gera uma subtarefa irmã alinhada ao mesmo nível hierárquico.
+     */
     public function createSiblingSubtask(int $checkpointId): void
     {
         $user = Auth::user();
@@ -797,6 +860,9 @@ class MainPanel extends Component
         $this->dispatch('focus-subtask-input', subtaskId: $sibling->id);
     }
 
+    /**
+     * Cria uma subtarefa filha diretamente abaixo da atual.
+     */
     public function createChildSubtask(int $checkpointId): void
     {
         $user = Auth::user();
@@ -847,6 +913,9 @@ class MainPanel extends Component
         $this->dispatch('focus-subtask-input', subtaskId: $child->id);
     }
 
+    /**
+     * Calcula a posição da próxima missão ao criar itens no painel.
+     */
     private function nextPosition(int $userId, ?int $listId): int
     {
         return (int) Mission::query()
@@ -859,6 +928,9 @@ class MainPanel extends Component
             ->max('position') + 1;
     }
 
+    /**
+     * Processa a seleção manual de datas para missões.
+     */
     private function handleMissionDateSelection(Mission $mission, ?string $value, string $timezone): bool
     {
         if ($value === null || $value === '') {
@@ -874,6 +946,9 @@ class MainPanel extends Component
         return $this->updateMissionDueDate($mission, $localDate);
     }
 
+    /**
+     * Aplica atalhos de vencimento às missões (hoje, amanhã, etc.).
+     */
     private function handleMissionShortcut(Mission $mission, ?string $shortcut, string $timezone): bool
     {
         if (! $shortcut) {
@@ -900,6 +975,9 @@ class MainPanel extends Component
         return $this->updateMissionDueDate($mission, $target);
     }
 
+    /**
+     * Converte datas vindas da interface considerando o fuso horário do usuário.
+     */
     private function parseLocalDate(string $value, string $timezone): ?CarbonImmutable
     {
         try {
@@ -909,6 +987,9 @@ class MainPanel extends Component
         }
     }
 
+    /**
+     * Atualiza o campo de vencimento da missão e evita gravações desnecessárias.
+     */
     private function updateMissionDueDate(Mission $mission, ?CarbonImmutable $localDate): bool
     {
         $current = $mission->due_at;
@@ -936,6 +1017,9 @@ class MainPanel extends Component
         return true;
     }
 
+    /**
+     * Processa datas escolhidas manualmente para uma subtarefa.
+     */
     private function handleCheckpointDateSelection(Checkpoint $checkpoint, ?string $value, string $timezone): bool
     {
         if ($value === null || $value === '') {
@@ -951,6 +1035,9 @@ class MainPanel extends Component
         return $this->updateCheckpointDueDate($checkpoint, $localDate);
     }
 
+    /**
+     * Aplica atalhos de vencimento para subtarefas específicas.
+     */
     private function handleCheckpointShortcut(Checkpoint $checkpoint, ?string $shortcut, string $timezone): bool
     {
         if (! $shortcut) {
@@ -1004,6 +1091,9 @@ class MainPanel extends Component
         return true;
     }
 
+    /**
+     * Renderiza a lista principal de missões com o estado atual.
+     */
     public function render()
     {
         $user = Auth::user();
@@ -1139,6 +1229,9 @@ class MainPanel extends Component
         ]);
     }
 
+    /**
+     * Converte códigos de atalho em rótulos humanizados.
+     */
     private function labelForShortcut(string $shortcut): string
     {
         return match ($shortcut) {
@@ -1149,6 +1242,9 @@ class MainPanel extends Component
         };
     }
 
+    /**
+     * Recupera uma subtarefa garantindo o vínculo com o usuário logado.
+     */
     private function findUserCheckpoint(int $checkpointId, int $userId): ?Checkpoint
     {
         return Checkpoint::query()
@@ -1166,6 +1262,9 @@ class MainPanel extends Component
         return (int) $value;
     }
 
+    /**
+     * Sincroniza a ordem das subtarefas após arrastar e soltar itens.
+     */
     private function syncCheckpointOrder(int $missionId, ?int $parentId, Collection $order): void
     {
         if ($order->isEmpty()) {
@@ -1193,6 +1292,9 @@ class MainPanel extends Component
         }
     }
 
+    /**
+     * Detecta dinamicamente a coluna usada para relacionar subtarefas pai/filho.
+     */
     private function checkpointParentColumn(): ?string
     {
         static $column;
@@ -1210,6 +1312,9 @@ class MainPanel extends Component
         return $column !== '' ? $column : null;
     }
 
+    /**
+     * Calcula a próxima posição disponível na hierarquia de subtarefas.
+     */
     private function nextCheckpointPosition(int $missionId, ?int $parentId = null): int
     {
         $query = Checkpoint::query()->where('mission_id', $missionId);
@@ -1227,6 +1332,9 @@ class MainPanel extends Component
         return $position + 1;
     }
 
+    /**
+     * Valida se a missão atingiu o limite máximo de subtarefas.
+     */
     private function reachedSubtaskLimit(int $missionId, ?int $parentId = null): bool
     {
         $query = Checkpoint::query()->where('mission_id', $missionId);
@@ -1242,6 +1350,9 @@ class MainPanel extends Component
         return $query->count() >= self::MAX_SUBTASKS;
     }
 
+    /**
+     * Anexa a árvore de subtarefas a cada missão retornada para a view.
+     */
     private function attachCheckpointTree(Collection $missions): void
     {
         $missions->each(function ($mission) {
@@ -1250,6 +1361,9 @@ class MainPanel extends Component
         });
     }
 
+    /**
+     * Gera a estrutura hierárquica usada pela lista principal.
+     */
     private function buildCheckpointTree(Collection $checkpoints): array
     {
         if ($checkpoints->isEmpty()) {
@@ -1267,6 +1381,9 @@ class MainPanel extends Component
         return $this->buildCheckpointBranch($grouped, null, 0);
     }
 
+    /**
+     * Percorre recursivamente os checkpoints agrupados para montar nós filhos.
+     */
     private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth): array
     {
         $key = $parentId === null ? '__root__' : (string) $parentId;
