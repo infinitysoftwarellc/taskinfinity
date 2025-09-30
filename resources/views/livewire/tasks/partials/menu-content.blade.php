@@ -4,6 +4,7 @@
     $missionId = $missionId ?? null;
     $subtaskId = $subtaskId ?? null;
     $isSubtask = $subtaskId !== null;
+    $customDateValue = $isDetails ? ($menuDate ?? '') : ($dueDate ?? '');
 @endphp
 
 <div class="ti-floating-menu" role="none">
@@ -56,6 +57,7 @@
                     class="ti-menu-date-input"
                     type="date"
                     aria-label="Escolher data personalizada"
+                    value="{{ $customDateValue }}"
                     @if ($isDetails)
                         wire:model.live="menuDate"
                         wire:change="applyMenuDate"

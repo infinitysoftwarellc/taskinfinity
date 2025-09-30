@@ -6,6 +6,7 @@
     'editingSubtaskId' => null,
     'siblingsCount' => 0,
     'maxSubtasks' => 7,
+    'userTimezone' => null,
 ])
 
 @php
@@ -18,6 +19,12 @@
     $hasChildren = $childrenCount > 0;
     $canAddChild = $childrenCount < $maxSubtasks;
     $canAddSibling = $siblingsCount < $maxSubtasks;
+    $timezone = $userTimezone ?? (auth()->user()?->timezone ?? config('app.timezone'));
+    $dueDate = null;
+
+    if (($item['due_at'] ?? null) instanceof \Carbon\CarbonInterface) {
+        $dueDate = $item['due_at']->copy()->setTimezone($timezone)->format('Y-m-d');
+    }
 @endphp
 
 <div
@@ -91,6 +98,7 @@
             'context' => 'main',
             'missionId' => $missionId,
             'subtaskId' => $item['id'] ?? null,
+            'dueDate' => $dueDate,
         ])
     </div>
 </div>

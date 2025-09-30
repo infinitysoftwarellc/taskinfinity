@@ -1,3 +1,7 @@
+@php
+    $userTimezone = auth()->user()?->timezone ?? config('app.timezone');
+@endphp
+
 <main class="main panel">
     <div class="toolbar">
         <div class="title">
@@ -65,6 +69,7 @@
                         $hasSubtasks = $subtasks->isNotEmpty();
                         $rootSubtaskCount = $subtasks->count();
                         $canAddMissionSubtask = $rootSubtaskCount < $maxSubtasks;
+                        $missionDueDate = optional(optional($mission->due_at)->setTimezone($userTimezone))->format('Y-m-d');
                     @endphp
 
                     <div class="task-block" wire:key="mission-flat-{{ $mission->id }}">
@@ -118,6 +123,7 @@
                                 @include('livewire.tasks.partials.inline-menu', [
                                     'context' => 'main',
                                     'missionId' => $mission->id,
+                                    'dueDate' => $missionDueDate,
                                 ])
                             </div>
                             {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
@@ -134,6 +140,7 @@
                                         'editingSubtaskId' => $editingSubtaskId,
                                         'siblingsCount' => $rootSubtaskCount,
                                         'maxSubtasks' => $maxSubtasks,
+                                        'userTimezone' => $userTimezone,
                                     ])
                                 @endforeach
                                 @if (! $canAddMissionSubtask)

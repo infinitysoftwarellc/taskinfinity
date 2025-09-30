@@ -6,6 +6,7 @@ use App\Models\Checkpoint;
 use App\Models\Mission;
 use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
@@ -211,7 +212,29 @@ class MainPanel extends Component
             return;
         }
 
-        if ($action === 'set-date' && ($value === null || $value === '')) {
+        $timezone = $user->timezone ?? config('app.timezone');
+
+        if ($action === 'set-date') {
+            $changed = $this->handleMissionDateSelection($mission, $value, $timezone);
+
+            if ($changed) {
+                $this->dispatch('tasks-updated');
+            }
+
+            $this->dispatch('tasks-inline-action', $mission->id, $action, $value);
+
+            return;
+        }
+
+        if ($action === 'due-shortcut') {
+            $changed = $this->handleMissionShortcut($mission, $value, $timezone);
+
+            if ($changed) {
+                $this->dispatch('tasks-updated');
+            }
+
+            $this->dispatch('tasks-inline-action', $mission->id, $action, $value);
+
             return;
         }
 
@@ -687,6 +710,83 @@ class MainPanel extends Component
                 fn ($query) => $query->whereNull('list_id')
             )
             ->max('position') + 1;
+    }
+
+    private function handleMissionDateSelection(Mission $mission, ?string $value, string $timezone): bool
+    {
+        if ($value === null || $value === '') {
+            return $this->updateMissionDueDate($mission, null);
+        }
+
+        $localDate = $this->parseLocalDate($value, $timezone);
+
+        if (! $localDate) {
+            return false;
+        }
+
+        return $this->updateMissionDueDate($mission, $localDate);
+    }
+
+    private function handleMissionShortcut(Mission $mission, ?string $shortcut, string $timezone): bool
+    {
+        if (! $shortcut) {
+            return false;
+        }
+
+        if ($shortcut === 'clear') {
+            return $this->updateMissionDueDate($mission, null);
+        }
+
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+
+        $target = match ($shortcut) {
+            'today' => $today,
+            'tomorrow' => $today->addDay(),
+            'next7' => $today->addDays(7),
+            default => null,
+        };
+
+        if (! $target) {
+            return false;
+        }
+
+        return $this->updateMissionDueDate($mission, $target);
+    }
+
+    private function parseLocalDate(string $value, string $timezone): ?CarbonImmutable
+    {
+        try {
+            return CarbonImmutable::createFromFormat('Y-m-d', $value, $timezone);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function updateMissionDueDate(Mission $mission, ?CarbonImmutable $localDate): bool
+    {
+        $current = $mission->due_at;
+
+        if ($localDate === null) {
+            if ($current === null) {
+                return false;
+            }
+
+            $mission->due_at = null;
+            $mission->save();
+
+            return true;
+        }
+
+        $serverDate = $localDate->setTimezone(config('app.timezone'));
+
+        if ($current && $current->equalTo($serverDate)) {
+            return false;
+        }
+
+        $mission->due_at = $serverDate;
+        $mission->save();
+
+        return true;
     }
 
     public function render()
