@@ -92,8 +92,6 @@
 
 
                         <div class="ti-topbar-right">
-                            
-
                             <div class="ti-menu">
                                 <button class="icon ghost" title="Mais opções">
                                     <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
