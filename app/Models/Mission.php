@@ -14,7 +14,6 @@ class Mission extends Model
         'user_id',
         'list_id',
         'title',
-        'description',
         'priority',
         'labels_json',
         'is_starred',

@@ -35,7 +35,6 @@ class MissionController extends Controller
         $data = $request->validate([
             'list_id' => ['required', 'integer', Rule::exists('lists', 'id')->where(fn ($query) => $query->where('user_id', $request->user()->id))],
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
             'priority' => 'nullable|integer|min:0|max:2',
             'labels_json' => 'nullable|array',
             'labels_json.*' => 'string',
@@ -73,7 +72,6 @@ class MissionController extends Controller
         $data = $request->validate([
             'list_id' => ['sometimes', 'integer', Rule::exists('lists', 'id')->where(fn ($query) => $query->where('user_id', $request->user()->id))],
             'title' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
             'priority' => 'nullable|integer|min:0|max:2',
             'labels_json' => 'nullable|array',
             'labels_json.*' => 'string',

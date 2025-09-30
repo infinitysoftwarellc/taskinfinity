@@ -95,16 +95,6 @@ class Details extends Component
     public ?int $selectedSubtaskId = null;
 
     /**
-     * Indica se o editor de descrição está ativo.
-     */
-    public bool $isEditingDescription = false;
-
-    /**
-     * Conteúdo temporário da descrição durante a edição.
-     */
-    public string $descriptionDraft = '';
-
-    /**
      * Carrega missão e subtarefas quando o usuário seleciona um item na lista.
      */
     #[On('task-selected')]
@@ -122,8 +112,6 @@ class Details extends Component
             $this->newSubtaskParentLabel = null;
             $this->menuDate = null;
             $this->selectedSubtaskId = null;
-            $this->isEditingDescription = false;
-            $this->descriptionDraft = '';
 
             return;
         }
@@ -149,8 +137,6 @@ class Details extends Component
             $this->missionId = null;
             $this->mission = null;
             $this->missionTags = [];
-            $this->isEditingDescription = false;
-            $this->descriptionDraft = '';
 
             return;
         }
@@ -165,7 +151,6 @@ class Details extends Component
         $this->mission = [
             'id' => $mission->id,
             'title' => $mission->title,
-            'description' => $mission->description,
             'status' => $mission->status,
             'list' => $mission->list?->name,
             'list_id' => $mission->list_id,
@@ -203,8 +188,6 @@ class Details extends Component
         $this->newSubtaskTitle = '';
         $this->newSubtaskParentId = null;
         $this->newSubtaskParentLabel = null;
-        $this->isEditingDescription = false;
-        $this->descriptionDraft = (string) ($mission->description ?? '');
         $this->applyActiveSubtaskContext($checkpointId);
 
         $this->availableLists = TaskList::query()
@@ -310,70 +293,6 @@ class Details extends Component
 
                 break;
         }
-    }
-
-    /**
-     * Inicia a edição do campo de descrição.
-     */
-    public function startDescriptionEdit(): void
-    {
-        if (! $this->missionId || ! is_array($this->mission)) {
-            return;
-        }
-
-        $this->isEditingDescription = true;
-        $this->descriptionDraft = (string) ($this->mission['description'] ?? '');
-    }
-
-    /**
-     * Cancela a edição da descrição e descarta alterações.
-     */
-    public function cancelDescriptionEdit(): void
-    {
-        $this->isEditingDescription = false;
-        $this->descriptionDraft = is_array($this->mission)
-            ? (string) ($this->mission['description'] ?? '')
-            : '';
-    }
-
-    /**
-     * Persiste a nova descrição da missão.
-     */
-    public function saveDescription(): void
-    {
-        if (! $this->missionId) {
-            return;
-        }
-
-        $user = Auth::user();
-
-        if (! $user) {
-            return;
-        }
-
-        $mission = Mission::query()
-            ->where('user_id', $user->id)
-            ->find($this->missionId);
-
-        if (! $mission) {
-            return;
-        }
-
-        $normalized = $this->normalizeDescriptionHtml((string) $this->descriptionDraft);
-
-        if ($normalized === null) {
-            $mission->description = null;
-        } else {
-            $mission->description = $normalized;
-        }
-
-        $mission->save();
-
-        $this->isEditingDescription = false;
-        $this->descriptionDraft = $mission->description ?? '';
-
-        $this->loadMission($mission->id, $this->selectedSubtaskId);
-        $this->dispatch('tasks-updated');
     }
 
     #[On('tasks-updated')]
@@ -1631,36 +1550,6 @@ class Details extends Component
                 fn ($query) => $query->whereNull('list_id')
             )
             ->max('position') + 1;
-    }
-
-    /**
-     * Sanitiza o HTML da descrição antes de salvar.
-     */
-    private function normalizeDescriptionHtml(string $html): ?string
-    {
-        $trimmed = trim($html);
-
-        if ($trimmed === '') {
-            return null;
-        }
-
-        $allowedTags = '<p><br><strong><b><em><i><u><s><ol><ul><li><a><blockquote><pre><code><span><img>';
-
-        $sanitized = strip_tags($trimmed, $allowedTags);
-        $sanitized = preg_replace('/\s+on[a-zA-Z]+="[^"]*"/i', '', $sanitized) ?? $sanitized;
-        $sanitized = preg_replace("/\s+on[a-zA-Z]+='[^']*'/i", '', $sanitized) ?? $sanitized;
-        $sanitized = preg_replace('/href\s*=\s*"javascript:[^"]*"/i', 'href="#"', $sanitized) ?? $sanitized;
-        $sanitized = preg_replace("/href\s*=\s*'javascript:[^']*'/i", 'href="#"', $sanitized) ?? $sanitized;
-
-        $plain = strip_tags($sanitized);
-        $plain = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $plain);
-        $plain = trim(preg_replace('/\s+/u', ' ', html_entity_decode($plain, ENT_QUOTES | ENT_HTML5) ?: ''));
-
-        if ($plain === '') {
-            return null;
-        }
-
-        return trim($sanitized);
     }
 
     /**
