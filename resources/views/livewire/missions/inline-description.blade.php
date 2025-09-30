@@ -292,6 +292,10 @@
                 init() {
                     this.displayValue = this.escapeAndFormat(this.value);
 
+                    this.$nextTick(() => {
+                        this.setEditorContent(this.value);
+                    });
+
                     Livewire.on('description-saving', ({ missionId }) => {
                         if (missionId !== this.missionId) return;
                         this.onSaving();
@@ -309,9 +313,11 @@
                 },
                 enterEdit() {
                     this.isEditing = true;
+                    this.showMenu = false;
                     this.$nextTick(() => {
+                        this.setEditorContent(this.value);
                         this.$refs.editor.focus({ preventScroll: false });
-                            this.setCaretPosition(this.value.length);
+                        this.setCaretPosition(this.value.length);
                         this.rememberSelection();
                     });
                 },
@@ -394,6 +400,10 @@
                     }, this.debounceMs);
                 },
                 saveNow(force = false, fromBlur = false) {
+                    if (this.debounceTimer) {
+                        clearTimeout(this.debounceTimer);
+                        this.debounceTimer = null;
+                    }
                     if (this.value === this.lastSavedValue && !force) {
                         return;
                     }
@@ -489,7 +499,7 @@
                         this.commandContext = {
                             valueBefore: this.value,
                             selectionStart: context.start,
-                            selectionEnd: context.start,
+                            selectionEnd: context.end,
                         };
                     }
 
@@ -497,6 +507,8 @@
                     this.commandContext.queryToken = context.token;
                     this.commandContext.start = context.start;
                     this.commandContext.end = context.end;
+                    this.commandContext.selectionStart = context.start;
+                    this.commandContext.selectionEnd = context.end;
                     this.openMenu(context.query);
                 },
                 filterCommands() {
@@ -517,8 +529,8 @@
                     if (!this.commandContext) {
                         return;
                     }
-                    const startIndex = this.commandContext.selectionStart ?? this.commandContext.start ?? 0;
-                    const endIndex = this.commandContext.selectionEnd ?? this.commandContext.end ?? startIndex;
+                    const startIndex = (this.commandContext.start ?? this.commandContext.selectionStart) ?? 0;
+                    const endIndex = (this.commandContext.end ?? this.commandContext.selectionEnd) ?? startIndex;
                     const base = this.commandContext.valueBefore ?? this.value;
                     const before = base.slice(0, startIndex);
                     const after = base.slice(endIndex);
