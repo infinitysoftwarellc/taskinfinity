@@ -47,6 +47,10 @@ class Details extends Component
 
     public ?int $selectedSubtaskId = null;
 
+    public bool $isEditingDescription = false;
+
+    public string $descriptionDraft = '';
+
     #[On('task-selected')]
     public function loadMission(?int $missionId = null, ?int $checkpointId = null): void
     {
@@ -62,6 +66,8 @@ class Details extends Component
             $this->newSubtaskParentLabel = null;
             $this->menuDate = null;
             $this->selectedSubtaskId = null;
+            $this->isEditingDescription = false;
+            $this->descriptionDraft = '';
 
             return;
         }
@@ -87,6 +93,8 @@ class Details extends Component
             $this->missionId = null;
             $this->mission = null;
             $this->missionTags = [];
+            $this->isEditingDescription = false;
+            $this->descriptionDraft = '';
 
             return;
         }
@@ -139,6 +147,8 @@ class Details extends Component
         $this->newSubtaskTitle = '';
         $this->newSubtaskParentId = null;
         $this->newSubtaskParentLabel = null;
+        $this->isEditingDescription = false;
+        $this->descriptionDraft = (string) ($mission->description ?? '');
         $this->applyActiveSubtaskContext($checkpointId);
 
         $this->availableLists = TaskList::query()
@@ -155,6 +165,62 @@ class Details extends Component
             ])
             ->values()
             ->toArray();
+    }
+
+    public function startDescriptionEdit(): void
+    {
+        if (! $this->missionId || ! is_array($this->mission)) {
+            return;
+        }
+
+        $this->isEditingDescription = true;
+        $this->descriptionDraft = (string) ($this->mission['description'] ?? '');
+    }
+
+    public function cancelDescriptionEdit(): void
+    {
+        $this->isEditingDescription = false;
+        $this->descriptionDraft = is_array($this->mission)
+            ? (string) ($this->mission['description'] ?? '')
+            : '';
+    }
+
+    public function saveDescription(): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $mission = Mission::query()
+            ->where('user_id', $user->id)
+            ->find($this->missionId);
+
+        if (! $mission) {
+            return;
+        }
+
+        $description = (string) $this->descriptionDraft;
+        $normalized = str_replace(["\r\n", "\r"], "\n", $description);
+
+        if (trim($normalized) === '') {
+            $mission->description = null;
+        } else {
+            $mission->description = $normalized;
+        }
+
+        $mission->save();
+
+        $this->isEditingDescription = false;
+        $this->descriptionDraft = $mission->description ?? '';
+
+        $this->loadMission($mission->id, $this->selectedSubtaskId);
+        $this->dispatch('tasks-updated');
     }
 
     #[On('tasks-updated')]
