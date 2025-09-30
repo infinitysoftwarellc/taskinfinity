@@ -280,6 +280,8 @@
 
         <div class="ti-divider"></div>
 
+        </div>
+
         <footer class="ti-footer">
             <div @class(['ti-list-selector', 'is-open' => $showMoveListMenu]) wire:click.away="closeMoveListMenu">
                 <button class="ti-list-selector-toggle" type="button" title="Mover para outra lista" wire:click="toggleMoveListMenu">
@@ -321,7 +323,6 @@
                 </button>
             </div>
         </footer>
-        </div>
     </div>
     @else
         <div class="ti-empty">
