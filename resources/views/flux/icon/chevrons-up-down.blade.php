@@ -1,43 +1,23 @@
-{{-- Credit: Lucide (https://lucide.dev) --}}
+{{-- Ícone do Font Awesome --}}
 
 @props([
     'variant' => 'outline',
 ])
 
 @php
-    if ($variant === 'solid') {
-        throw new \Exception('The "solid" variant is not supported in Lucide.');
-    }
-
-    $classes = Flux::classes('shrink-0')->add(
+    $classes = Flux::classes('shrink-0 fa-solid fa-arrows-up-down fa-fw')->add(
         match ($variant) {
-            'outline' => '[:where(&)]:size-6',
-            'solid' => '[:where(&)]:size-6',
+            'outline', 'solid' => '[:where(&)]:size-6',
             'mini' => '[:where(&)]:size-5',
             'micro' => '[:where(&)]:size-4',
+            default => '[:where(&)]:size-6',
         },
     );
-
-    $strokeWidth = match ($variant) {
-        'outline' => 2,
-        'mini' => 2.25,
-        'micro' => 2.5,
-    };
 @endphp
 
-<svg
+<i
     {{ $attributes->class($classes) }}
-    data-flux-icon
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="{{ $strokeWidth }}"
-    stroke-linecap="round"
-    stroke-linejoin="round"
     aria-hidden="true"
+    data-flux-icon
     data-slot="icon"
->
-    <path d="m7 15 5 5 5-5" />
-    <path d="m7 9 5-5 5 5" />
-</svg>
+></i>

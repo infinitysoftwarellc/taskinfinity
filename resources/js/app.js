@@ -1,20 +1,4 @@
-import { createIcons, icons } from 'lucide';
-
 // ---- IMPORTS PADRÃO DO SEU PROJETO (mantenha os que precisar)
-
-function hydrateIcons(root = document) {
-  createIcons({
-    icons,
-    attrs: {
-      'stroke-width': 1.6,
-      width: 18,
-      height: 18,
-      focusable: 'false',
-      'aria-hidden': 'true',
-    },
-    root,
-  });
-}
 
 /* ────────────────────────────────────────────────────────────────── */
 /* UTIL: alternar seção com aria-expanded + display none             */
@@ -28,9 +12,13 @@ function toggleSection(btn, content) {
 /* ────────────────────────────────────────────────────────────────── */
 /* DELEGAÇÃO: clique em checkbox (.checkbox)                          */
 /* ────────────────────────────────────────────────────────────────── */
-function onCheckboxClick(target) {
+function onCheckboxClick(event) {
+  const target = event.target;
   const cb = target.closest('.checkbox');
   if (!cb) return false;
+
+  event.preventDefault();
+  event.stopPropagation();
 
   cb.classList.toggle('checked');
   cb.closest('.task, .subtask')?.classList.toggle('done');
@@ -42,17 +30,50 @@ function onCheckboxClick(target) {
 /* espera markup: 
    .task.has-subtasks [aria-expanded] + (irmão seguinte) .subtasks   */
 /* ────────────────────────────────────────────────────────────────── */
-function onTaskExpanderClick(target) {
+function onTaskExpanderClick(event) {
+  const target = event.target;
   const exp = target.closest('.task.has-subtasks .expander');
   if (!exp) return false;
 
+  event.preventDefault();
+  event.stopPropagation();
+
   const task = exp.closest('.task.has-subtasks');
-  const next = task?.nextElementSibling; // .subtasks logo abaixo
-  const open = task?.getAttribute('aria-expanded') !== 'false';
-  task?.setAttribute('aria-expanded', String(!open));
-  if (next?.classList.contains('subtasks')) {
-    next.style.display = open ? 'none' : '';
+  if (task) {
+    const next = task.nextElementSibling; // .subtasks logo abaixo
+    const open = task.getAttribute('aria-expanded') !== 'false';
+    const isExpanded = !open;
+    task.setAttribute('aria-expanded', String(isExpanded));
+    if (next?.classList.contains('subtasks')) {
+      next.style.display = isExpanded ? '' : 'none';
+    }
+
+    const icon = exp.querySelector('i');
+    if (icon) {
+      icon.classList.toggle('fa-chevron-down', isExpanded);
+      icon.classList.toggle('fa-chevron-right', !isExpanded);
+    }
+
+    return true;
   }
+
+  const subtask = exp.closest('.subtask.has-children');
+  if (!subtask) return false;
+
+  const branch = subtask.nextElementSibling;
+  const open = subtask.getAttribute('aria-expanded') !== 'false';
+  const isExpanded = !open;
+  subtask.setAttribute('aria-expanded', String(isExpanded));
+  if (branch?.classList.contains('subtask-group')) {
+    branch.style.display = isExpanded ? '' : 'none';
+  }
+
+  const icon = exp.querySelector('i');
+  if (icon) {
+    icon.classList.toggle('fa-chevron-down', isExpanded);
+    icon.classList.toggle('fa-chevron-right', !isExpanded);
+  }
+
   return true;
 }
 
@@ -67,9 +88,13 @@ function closeAllMenus(except) {
   });
 }
 
-function onMenuToggle(target) {
+function onMenuToggle(event) {
+  const target = event.target;
   const trigger = target.closest('[data-menu-trigger]');
   if (!trigger) return false;
+
+  event.preventDefault();
+  event.stopPropagation();
 
   const container = trigger.closest('[data-menu]');
   if (!container) return false;
@@ -93,10 +118,13 @@ function onMenuToggle(target) {
 /*  - [data-click="toggle-subgroup"] -> usa .subgroup > .task-list    */
 /* Ajuste os seletores conforme seu HTML.                             */
 /* ────────────────────────────────────────────────────────────────── */
-function onGenericToggles(target) {
+function onGenericToggles(event) {
+  const target = event.target;
   // toggle sidebar
   const btnSidebar = target.closest('[data-click="toggle-sidebar"]');
   if (btnSidebar) {
+    event.preventDefault();
+    event.stopPropagation();
     document.querySelector('.sidebar')?.classList.toggle('open');
     return true;
   }
@@ -104,6 +132,8 @@ function onGenericToggles(target) {
   // toggle workspace — só para <button data-toggle="workspace">
   const btnWs = target.closest('button[data-click="toggle-workspace"], button[data-toggle="workspace"]');
   if (btnWs) {
+    event.preventDefault();
+    event.stopPropagation();
     if (target.closest('.workspace-add')) return true; // não colapsar ao clicar no “+”
 
     const container = btnWs.closest('.workspace');
@@ -123,22 +153,38 @@ function onGenericToggles(target) {
   // toggle group
   const btnGroup = target.closest('[data-click="toggle-group"], [data-toggle="group"]');
   if (btnGroup) {
+    event.preventDefault();
+    event.stopPropagation();
     const section = btnGroup.closest('.group');
     const body = section?.querySelector('.group-body');
     const expanded = section?.getAttribute('aria-expanded') !== 'false';
-    section?.setAttribute('aria-expanded', String(!expanded));
-    if (body) body.style.display = expanded ? 'none' : '';
+    const isExpanded = !expanded;
+    section?.setAttribute('aria-expanded', String(isExpanded));
+    if (body) body.style.display = isExpanded ? '' : 'none';
+    const icon = btnGroup.querySelector('i');
+    if (icon) {
+      icon.classList.toggle('fa-chevron-down', isExpanded);
+      icon.classList.toggle('fa-chevron-right', !isExpanded);
+    }
     return true;
   }
 
   // toggle subgroup
   const btnSubgroup = target.closest('[data-click="toggle-subgroup"], [data-toggle="subgroup"]');
   if (btnSubgroup) {
+    event.preventDefault();
+    event.stopPropagation();
     const sg = btnSubgroup.closest('.subgroup');
     const list = sg?.querySelector('.task-list');
     const expanded = sg?.getAttribute('aria-expanded') !== 'false';
-    sg?.setAttribute('aria-expanded', String(!expanded));
-    if (list) list.style.display = expanded ? 'none' : '';
+    const isExpanded = !expanded;
+    sg?.setAttribute('aria-expanded', String(isExpanded));
+    if (list) list.style.display = isExpanded ? '' : 'none';
+    const icon = btnSubgroup.querySelector('i');
+    if (icon) {
+      icon.classList.toggle('fa-chevron-down', isExpanded);
+      icon.classList.toggle('fa-chevron-right', !isExpanded);
+    }
     return true;
   }
 
@@ -160,9 +206,9 @@ function setupDelegatedClick() {
     }
 
     // ordem: específicos → genéricos
-    if (onCheckboxClick(t)) return;
-    if (onTaskExpanderClick(t)) return;
-    if (onMenuToggle(t)) return;
+    if (onCheckboxClick(e)) return;
+    if (onTaskExpanderClick(e)) return;
+    if (onMenuToggle(e)) return;
 
     const menuItem = t.closest('[data-menu-item]');
     if (menuItem) {
@@ -170,7 +216,7 @@ function setupDelegatedClick() {
       return;
     }
 
-    if (onGenericToggles(t)) return;
+    if (onGenericToggles(e)) return;
   });
 }
 
@@ -319,7 +365,6 @@ function setupDetailsKeyboard() {
 /* BOOT: DOM pronto                                                   */
 /* ────────────────────────────────────────────────────────────────── */
 function boot(root = document) {
-  hydrateIcons();       // 1) troca <i> → <svg>
   setupDelegatedClick(); // 2) um único listener que sobrevive a trocas
   setupInputs(root);     // 3) inputs que criam itens dinamicamente
   setupFocusListeners();
@@ -347,7 +392,6 @@ document.addEventListener('livewire:init', () => {
 /* Livewire v2 (se precisar): descomente
 document.addEventListener('livewire:load', () => {
   window.Livewire.hook('message.processed', (message, component) => {
-    hydrateIcons();
     setupInputs(component.el);
   });
 });
@@ -361,14 +405,15 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.setAttribute('aria-expanded', String(!expanded));
       const list = document.getElementById(btn.getAttribute('aria-controls'));
       if (!list) return;
-      if (expanded) {
-        list.style.display = 'none';
-        btn.innerHTML = '<i data-lucide="chevron-right"></i>';
-      } else {
-        list.style.display = '';
-        btn.innerHTML = '<i data-lucide="chevron-down"></i>';
+      const isExpanded = !expanded;
+      if (list) {
+        list.style.display = isExpanded ? '' : 'none';
       }
-      hydrateIcons();
+      const icon = btn.querySelector('i');
+      if (icon) {
+        icon.classList.toggle('fa-chevron-down', isExpanded);
+        icon.classList.toggle('fa-chevron-right', !isExpanded);
+      }
     });
   });
 });

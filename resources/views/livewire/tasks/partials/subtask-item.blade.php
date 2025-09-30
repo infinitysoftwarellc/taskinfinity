@@ -2,6 +2,7 @@
     'item' => [],
     'depth' => 0,
     'selectedSubtaskId' => null,
+    'maxSubtasks' => 7,
 ])
 
 @php
@@ -9,6 +10,8 @@
     $isDone = (bool) ($item['is_done'] ?? false);
     $title = trim((string) ($item['title'] ?? ''));
     $isSelected = ($item['id'] ?? null) === $selectedSubtaskId;
+    $childrenCount = count($children);
+    $canAddChild = $childrenCount < $maxSubtasks;
 @endphp
 
 <li class="ti-subtask-item" data-depth="{{ $depth }}" wire:key="detail-subtask-{{ $item['id'] ?? 'temp' }}">
@@ -29,14 +32,16 @@
             @endif
         </div>
         <div class="ti-subtask-actions" wire:click.stop>
-            <button
-                class="icon ghost"
-                type="button"
-                title="Adicionar subtarefa"
-                wire:click="openSubtaskForm({{ $item['id'] }})"
-            >
-                <i data-lucide="plus"></i>
-            </button>
+            @if ($canAddChild)
+                <button
+                    class="icon ghost"
+                    type="button"
+                    title="Adicionar subtarefa"
+                    wire:click="openSubtaskForm({{ $item['id'] }})"
+                >
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                </button>
+            @endif
             @include('livewire.tasks.partials.inline-menu')
         </div>
     </div>
@@ -48,8 +53,12 @@
                     'item' => $child,
                     'depth' => $depth + 1,
                     'selectedSubtaskId' => $selectedSubtaskId,
+                    'maxSubtasks' => $maxSubtasks,
                 ])
             @endforeach
         </ul>
+        @if (! $canAddChild)
+            <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
+        @endif
     @endif
 </li>

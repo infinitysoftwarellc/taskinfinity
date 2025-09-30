@@ -17,13 +17,13 @@ new class extends Component {
 <div>
         <aside class="rail">
         <div class="avatar" title="Você"></div>
-        <button class="btn" title="All"><i data-lucide="list-checks"></i></button>
-        <button class="btn" title="Today"><i data-lucide="sun"></i></button>
-        <button class="btn" title="7 Days"><i data-lucide="calendar-days"></i></button>
-        <button class="btn" title="Inbox"><i data-lucide="inbox"></i></button>
-        <button class="btn" title="Summary"><i data-lucide="pie-chart"></i></button>
+        <button class="btn" title="All"><i class="fa-solid fa-list-check" aria-hidden="true"></i></button>
+        <button class="btn" title="Today"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
+        <button class="btn" title="7 Days"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
+        <button class="btn" title="Inbox"><i class="fa-solid fa-inbox" aria-hidden="true"></i></button>
+        <button class="btn" title="Summary"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></button>
         <div class="spacer"></div>
-        <button class="btn" title="Settings"><i data-lucide="settings"></i></button>
+        <button class="btn" title="Settings"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
     </aside>
 </div>
 

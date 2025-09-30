@@ -17,6 +17,8 @@ use Livewire\Component;
 
 class Details extends Component
 {
+    public const MAX_SUBTASKS = MainPanel::MAX_SUBTASKS;
+
     public ?int $missionId = null;
 
     public ?array $mission = null;
@@ -221,6 +223,7 @@ class Details extends Component
             'missionTags' => $this->missionTags,
             'pickerCalendar' => $this->mission ? $this->buildCalendar() : null,
             'selectedSubtaskId' => $this->selectedSubtaskId,
+            'maxSubtasks' => self::MAX_SUBTASKS,
         ]);
     }
 
@@ -486,6 +489,10 @@ class Details extends Component
             return;
         }
 
+        if ($this->reachedSubtaskLimit($this->missionId, $parentId)) {
+            return;
+        }
+
         $this->newSubtaskParentId = $parentId;
         $this->newSubtaskParentLabel = $parentId ? $this->resolveSubtaskTitle($parentId) : null;
         $this->newSubtaskTitle = '';
@@ -517,6 +524,15 @@ class Details extends Component
             ->find($this->missionId);
 
         if (! $mission) {
+            return;
+        }
+
+        if ($this->reachedSubtaskLimit($mission->id, $this->newSubtaskParentId)) {
+            $this->showSubtaskForm = false;
+            $this->newSubtaskTitle = '';
+            $this->newSubtaskParentId = null;
+            $this->newSubtaskParentLabel = null;
+
             return;
         }
 
@@ -967,6 +983,21 @@ class Details extends Component
         $position = (int) $query->max('position');
 
         return $position + 1;
+    }
+
+    private function reachedSubtaskLimit(int $missionId, ?int $parentId = null): bool
+    {
+        $query = Checkpoint::query()->where('mission_id', $missionId);
+
+        if ($column = $this->checkpointParentColumn()) {
+            if ($parentId === null) {
+                $query->whereNull($column);
+            } else {
+                $query->where($column, $parentId);
+            }
+        }
+
+        return $query->count() >= self::MAX_SUBTASKS;
     }
 
     private function duplicatedTitle(?string $title): string

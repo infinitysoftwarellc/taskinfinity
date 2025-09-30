@@ -23,7 +23,7 @@
                 wire:click.stop="toggleMenu('{{ $menuKey }}')"
                 title="Mais opções"
             >
-                <i data-lucide="more-horizontal"></i>
+                <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
             </button>
 
             @if ($openMenuId === $menuKey)

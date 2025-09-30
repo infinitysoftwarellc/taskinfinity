@@ -14,8 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Ícones Lucide via CDN -->
-    <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+    <!-- Ícones Font Awesome -->
     <script src="https://kit.fontawesome.com/c9cfb44e99.js" crossorigin="anonymous"></script>
 
     <!-- Scripts -->
@@ -31,11 +30,6 @@
     </main>
     @livewireScripts
     @stack('scripts')
-    <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    if (window.lucide) lucide.createIcons();
-  });
-</script>
 </body>
 
 </html>

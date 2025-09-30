@@ -6,8 +6,7 @@
   <title>Clone – Layout de Tarefas</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Ícones Lucide via CDN -->
-  <script defer src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script src="https://kit.fontawesome.com/c9cfb44e99.js" crossorigin="anonymous"></script>
   <style>
     :root{
       --bg: #0b0d12;           /* fundo app */
@@ -157,13 +156,13 @@
     <!-- RAIL (menu lateral fino) -->
     <aside class="rail">
       <div class="avatar" title="Você"></div>
-      <button class="btn" title="All"><i data-lucide="list-checks"></i></button>
-      <button class="btn" title="Today"><i data-lucide="sun"></i></button>
-      <button class="btn" title="7 Days"><i data-lucide="calendar-days"></i></button>
-      <button class="btn" title="Inbox"><i data-lucide="inbox"></i></button>
-      <button class="btn" title="Summary"><i data-lucide="pie-chart"></i></button>
+      <button class="btn" title="All"><i class="fa-solid fa-list-check" aria-hidden="true"></i></button>
+      <button class="btn" title="Today"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
+      <button class="btn" title="7 Days"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
+      <button class="btn" title="Inbox"><i class="fa-solid fa-inbox" aria-hidden="true"></i></button>
+      <button class="btn" title="Summary"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></button>
       <div class="spacer"></div>
-      <button class="btn" title="Settings"><i data-lucide="settings"></i></button>
+      <button class="btn" title="Settings"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
     </aside>
 
     <!-- SIDEBAR -->
@@ -171,26 +170,26 @@
       <h6>Atalhos</h6>
       <nav>
         <ul class="nav-list">
-          <li><a class="nav-item" href="#"><i class="icon" data-lucide="infinity"></i><span class="label">All</span><span class="count">38</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon" data-lucide="sun"></i><span class="label">Today</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon" data-lucide="calendar-days"></i><span class="label">Next 7 Days</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon" data-lucide="inbox"></i><span class="label">Inbox</span><span class="count">2</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon" data-lucide="pie-chart"></i><span class="label">Summary</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-infinity" aria-hidden="true"></i><span class="label">All</span><span class="count">38</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-sun" aria-hidden="true"></i><span class="label">Today</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-calendar-days" aria-hidden="true"></i><span class="label">Next 7 Days</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-inbox" aria-hidden="true"></i><span class="label">Inbox</span><span class="count">2</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-chart-pie" aria-hidden="true"></i><span class="label">Summary</span></a></li>
         </ul>
       </nav>
 
       <div class="sep"></div>
 
       <button class="workspace" aria-expanded="true" data-toggle="workspace">
-        <i class="chev" data-lucide="chevron-down"></i>
+        <i class="chev fa-solid fa-chevron-down" aria-hidden="true"></i>
         <span class="title">SOFTWAREINFINITY</span>
         <span class="badge">36</span>
       </button>
       <div class="workspace-content" style="padding-left:8px;">
         <ul class="nav-list">
-          <li><a class="nav-item" href="#"><i class="icon" data-lucide="list-todo"></i><span class="label">Tasks</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon" data-lucide="flame"></i><span class="label">Habits</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon" data-lucide="clock"></i><span class="label">Pomodoro</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-list-check" aria-hidden="true"></i><span class="label">Tasks</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-fire" aria-hidden="true"></i><span class="label">Habits</span></a></li>
+          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-clock" aria-hidden="true"></i><span class="label">Pomodoro</span></a></li>
         </ul>
       </div>
 
@@ -204,7 +203,7 @@
       </div>
 
       <h6 style="margin-top:14px"> </h6>
-      <div class="completed"><i class="icon" data-lucide="check-square"></i> Completed</div>
+      <div class="completed"><i class="icon fa-solid fa-square-check" aria-hidden="true"></i> Completed</div>
     </aside>
 
     <!-- MAIN -->
@@ -212,8 +211,8 @@
       <div class="toolbar">
         <div class="title">All <span class="bubble">38</span></div>
         <div class="spacer"></div>
-        <button class="icon-btn" title="Ordenar"><i data-lucide="sort-desc"></i></button>
-        <button class="icon-btn" title="Opções"><i data-lucide="more-horizontal"></i></button>
+        <button class="icon-btn" title="Ordenar"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
+        <button class="icon-btn" title="Opções"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
       </div>
 
       <div class="add-row">
@@ -222,7 +221,7 @@
 
       <section class="group" aria-expanded="true">
         <header class="group-header" data-toggle="group">
-          <i class="chev" data-lucide="chevron-down"></i>
+          <i class="chev fa-solid fa-chevron-down" aria-hidden="true"></i>
           <span class="group-title">No Date</span>
           <span class="group-count">38</span>
         </header>
@@ -230,7 +229,7 @@
 
           <div class="subgroup" aria-expanded="true">
             <div class="subgroup-toggle" data-toggle="subgroup">
-              <i class="chev" data-lucide="chevron-down"></i>
+              <i class="chev fa-solid fa-chevron-down" aria-hidden="true"></i>
               <span class="name">aa</span>
               <span class="meta" style="margin-left:auto; color:var(--muted)">Inbox</span>
             </div>
@@ -246,7 +245,7 @@
               <!-- Tarefa com SUBTAREFAS -->
               <div class="task has-subtasks" aria-expanded="true">
                 <button class="checkbox" aria-label="marcar"></button>
-                <div class="expander" title="Expandir/ocultar subtarefas"><i data-lucide="chevron-down"></i></div>
+                <div class="expander" title="Expandir/ocultar subtarefas"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></div>
                 <div class="title-line"><span class="title">COLOCAR METAS</span></div>
                 <div class="meta">Task Infinity</div>
               </div>
@@ -262,7 +261,7 @@
                   <div class="meta">Inbox</div>
                 </div>
                 <div class="add-subtask">
-                  <i data-lucide="plus"></i>
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
                   <input type="text" placeholder="Add subtask" class="add-subtask-input"/>
                 </div>
               </div>
@@ -321,8 +320,8 @@
       <div class="header">
         <div style="font-weight:700; color:var(--muted)">aa ›</div>
         <div class="right">
-          <button class="icon-btn" title="Classificar por data"><i data-lucide="flag"></i></button>
-          <button class="icon-btn" title="Opções"><i data-lucide="more-horizontal"></i></button>
+          <button class="icon-btn" title="Classificar por data"><i class="fa-solid fa-flag" aria-hidden="true"></i></button>
+          <button class="icon-btn" title="Opções"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
         </div>
       </div>
       <div class="empty">
@@ -333,11 +332,6 @@
   </div>
 
   <script>
-    // Inicializa os ícones Lucide
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) lucide.createIcons();
-    });
-
     // Toggle helpers
     function toggleSection(btn, content){
       const expanded = btn.getAttribute('aria-expanded') !== 'false';

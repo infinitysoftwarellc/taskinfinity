@@ -1,5 +1,19 @@
 @php
     $workspaceStyle = $workspaceExpanded ? 'padding-left:8px;' : 'padding-left:8px; display:none;';
+    $iconMap = [
+        'list-checks' => 'fa-solid fa-list-check',
+        'sun' => 'fa-solid fa-sun',
+        'calendar-days' => 'fa-solid fa-calendar-days',
+        'inbox' => 'fa-solid fa-inbox',
+        'pie-chart' => 'fa-solid fa-chart-pie',
+        'chevron-down' => 'fa-solid fa-chevron-down',
+        'plus' => 'fa-solid fa-plus',
+        'check-square' => 'fa-solid fa-square-check',
+        'x' => 'fa-solid fa-xmark',
+        'folder' => 'fa-solid fa-folder',
+        'list' => 'fa-solid fa-list',
+    ];
+    $resolveIcon = fn ($name) => $iconMap[$name] ?? 'fa-solid fa-circle';
 @endphp
 
 {{-- ELEMENTO RAIZ ÚNICO --}}
@@ -15,7 +29,7 @@
                             class="nav-item {{ ($shortcut['active'] ?? false) ? 'is-active' : '' }}"
                             href="{{ $shortcut['href'] ?? '#' }}"
                         >
-                            <i class="icon" data-lucide="{{ $shortcut['icon'] ?? '' }}"></i>
+                            <i class="icon {{ $resolveIcon($shortcut['icon'] ?? '') }}" aria-hidden="true"></i>
                             <span class="label">{{ $shortcut['label'] ?? '' }}</span>
                             @if (($shortcut['count'] ?? 0) > 0)
                                 <span class="count">{{ $shortcut['count'] }}</span>
@@ -37,7 +51,7 @@
                 data-toggle="workspace"
                 aria-expanded="{{ $workspaceExpanded ? 'true' : 'false' }}"
             >
-                <i class="chev" data-lucide="chevron-down"></i>
+                <i class="chev fa-solid fa-chevron-down" aria-hidden="true"></i>
                 <span class="title">{{ $workspaceTitle ?? 'Workspace' }}</span>
                 @if ($workspaceBadge)
                     <span class="badge">{{ $workspaceBadge }}</span>
@@ -49,7 +63,7 @@
                 title="Nova lista"
                 wire:click.stop="openCreateModal('list')"
             >
-                <i data-lucide="plus"></i>
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -81,7 +95,7 @@
                         type="button"
                         wire:click.stop="openCreateModal('list')"
                     >
-                        <i class="icon" data-lucide="plus"></i>
+                        <i class="icon fa-solid fa-plus" aria-hidden="true"></i>
                         <span class="label">Nova lista ou pasta</span>
                     </button>
                 </li>
@@ -91,7 +105,7 @@
         <div class="sidebar-section-header">
             <h6>Tags</h6>
             <button class="btn-new" type="button" title="Nova tag" wire:click.prevent="toggleTagForm">
-                <i data-lucide="plus"></i>
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -134,7 +148,7 @@
 
         <h6 style="margin-top:14px"> </h6>
         <div class="completed">
-            <i class="icon" data-lucide="check-square"></i>
+            <i class="icon fa-solid fa-square-check" aria-hidden="true"></i>
             {{ $completedLabel }}
             <span class="count" style="margin-left:auto">{{ $completedCount }}</span>
         </div>
@@ -156,7 +170,7 @@
                             <p>Organize tudo com nome, visualização, pasta e cor.</p>
                         </div>
                         <button class="ti-modal-close" type="button" wire:click="closeCreateModal">
-                            <i data-lucide="x"></i>
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                         </button>
                     </header>
 
@@ -185,7 +199,7 @@
                                     wire:click="$set('newListType', 'list')"
                                     {{ $editingFolderId ? 'disabled' : '' }}
                                 >
-                                    <i data-lucide="list-checks"></i>
+                                    <i class="fa-solid fa-list-check" aria-hidden="true"></i>
                                     Lista
                                 </button>
                                 <button
@@ -194,7 +208,7 @@
                                     wire:click="$set('newListType', 'folder')"
                                     {{ $editingListId ? 'disabled' : '' }}
                                 >
-                                    <i data-lucide="folder"></i>
+                                    <i class="fa-solid fa-folder" aria-hidden="true"></i>
                                     Pasta
                                 </button>
                             </div>

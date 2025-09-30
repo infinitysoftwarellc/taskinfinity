@@ -37,7 +37,7 @@
                             title="Adicionar data"
                             wire:click="toggleDatePicker"
                         >
-                            <i data-lucide="calendar"></i>
+                            <i class="fa-solid fa-calendar" aria-hidden="true"></i>
                             <span>
                               @if ($mission['due_at'])
                                  {{ $mission['due_at']->format('d/m/Y') }}
@@ -58,7 +58,7 @@
                                     title="Mês anterior"
                                     wire:click="movePicker(-1)"
                                 >
-                                    <i data-lucide="chevron-left"></i>
+                                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                                 </button>
                                 <span class="label">{{ $pickerCalendar['label'] ?? '' }}</span>
                                 <button
@@ -67,7 +67,7 @@
                                     title="Próximo mês"
                                     wire:click="movePicker(1)"
                                 >
-                                    <i data-lucide="chevron-right"></i>
+                                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                                 </button>
                             </div>
 
@@ -118,7 +118,7 @@
             <div class="ti-topbar-right">
                 <div class="ti-priority-selector">
                     <button class="icon ghost" type="button" title="Prioridade">
-                        <i data-lucide="flag"></i>
+                        <i class="fa-solid fa-flag" aria-hidden="true"></i>
                         <span class="ti-priority-current">{{ $mission['priority_label'] ?? 'Nenhuma' }}</span>
                     </button>
 
@@ -162,10 +162,10 @@
                 @endif
             </div>
             <div class="actions">
-                <button class="icon ghost" title="Editar"><i data-lucide="pencil"></i></button>
+                <button class="icon ghost" title="Editar"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
                 <div class="ti-menu">
                     <button class="icon ghost" title="Mais opções">
-                        <i data-lucide="more-horizontal"></i>
+                        <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
                     </button>
                     <div class="ti-menu-dropdown" role="menu">
                         @include('livewire.tasks.partials.menu-content', ['context' => 'details'])
@@ -176,17 +176,17 @@
 
         <div class="ti-description">
             <div class="ti-format-toolbar" role="toolbar" aria-label="Formatação de texto">
-                <button type="button" title="Negrito"><i data-lucide="bold"></i></button>
-                <button type="button" title="Itálico"><i data-lucide="italic"></i></button>
-                <button type="button" title="Sublinhado"><i data-lucide="underline"></i></button>
-                <button type="button" title="Tachado"><i data-lucide="strikethrough"></i></button>
+                <button type="button" title="Negrito"><i class="fa-solid fa-bold" aria-hidden="true"></i></button>
+                <button type="button" title="Itálico"><i class="fa-solid fa-italic" aria-hidden="true"></i></button>
+                <button type="button" title="Sublinhado"><i class="fa-solid fa-underline" aria-hidden="true"></i></button>
+                <button type="button" title="Tachado"><i class="fa-solid fa-strikethrough" aria-hidden="true"></i></button>
                 <span class="ti-toolbar-separator"></span>
-                <button type="button" title="Lista"><i data-lucide="list"></i></button>
-                <button type="button" title="Checklist"><i data-lucide="check-square"></i></button>
-                <button type="button" title="Citação"><i data-lucide="quote"></i></button>
+                <button type="button" title="Lista"><i class="fa-solid fa-list" aria-hidden="true"></i></button>
+                <button type="button" title="Checklist"><i class="fa-solid fa-square-check" aria-hidden="true"></i></button>
+                <button type="button" title="Citação"><i class="fa-solid fa-quote-right" aria-hidden="true"></i></button>
                 <span class="ti-toolbar-separator"></span>
-                <button type="button" title="Inserir link"><i data-lucide="link"></i></button>
-                <button type="button" title="Inserir imagem"><i data-lucide="image"></i></button>
+                <button type="button" title="Inserir link"><i class="fa-solid fa-link" aria-hidden="true"></i></button>
+                <button type="button" title="Inserir imagem"><i class="fa-solid fa-image" aria-hidden="true"></i></button>
             </div>
 
             <div class="ti-description-content">
@@ -201,22 +201,20 @@
         <!-- Subtasks -->
         <section class="ti-subtasks">
             @php
-                // $mission['subtasks'] = [
-                //   ['id'=>1,'title'=>'s','done'=>false,'children'=>[
-                //       ['id'=>2,'title'=>'S','done'=>false,'children'=>[]],
-                //       ['id'=>3,'title'=>'No Title','done'=>false,'children'=>[]],
-                //   ]],
-                // ];
                 $subtasks = $mission['subtasks'] ?? [];
+                $maxSubtasks = $maxSubtasks ?? \App\Livewire\Tasks\MainPanel::MAX_SUBTASKS;
+                $rootSubtaskCount = count($subtasks);
+                $canAddRootSubtask = $rootSubtaskCount < $maxSubtasks;
             @endphp
 
-            @if (count($subtasks))
+            @if ($rootSubtaskCount)
                 <ul class="ti-subtask-list" role="list">
                     @foreach ($subtasks as $st)
                         @include('livewire.tasks.partials.subtask-item', [
                             'item' => $st,
                             'depth' => 0,
                             'selectedSubtaskId' => $selectedSubtaskId,
+                            'maxSubtasks' => $maxSubtasks,
                         ])
                     @endforeach
                 </ul>
@@ -224,7 +222,7 @@
                 <p class="muted" style="margin:8px 0 0;">Sem subtarefas</p>
             @endif
 
-            @if ($showSubtaskForm)
+            @if ($showSubtaskForm && $canAddRootSubtask)
                 <form class="ti-subtask-form" wire:submit.prevent="saveSubtask">
                     @if ($newSubtaskParentLabel)
                         <div class="ti-subtask-context">Dentro de <span>{{ $newSubtaskParentLabel }}</span></div>
@@ -240,10 +238,12 @@
                         <button type="submit" class="primary">Adicionar</button>
                     </div>
                 </form>
-            @else
+            @elseif ($canAddRootSubtask)
                 <button class="add-subtask" type="button" wire:click="openSubtaskForm">
-                    <i data-lucide="plus"></i> Adicionar subtarefa
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar subtarefa
                 </button>
+            @else
+                <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
             @endif
         </section>
 
@@ -252,9 +252,9 @@
         <footer class="ti-footer">
             <div @class(['ti-list-selector', 'is-open' => $showMoveListMenu]) wire:click.away="closeMoveListMenu">
                 <button class="ti-list-selector-toggle" type="button" title="Mover para outra lista" wire:click="toggleMoveListMenu">
-                    <i data-lucide="list"></i>
+                    <i class="fa-solid fa-list" aria-hidden="true"></i>
                     <span>{{ $mission['list'] ?? 'Sem lista' }}</span>
-                    <i data-lucide="chevron-down" class="chevron"></i>
+                    <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
                 </button>
 
                 @if ($showMoveListMenu)
@@ -277,7 +277,7 @@
 
             <div class="ti-footer-actions">
                 <button class="ti-footer-icon" type="button" title="Iniciar Pomodoro" wire:click="startPomodoro">
-                    <i data-lucide="timer"></i>
+                    <i class="fa-solid fa-stopwatch" aria-hidden="true"></i>
                 </button>
                 <button
                     class="ti-footer-icon {{ ($mission['is_starred'] ?? false) ? 'is-active' : '' }}"
@@ -286,7 +286,7 @@
                     aria-pressed="{{ ($mission['is_starred'] ?? false) ? 'true' : 'false' }}"
                     wire:click="toggleStar"
                 >
-                    <i data-lucide="star"></i>
+                    <i class="fa-solid fa-star" aria-hidden="true"></i>
                 </button>
             </div>
         </footer>
