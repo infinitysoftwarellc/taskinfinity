@@ -24,9 +24,10 @@
     $dueDate = null;
     $dueLabel = null;
     $dueClass = 'subtask-due';
+    $rawDueAt = $item['due_at'] ?? null;
 
-    if (($item['due_at'] ?? null) instanceof \Carbon\CarbonInterface) {
-        $dueAt = $item['due_at']->copy()->setTimezone($timezone);
+    if ($rawDueAt instanceof \Carbon\CarbonInterface) {
+        $dueAt = $rawDueAt->copy()->setTimezone($timezone);
         $dueDate = $dueAt->format('Y-m-d');
 
         $dueDay = $dueAt->copy()->startOfDay();
@@ -128,7 +129,7 @@
 
         <div class="subtask-date">
             <label class="subtask-date-button" title="Alterar data da subtarefa">
-                <span class="{{ $item['due_at'] ? $dueClass : 'subtask-due is-empty' }}">
+                <span class="{{ $rawDueAt ? $dueClass : 'subtask-due is-empty' }}">
                     {{ $dueLabel ?? 'Definir data' }}
                 </span>
                 <input
