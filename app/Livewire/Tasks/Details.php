@@ -619,6 +619,10 @@ class Details extends Component
             return;
         }
 
+        if ($parentId === null && $this->selectedSubtaskId) {
+            $parentId = $this->selectedSubtaskId;
+        }
+
         if ($this->reachedSubtaskLimit($this->missionId, $parentId)) {
             return;
         }
@@ -684,8 +688,19 @@ class Details extends Component
         $this->newSubtaskParentId = null;
         $this->newSubtaskParentLabel = null;
 
-        $this->loadMission($mission->id);
+        $this->loadMission($mission->id, $this->selectedSubtaskId);
         $this->dispatch('tasks-updated');
+    }
+
+    public function clearSelectedSubtask(): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $this->cancelSubtaskForm();
+        $this->applyActiveSubtaskContext(null);
+        $this->dispatch('task-selected', $this->missionId, null);
     }
 
     public function duplicateMission(): void
