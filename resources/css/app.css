@@ -183,6 +183,11 @@ body {
 .workspace:hover {
     background: var(--hover);
 }
+.workspace-content {
+    width: 100%;
+    padding-left: 0;
+    margin-top: 4px;
+}
 .workspace-toggle {
     display: flex;
     align-items: center;
@@ -246,10 +251,15 @@ body {
 .workspace-row .nav-item {
     flex: 1;
     min-height: 38px;
+    background: transparent;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 .nav-folder {
     cursor: default;
-    background: rgba(255, 255, 255, 0.02);
+    background: transparent;
+}
+.nav-folder:hover {
+    background: var(--hover);
 }
 .nav-folder .color-dot {
     width: 10px;
