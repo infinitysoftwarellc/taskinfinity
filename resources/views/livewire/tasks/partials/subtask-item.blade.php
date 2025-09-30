@@ -44,6 +44,7 @@
             @endif
             @include('livewire.tasks.partials.inline-menu', [
                 'context' => 'details',
+                'subtaskId' => $item['id'] ?? null,
             ])
         </div>
     </div>

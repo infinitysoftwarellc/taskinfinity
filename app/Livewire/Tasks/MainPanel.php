@@ -296,6 +296,51 @@ class MainPanel extends Component
         $this->dispatch('tasks-updated');
     }
 
+    public function deleteSubtask(int $missionId, int $checkpointId): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $checkpoint = Checkpoint::query()
+            ->where('id', $checkpointId)
+            ->whereHas('mission', function ($query) use ($user, $missionId) {
+                $query->where('id', $missionId)
+                    ->where('user_id', $user->id)
+                    ->when(
+                        $this->currentListId,
+                        fn ($inner) => $inner->where('list_id', $this->currentListId)
+                    );
+
+                if ($this->shortcut) {
+                    MissionShortcutFilter::apply($query, $this->shortcut, $user->timezone ?? config('app.timezone'));
+                }
+            })
+            ->first();
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        $parentColumn = $this->checkpointParentColumn();
+        $parentId = $parentColumn ? ($checkpoint->{$parentColumn} ?? null) : null;
+
+        $checkpoint->delete();
+
+        if ($this->selectedMissionId !== $missionId) {
+            $this->selectedMissionId = $missionId;
+        }
+
+        if ($this->selectedSubtaskId === $checkpointId) {
+            $this->selectedSubtaskId = $parentId;
+            $this->dispatch('task-selected', $missionId, $parentId);
+        }
+
+        $this->dispatch('tasks-updated');
+    }
+
     public function startMissionEdit(int $missionId, ?Mission $model = null): void
     {
         $user = Auth::user();

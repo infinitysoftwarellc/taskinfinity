@@ -15,10 +15,12 @@
             @php
                 $menuContext = $context ?? null;
                 $menuMissionId = $missionId ?? null;
+                $menuSubtaskId = $subtaskId ?? null;
             @endphp
             @include('livewire.tasks.partials.menu-content', [
                 'context' => $menuContext,
                 'missionId' => $menuMissionId,
+                'subtaskId' => $menuSubtaskId,
             ])
         </div>
     </div>

@@ -90,6 +90,7 @@
         @include('livewire.tasks.partials.inline-menu', [
             'context' => 'main',
             'missionId' => $missionId,
+            'subtaskId' => $item['id'] ?? null,
         ])
     </div>
 </div>

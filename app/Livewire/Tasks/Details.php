@@ -346,6 +346,35 @@ class Details extends Component
         $this->dispatch('tasks-updated');
     }
 
+    public function deleteSubtask(int $checkpointId): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $checkpoint = Checkpoint::query()
+            ->where('id', $checkpointId)
+            ->whereHas('mission', fn ($query) => $query
+                ->where('id', $this->missionId)
+                ->where('user_id', Auth::id()))
+            ->first();
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        $parentColumn = $this->checkpointParentColumn();
+        $parentId = $parentColumn ? ($checkpoint->{$parentColumn} ?? null) : null;
+
+        $checkpoint->delete();
+
+        if ($this->selectedSubtaskId === $checkpointId) {
+            $this->selectedSubtaskId = $parentId;
+        }
+
+        $this->dispatch('tasks-updated');
+    }
+
     public function render()
     {
         return view('livewire.tasks.details', [

@@ -2,6 +2,8 @@
     $context = $context ?? 'static';
     $isDetails = $context === 'details';
     $missionId = $missionId ?? null;
+    $subtaskId = $subtaskId ?? null;
+    $isSubtask = $subtaskId !== null;
 @endphp
 
 <div class="ti-floating-menu" role="none">
@@ -142,7 +144,11 @@
                 class="ti-menu-action"
                 type="button"
                 data-menu-item
-                @if ($isDetails)
+                @if ($isSubtask && $isDetails)
+                    wire:click="openSubtaskForm({{ $subtaskId }})"
+                @elseif ($isSubtask && $missionId)
+                    wire:click="createChildSubtask({{ $subtaskId }})"
+                @elseif ($isDetails)
                     wire:click="openSubtaskForm"
                 @elseif ($missionId)
                     wire:click="runInlineAction({{ $missionId }}, 'create-subtask')"
@@ -207,7 +213,11 @@
                 class="ti-menu-action danger"
                 type="button"
                 data-menu-item
-                @if ($isDetails)
+                @if ($isSubtask && $isDetails)
+                    wire:click="deleteSubtask({{ $subtaskId }})"
+                @elseif ($isSubtask && $missionId)
+                    wire:click="deleteSubtask({{ $missionId }}, {{ $subtaskId }})"
+                @elseif ($isDetails)
                     wire:click="deleteMission"
                 @elseif ($missionId)
                     wire:click="runInlineAction({{ $missionId }}, 'delete')"
