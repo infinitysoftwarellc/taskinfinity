@@ -324,13 +324,20 @@
                     @endphp
 
                     @if ($rootSubtaskCount)
-                        <ul class="ti-subtask-list" role="list">
+                        <ul
+                            class="ti-subtask-list"
+                            role="list"
+                            data-subtask-container
+                            data-mission-id="{{ $missionData['id'] ?? '' }}"
+                            data-parent-id=""
+                        >
                             @foreach ($subtasks as $st)
                                 @include('livewire.tasks.partials.subtask-item', [
                                     'item' => $st,
                                     'depth' => 0,
                                     'selectedSubtaskId' => $selectedSubtaskId,
                                     'maxSubtasks' => $maxSubtasks,
+                                    'missionId' => $missionData['id'] ?? null,
                                 ])
                             @endforeach
                         </ul>

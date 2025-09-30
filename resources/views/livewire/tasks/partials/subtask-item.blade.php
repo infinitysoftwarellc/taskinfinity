@@ -3,6 +3,7 @@
     'depth' => 0,
     'selectedSubtaskId' => null,
     'maxSubtasks' => 7,
+    'missionId' => null,
 ])
 
 @php
@@ -14,7 +15,15 @@
     $canAddChild = $childrenCount < $maxSubtasks;
 @endphp
 
-<li class="ti-subtask-item" data-depth="{{ $depth }}" wire:key="detail-subtask-{{ $item['id'] ?? 'temp' }}">
+<li
+    class="ti-subtask-item"
+    data-depth="{{ $depth }}"
+    wire:key="detail-subtask-{{ $item['id'] ?? 'temp' }}"
+    data-subtask-node
+    data-subtask-id="{{ $item['id'] ?? '' }}"
+    data-parent-id="{{ $item['parent_id'] ?? '' }}"
+    data-mission-id="{{ $missionId ?? '' }}"
+>
     <div
         class="ti-subtask-row subtask {{ $isDone ? 'is-done' : '' }} {{ $isSelected ? 'is-active' : '' }}"
         wire:click="selectCheckpoint({{ $item['id'] }})"
@@ -50,13 +59,20 @@
     </div>
 
     @if (!empty($children))
-        <ul class="ti-subtask-children" role="list">
+        <ul
+            class="ti-subtask-children"
+            role="list"
+            data-subtask-container
+            data-parent-id="{{ $item['id'] ?? '' }}"
+            data-mission-id="{{ $missionId ?? '' }}"
+        >
             @foreach ($children as $child)
                 @include('livewire.tasks.partials.subtask-item', [
                     'item' => $child,
                     'depth' => $depth + 1,
                     'selectedSubtaskId' => $selectedSubtaskId,
                     'maxSubtasks' => $maxSubtasks,
+                    'missionId' => $missionId,
                 ])
             @endforeach
         </ul>
