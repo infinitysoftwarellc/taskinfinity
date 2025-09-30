@@ -189,11 +189,42 @@
                 <button type="button" title="Inserir imagem"><i class="fa-solid fa-image" aria-hidden="true"></i></button>
             </div>
 
-            <div class="ti-description-content">
-                @if ($mission['description'])
-                    <p>{!! nl2br(e($mission['description'])) !!}</p>
+            <div class="ti-description-content {{ $isEditingDescription ? 'is-editing' : '' }}">
+                @if ($isEditingDescription)
+                    <div class="ti-description-editor">
+                        <textarea
+                            wire:model.defer="descriptionDraft"
+                            placeholder="Descreva a missão com mais detalhes"
+                            aria-label="Editar descrição da missão"
+                        ></textarea>
+
+                        <div class="ti-description-actions">
+                            <button type="button" class="ghost" wire:click="cancelDescriptionEdit">Cancelar</button>
+                            <button type="button" class="primary" wire:click="saveDescription">Salvar</button>
+                        </div>
+                    </div>
+                @elseif ($mission['description'])
+                    <div
+                        class="ti-description-display"
+                        role="button"
+                        tabindex="0"
+                        wire:click="startDescriptionEdit"
+                        wire:keydown.enter.prevent="startDescriptionEdit"
+                        wire:keydown.space.prevent="startDescriptionEdit"
+                    >
+                        <p>{!! nl2br(e($mission['description'])) !!}</p>
+                    </div>
                 @else
-                    <p class="muted">Adicione detalhes ou cole notas importantes aqui…</p>
+                    <div
+                        class="ti-description-empty"
+                        role="button"
+                        tabindex="0"
+                        wire:click="startDescriptionEdit"
+                        wire:keydown.enter.prevent="startDescriptionEdit"
+                        wire:keydown.space.prevent="startDescriptionEdit"
+                    >
+                        <p class="muted">Adicione detalhes ou cole notas importantes aqui…</p>
+                    </div>
                 @endif
             </div>
         </div>

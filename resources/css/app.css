@@ -1575,6 +1575,20 @@ body {
 .ti-toolbar-separator{width:1px; height:22px; background:#1f243a; margin:0 2px;}
 .ti-description-content{background:#0f1118; border:1px solid #1a1d2a; border-radius:12px; padding:14px; min-height:120px; font:500 14px/1.6 'Inter',ui-sans-serif; color:#d5daf1;}
 .ti-description-content p{margin:0; white-space:pre-wrap;}
+.ti-description-content.is-editing{padding:16px;}
+.ti-description-editor{display:flex; flex-direction:column; gap:12px;}
+.ti-description-editor textarea{width:100%; min-height:160px; background:#111428; border:1px solid #1c2138; border-radius:10px; padding:12px 14px; color:#d5daf1; font:500 14px/1.6 'Inter',ui-sans-serif; resize:vertical; transition:border-color .15s ease, box-shadow .15s ease;}
+.ti-description-editor textarea::placeholder{color:var(--muted);}
+.ti-description-editor textarea:focus{outline:none; border-color:rgba(122,162,255,.45); box-shadow:0 0 0 1px rgba(122,162,255,.18);}
+.ti-description-actions{display:flex; justify-content:flex-end; gap:8px;}
+.ti-description-actions .ghost{background:transparent;border:none;color:#98a5ce;font:500 13px/1.3 'Inter',ui-sans-serif;cursor:pointer;padding:6px 10px;border-radius:8px;transition:.15s ease;}
+.ti-description-actions .ghost:hover{color:#cdd6ff;background:rgba(122,162,255,.08);}
+.ti-description-actions .primary{background:#1b2552;border:none;color:#fff;font:600 13px/1.3 'Inter',ui-sans-serif;padding:6px 14px;border-radius:8px;cursor:pointer;transition:.15s ease;}
+.ti-description-actions .primary:hover{background:#24306a;}
+.ti-description-display,.ti-description-empty{display:block; width:100%; min-height:92px; border-radius:8px; padding:0; outline:none;}
+.ti-description-display:hover,.ti-description-empty:hover{background:rgba(122,162,255,.04);}
+.ti-description-display:focus-visible,.ti-description-empty:focus-visible{box-shadow:0 0 0 2px rgba(122,162,255,.35);}
+.ti-description-empty p{color:var(--muted);}
 
 .ti-illustrations{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; padding:16px;}
 .ti-illustrations img{width:100%; border-radius:12px; border:1px solid #1c2235; object-fit:cover; min-height:120px; box-shadow:0 14px 30px rgba(10,12,18,.45);}
