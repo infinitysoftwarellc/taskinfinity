@@ -72,7 +72,12 @@ class Completed extends Component
             $completedAt = $mission->completed_at ?? $mission->updated_at ?? $mission->created_at;
             $localized = $completedAt?->copy()->setTimezone($timezone);
             $key = $localized ? $localized->toDateString() : 'sem-data';
-            $target = $localized ? &$dated : &$undated;
+
+            if ($localized) {
+                $target = &$dated;
+            } else {
+                $target = &$undated;
+            }
 
             if (! array_key_exists($key, $target)) {
                 $target[$key] = [
