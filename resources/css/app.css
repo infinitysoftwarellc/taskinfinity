@@ -929,17 +929,18 @@ body {
 }
 .task {
     display: grid;
-    grid-template-columns: 28px minmax(0, 1fr) auto;
+    grid-template-columns: 32px minmax(0, 1fr) max-content 44px;
     align-items: center;
     gap: 12px;
     padding: 14px 18px;
-    background: rgba(18, 22, 36, 0.88);
+    background: rgba(17, 21, 33, 0.92);
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 .task:hover {
-    background: var(--hover);
+    background: rgba(28, 34, 52, 0.98);
 }
 .task.is-active {
-    background: rgba(122, 162, 255, 0.12);
+    background: rgba(122, 162, 255, 0.14);
     border-left: 2px solid var(--accent);
 }
 .checkbox {
@@ -964,11 +965,18 @@ body {
     transform: rotate(40deg);
 }
 
+.task-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
 .task .title-line {
     display: flex;
     align-items: center;
     gap: 8px;
     min-width: 0;
+    width: 100%;
 }
 .task .title-line .title {
     font-size: 14px;
@@ -996,11 +1004,18 @@ body {
 .inline-input::placeholder {
     color: rgba(203, 210, 228, .55);
 }
-.task-actions {
+.task-date {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 6px;
+    min-height: 18px;
+    min-width: 0;
+}
+.task-menu {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 .task-due {
     font-size: 12px;
@@ -1010,6 +1025,7 @@ body {
     align-items: center;
     line-height: 1;
     text-transform: none;
+    white-space: nowrap;
 }
 .task-due.is-overdue {
     color: #f87171;
@@ -1019,51 +1035,34 @@ body {
     font-size: 12px;
 }
 
-.task-quick-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    border: 1px solid rgba(66, 76, 112, .6);
-    background: rgba(18, 22, 36, .9);
-    color: var(--muted);
-    cursor: pointer;
-    transition: all .15s ease;
-    padding: 0;
-}
-.task-quick-btn:hover {
-    color: var(--text);
-    border-color: rgba(122, 162, 255, .6);
-    background: rgba(30, 38, 62, .95);
-}
-.task-quick-btn i {
-    width: 16px;
-    height: 16px;
-}
-
 .task.done .title {
     color: var(--muted);
     font-weight: 600;
 }
 
 /* Subtarefas */
-.task.has-subtasks {
-    grid-template-columns: 28px 16px minmax(0, 1fr) auto;
+.task.has-subtasks .task-label {
+    padding-left: 0;
 }
 .expander {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     display: grid;
     place-items: center;
     color: var(--muted);
     cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
 }
 .expander i {
     width: 16px;
     height: 16px;
     transition: transform 0.2s ease;
+}
+.task-label .expander,
+.subtask-label .expander {
+    margin-right: 4px;
 }
 
 .subtasks {
@@ -1076,24 +1075,25 @@ body {
 }
 .subtasks .subtask {
     display: grid;
-    grid-template-columns: 18px minmax(0, 1fr) auto;
+    grid-template-columns: 24px minmax(0, 1fr) max-content 44px;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 10px 14px;
     margin-left: calc(var(--subtask-depth, 0) * 18px);
-    border-radius: 8px;
+    border-radius: 10px;
+    background: rgba(17, 21, 33, 0.8);
     transition: background .15s ease, box-shadow .15s ease;
     cursor: pointer;
 }
 .subtasks .subtask.has-children {
-    grid-template-columns: 18px 16px minmax(0, 1fr) auto;
+    grid-template-columns: 24px minmax(0, 1fr) max-content 44px;
 }
 .subtasks .subtask:hover {
-    background: rgba(16, 18, 32, .9);
+    background: rgba(28, 34, 52, 0.92);
     box-shadow: inset 0 0 0 1px rgba(24, 32, 60, .55);
 }
 .subtasks .subtask.is-active {
-    background: rgba(122, 162, 255, 0.14);
+    background: rgba(122, 162, 255, 0.16);
     box-shadow: inset 0 0 0 1px rgba(122, 162, 255, 0.35);
 }
 .subtasks .checkbox {
@@ -1105,6 +1105,12 @@ body {
     background: linear-gradient(135deg, var(--brand), #8b5cf6);
     border-color: transparent;
 }
+.subtask-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
 .subtasks .title {
     font-size: 13px;
     font-weight: 600;
@@ -1114,11 +1120,17 @@ body {
 .subtasks .subtask.done .title {
     color: var(--muted);
 }
-.subtasks .subtask-actions {
+.subtask-date {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 6px;
+    min-width: 0;
+}
+.subtask-menu {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 .subtask-due {
     font-size: 11px;
@@ -1128,6 +1140,7 @@ body {
     align-items: center;
     line-height: 1;
     text-transform: none;
+    white-space: nowrap;
 }
 .subtask-due.is-overdue {
     color: #f87171;
@@ -1145,62 +1158,16 @@ body {
     border-left: 1px dashed rgba(122, 162, 255, .18);
 }
 
-.subtask-quick-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    border: 1px solid rgba(66, 76, 112, .6);
-    background: rgba(14, 18, 30, .9);
-    color: var(--muted);
-    cursor: pointer;
-    transition: all .15s ease;
-    padding: 0;
-}
-.subtask-quick-btn:hover {
-    color: var(--text);
-    border-color: rgba(122, 162, 255, .6);
-    background: rgba(24, 32, 52, .95);
-}
-.subtask-quick-btn i {
-    width: 14px;
-    height: 14px;
-}
-
 .subtasks-empty {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 6px 0 10px;
+    gap: 8px;
+    padding: 10px 0 12px;
 }
 .subtasks-limit {
     font-size: 12px;
     color: rgba(199, 208, 236, .7);
     padding: 4px 0 0 0;
-}
-.subtasks-empty-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    width: fit-content;
-    border-radius: 10px;
-    border: 1px dashed rgba(122, 162, 255, .45);
-    background: rgba(21, 26, 40, .7);
-    color: var(--text);
-    padding: 6px 12px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: background .15s ease, border-color .15s ease;
-}
-.subtasks-empty-btn:hover {
-    background: rgba(31, 38, 60, .9);
-    border-color: rgba(122, 162, 255, .75);
-}
-.subtasks-empty-btn i {
-    width: 16px;
-    height: 16px;
 }
 .subtask-hint {
     font-size: 11px;
@@ -1227,30 +1194,17 @@ body {
 
 @media (max-width: 640px) {
     .task {
-        display: flex;
-        flex-wrap: wrap;
+        grid-template-columns: 28px minmax(0, 1fr);
+        grid-auto-rows: auto;
         align-items: flex-start;
-        gap: 10px;
+        gap: 10px 12px;
         padding: 14px;
     }
 
-    .task .title-line {
-        flex: 1 1 calc(100% - 44px);
-    }
-
-    .task.has-subtasks {
-        gap: 10px;
-    }
-
-    .task.has-subtasks .title-line {
-        flex-basis: 100%;
-    }
-
-    .task .task-actions {
-        width: 100%;
+    .task-date,
+    .task-menu {
+        grid-column: 1 / -1;
         justify-content: flex-start;
-        margin-top: 6px;
-        gap: 10px;
     }
 
     .subtasks {
@@ -1258,24 +1212,15 @@ body {
     }
 
     .subtasks .subtask {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 10px;
-        margin-left: calc(var(--subtask-depth, 0) * 12px);
+        grid-template-columns: 20px minmax(0, 1fr);
+        gap: 8px 12px;
+        padding: 8px 12px;
     }
 
-    .subtasks .title {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    .subtasks .subtask-actions {
-        width: 100%;
+    .subtask-date,
+    .subtask-menu {
+        grid-column: 1 / -1;
         justify-content: flex-start;
-        margin-top: 6px;
-        gap: 10px;
     }
 }
 

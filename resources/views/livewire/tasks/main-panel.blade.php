@@ -133,43 +133,37 @@
                             @endif
                         >
                             <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
-                            @if ($hasSubtasks)
-                                <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
-                                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-                                </button>
-                            @endif
-                            <div class="title-line">
-                                @if ($editingMissionId === $mission->id)
-                                    <input
-                                        type="text"
-                                        class="inline-input"
-                                        data-mission-input="{{ $mission->id }}"
-                                        wire:model.defer="editingMissionTitle"
-                                        wire:keydown.enter.prevent="saveMissionEdit({{ $mission->id }})"
-                                        wire:keydown.shift.enter.prevent="missionShiftEnter({{ $mission->id }})"
-                                        wire:keydown.escape="cancelMissionEdit"
-                                        wire:blur="saveMissionEdit({{ $mission->id }})"
-                                    />
-                                @else
-                                    <span class="title" wire:click.stop="startMissionEdit({{ $mission->id }})">
-                                        {{ $mission->title ?: 'Sem título' }}
-                                    </span>
-                                @endif
-                            </div>
-                            <div class="task-actions" wire:click.stop>
-                                @if ($canAddMissionSubtask)
-                                    <button
-                                        type="button"
-                                        class="task-quick-btn"
-                                        title="Adicionar subtarefa (Shift + Enter)"
-                                        wire:click.stop="createSubtaskForMission({{ $mission->id }})"
-                                    >
-                                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                            <div class="task-label">
+                                @if ($hasSubtasks)
+                                    <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
+                                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                                     </button>
                                 @endif
+                                <div class="title-line">
+                                    @if ($editingMissionId === $mission->id)
+                                        <input
+                                            type="text"
+                                            class="inline-input"
+                                            data-mission-input="{{ $mission->id }}"
+                                            wire:model.defer="editingMissionTitle"
+                                            wire:keydown.enter.prevent="saveMissionEdit({{ $mission->id }}, true)"
+                                            wire:keydown.shift.enter.prevent="missionShiftEnter({{ $mission->id }})"
+                                            wire:keydown.escape="cancelMissionEdit"
+                                            wire:blur="saveMissionEdit({{ $mission->id }})"
+                                        />
+                                    @else
+                                        <span class="title" wire:click.stop="startMissionEdit({{ $mission->id }})">
+                                            {{ $mission->title ?: 'Sem título' }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="task-date">
                                 @if ($dueLabel)
                                     <span class="{{ $dueClass }}">{{ $dueLabel }}</span>
                                 @endif
+                            </div>
+                            <div class="task-menu" wire:click.stop>
                                 @include('livewire.tasks.partials.inline-menu', [
                                     'context' => 'main',
                                     'missionId' => $mission->id,
@@ -202,23 +196,13 @@
                                     <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
                                 @endif
                             @else
-                                @if ($canAddMissionSubtask)
-                                    <div class="subtasks-empty">
-                                        <button
-                                            type="button"
-                                            class="subtasks-empty-btn"
-                                            wire:click.stop="createSubtaskForMission({{ $mission->id }})"
-                                        >
-                                            <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                                            <span>Adicionar subtarefa</span>
-                                        </button>
+                                <div class="subtasks-empty">
+                                    @if ($canAddMissionSubtask)
                                         <span class="subtask-hint">Shift + Enter para criar subtarefa</span>
-                                    </div>
-                                @else
-                                    <div class="subtasks-empty">
+                                    @else
                                         <span class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</span>
-                                    </div>
-                                @endif
+                                    @endif
+                                </div>
                             @endif
                         </div>
                     </div>
