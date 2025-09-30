@@ -60,7 +60,7 @@ class Sidebar extends Component
 
     public ?int $newListFolder = null;
 
-    public bool $showTagForm = false;
+    public bool $showTagModal = false;
 
     public string $newTagName = '';
 
@@ -370,9 +370,19 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
-    public function toggleTagForm(): void
+    public function openTagModal(): void
     {
-        $this->showTagForm = ! $this->showTagForm;
+        $this->resetValidation();
+        $this->resetErrorBag();
+        $this->resetTagForm();
+
+        $this->showTagModal = true;
+    }
+
+    public function closeTagModal(): void
+    {
+        $this->showTagModal = false;
+        $this->resetTagForm();
     }
 
     public function createTag(): void
@@ -405,9 +415,8 @@ class Sidebar extends Component
             ]
         );
 
-        $this->reset(['newTagName', 'newTagColor']);
-        $this->newTagColor = '#7aa2ff';
-        $this->showTagForm = false;
+        $this->resetTagForm();
+        $this->showTagModal = false;
     }
 
     public function render()
@@ -428,7 +437,7 @@ class Sidebar extends Component
                 'tags' => collect(),
                 'completedLabel' => 'Completed',
                 'completedCount' => 0,
-                'showTagForm' => $this->showTagForm,
+                'showTagModal' => $this->showTagModal,
                 'viewTypes' => $this->viewTypes,
                 'colorPalette' => $this->colorPalette,
                 'openMenuId' => $this->openMenuId,
@@ -545,7 +554,7 @@ class Sidebar extends Component
             'tags' => $tags,
             'completedLabel' => 'Completed',
             'completedCount' => $completedTasks,
-            'showTagForm' => $this->showTagForm,
+            'showTagModal' => $this->showTagModal,
             'viewTypes' => $this->viewTypes,
             'colorPalette' => $this->colorPalette,
             'openMenuId' => $this->openMenuId,
@@ -788,6 +797,16 @@ class Sidebar extends Component
         if (! $this->newListViewType) {
             $this->newListViewType = $defaultView;
         }
+
+        if (! $this->newTagColor) {
+            $this->newTagColor = $defaultColor;
+        }
+    }
+
+    protected function resetTagForm(): void
+    {
+        $this->newTagName = '';
+        $this->newTagColor = $this->colorPalette[0] ?? '#7aa2ff';
     }
 
     protected function resetCreateForm(string $type = 'list'): void
