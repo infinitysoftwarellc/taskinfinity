@@ -365,6 +365,7 @@
                                     'selectedSubtaskId' => $selectedSubtaskId,
                                     'maxSubtasks' => $maxSubtasks,
                                     'missionId' => $missionData['id'] ?? null,
+                                    'missionPriority' => $missionData['priority'] ?? 0,
                                 ])
                             @endforeach
                         </ul>

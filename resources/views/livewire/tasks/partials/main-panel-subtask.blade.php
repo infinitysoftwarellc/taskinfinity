@@ -8,6 +8,7 @@
     'siblingsCount' => 0,
     'maxSubtasks' => 7,
     'userTimezone' => null,
+    'missionPriority' => 0,
 ])
 
 @php
@@ -24,6 +25,7 @@
     $dueDate = null;
     $dueLabel = null;
     $dueClass = 'subtask-due';
+    $priorityLevel = (int) ($missionPriority ?? 0);
 
     if (($item['due_at'] ?? null) instanceof \Carbon\CarbonInterface) {
         $dueAt = $item['due_at']->copy()->setTimezone($timezone);
@@ -83,6 +85,9 @@
             'done' => $isDone,
             'is-active' => $isActive,
             'has-children' => $hasChildren,
+            'priority-high' => $priorityLevel === 3,
+            'priority-medium' => $priorityLevel === 2,
+            'priority-low' => $priorityLevel === 1,
         ])
         @if($hasChildren)
             aria-expanded="true"
@@ -166,6 +171,7 @@
                     'siblingsCount' => $childrenCount,
                     'maxSubtasks' => $maxSubtasks,
                     'userTimezone' => $userTimezone,
+                    'missionPriority' => $priorityLevel,
                 ])
             @endforeach
             @if (! $canAddChild)

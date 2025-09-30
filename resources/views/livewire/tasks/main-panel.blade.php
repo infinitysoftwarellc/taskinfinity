@@ -90,6 +90,7 @@
                         $missionDueDate = optional(optional($mission->due_at)->setTimezone($userTimezone))->format('Y-m-d');
                         $dueLabel = null;
                         $dueClass = 'task-due';
+                        $missionPriority = (int) ($mission->priority ?? 0);
 
                         if ($mission->due_at) {
                             $missionDue = $mission->due_at->copy()->setTimezone($userTimezone);
@@ -127,12 +128,22 @@
                                 'done' => $mission->status === 'done',
                                 'is-active' => $isActive,
                                 'has-subtasks' => $hasSubtasks,
+                                'priority-high' => $missionPriority === 3,
+                                'priority-medium' => $missionPriority === 2,
+                                'priority-low' => $missionPriority === 1,
                             ])
                             @if($hasSubtasks)
                                 aria-expanded="true"
                             @endif
                         >
-                            <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
+                            <button
+                                @class([
+                                    'checkbox',
+                                    'checked' => $mission->status === 'done',
+                                ])
+                                aria-label="Marcar tarefa"
+                                type="button"
+                            ></button>
                             <div class="task-label">
                                 @if ($hasSubtasks)
                                     <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
@@ -202,6 +213,7 @@
                                         'siblingsCount' => $rootSubtaskCount,
                                         'maxSubtasks' => $maxSubtasks,
                                         'userTimezone' => $userTimezone,
+                                        'missionPriority' => $missionPriority,
                                     ])
                                 @endforeach
                                 @if (! $canAddMissionSubtask)

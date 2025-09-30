@@ -5,6 +5,7 @@
     'selectedSubtaskId' => null,
     'maxSubtasks' => 7,
     'missionId' => null,
+    'missionPriority' => 0,
 ])
 
 @php
@@ -14,6 +15,7 @@
     $isSelected = ($item['id'] ?? null) === $selectedSubtaskId;
     $childrenCount = count($children);
     $canAddChild = $childrenCount < $maxSubtasks;
+    $priorityLevel = (int) ($missionPriority ?? 0);
 @endphp
 
 <li
@@ -26,7 +28,15 @@
     data-mission-id="{{ $missionId ?? '' }}"
 >
     <div
-        class="ti-subtask-row subtask {{ $isDone ? 'is-done' : '' }} {{ $isSelected ? 'is-active' : '' }}"
+        @class([
+            'ti-subtask-row',
+            'subtask',
+            'is-done' => $isDone,
+            'is-active' => $isSelected,
+            'priority-high' => $priorityLevel === 3,
+            'priority-medium' => $priorityLevel === 2,
+            'priority-low' => $priorityLevel === 1,
+        ])
         wire:click="selectCheckpoint({{ $item['id'] }})"
     >
         <button
@@ -74,6 +84,7 @@
                     'selectedSubtaskId' => $selectedSubtaskId,
                     'maxSubtasks' => $maxSubtasks,
                     'missionId' => $missionId,
+                    'missionPriority' => $priorityLevel,
                 ])
             @endforeach
         </ul>
