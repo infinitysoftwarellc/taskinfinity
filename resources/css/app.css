@@ -1513,6 +1513,8 @@ body {
 .ti-topbar .pill.ghost:hover{background:rgba(122,162,255,.08);border-color:rgba(122,162,255,.35);color:#d7dcff;}
 .ti-topbar .pill.is-active{border-color:var(--blue); box-shadow:0 0 0 1px rgba(122,162,255,.35); color:#fff;}
 .ti-topbar .pill i{width:16px;height:16px;stroke-width:1.8}
+.ti-topbar .pill.icon-only{gap:6px;}
+.ti-date-label{font:600 12px/1.3 'Inter',ui-sans-serif;color:#dfe4ff;}
 .ti-topbar .icon.ghost{opacity:.9}
 .ti-date-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .ti-date-actions .pill{white-space:nowrap;}
@@ -1932,7 +1934,8 @@ body.ti-inline-menu-open {
 .ti-subtask-form-actions .primary:hover{background:#24306a;}
 
 /* footer */
-.ti-footer{padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid #1d2130; background:linear-gradient(180deg,rgba(16,19,35,.94),rgba(12,15,27,.94)); flex-shrink:0;}
+.ti-footer{padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid #1d2130; background:linear-gradient(180deg,rgba(16,19,35,.94),rgba(12,15,27,.94)); flex-shrink:0; position:sticky; bottom:0; z-index:35;}
+.ti-footer-start{flex:1; display:flex; align-items:center; min-height:32px;}
 .ti-list-selector{position:relative;display:inline-block;}
 .ti-list-selector-toggle{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1px solid #262c42;background:#111426;color:#dbe3ff;cursor:pointer;font:600 13px/1.3 'Inter',ui-sans-serif;transition:.15s ease;min-width:190px;}
 .ti-list-selector-toggle:hover{border-color:#333a56;background:#151a2e;}
@@ -1943,7 +1946,7 @@ body.ti-inline-menu-open {
 .ti-list-option{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:transparent;border:none;color:#cdd6ff;font:500 13px/1.3 'Inter',ui-sans-serif;text-align:left;cursor:pointer;transition:.15s ease;}
 .ti-list-option:hover{background:rgba(122,162,255,.12);color:#fff;}
 .ti-list-option.is-active{background:rgba(122,162,255,.18);color:#fff;}
-.ti-footer-actions{display:flex; align-items:center; gap:8px;}
+.ti-footer-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
 .ti-footer-icon{background:#101323; border:1px solid #21263a; color:#9cabd8; width:32px; height:32px; border-radius:10px; display:inline-grid; place-items:center; cursor:pointer; transition:.15s ease;}
 .ti-footer-icon:hover{background:rgba(122,162,255,.12); color:#ffffff;}
 .ti-footer-icon.is-active{background:rgba(122,162,255,.18);color:#ffe37a;border-color:rgba(255,227,122,.45);}
