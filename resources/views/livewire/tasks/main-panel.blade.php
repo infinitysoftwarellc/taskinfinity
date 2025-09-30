@@ -67,94 +67,95 @@
                         $canAddMissionSubtask = $rootSubtaskCount < $maxSubtasks;
                     @endphp
 
-                    <div
-                        wire:key="mission-flat-{{ $mission->id }}"
-                        wire:click="selectMission({{ $mission->id }})"
-                        @class([
-                            'task',
-                            'done' => $mission->status === 'done',
-                            'is-active' => $isActive,
-                            'has-subtasks' => $hasSubtasks,
-                        ])
-                        @if($hasSubtasks)
-                            aria-expanded="true"
-                        @endif
-                    >
-                        <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
-                        @if ($hasSubtasks)
-                            <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
-                                <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-                            </button>
-                        @endif
-                        <div class="title-line">
-                            @if ($editingMissionId === $mission->id)
-                                <input
-                                    type="text"
-                                    class="inline-input"
-                                    data-mission-input="{{ $mission->id }}"
-                                    wire:model.defer="editingMissionTitle"
-                                    wire:keydown.enter.prevent="saveMissionEdit({{ $mission->id }})"
-                                    wire:keydown.shift.enter.prevent="missionShiftEnter({{ $mission->id }})"
-                                    wire:keydown.escape="cancelMissionEdit"
-                                    wire:blur="saveMissionEdit({{ $mission->id }})"
-                                />
-                            @else
-                                <span class="title" wire:click.stop="startMissionEdit({{ $mission->id }})">
-                                    {{ $mission->title ?: 'Sem título' }}
-                                </span>
+                    <div class="task-block" wire:key="mission-flat-{{ $mission->id }}">
+                        <div
+                            wire:click="selectMission({{ $mission->id }})"
+                            @class([
+                                'task',
+                                'done' => $mission->status === 'done',
+                                'is-active' => $isActive,
+                                'has-subtasks' => $hasSubtasks,
+                            ])
+                            @if($hasSubtasks)
+                                aria-expanded="true"
                             @endif
-                        </div>
-                        <div class="task-actions" wire:click.stop>
-                            @if ($canAddMissionSubtask)
-                                <button
-                                    type="button"
-                                    class="task-quick-btn"
-                                    title="Adicionar subtarefa (Shift + Enter)"
-                                    wire:click.stop="createSubtaskForMission({{ $mission->id }})"
-                                >
-                                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                        >
+                            <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
+                            @if ($hasSubtasks)
+                                <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
+                                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                                 </button>
                             @endif
-                            @include('livewire.tasks.partials.inline-menu')
-                        </div>
-                        {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
-                    </div>
-
-                    <div class="subtasks">
-                        @if ($hasSubtasks)
-                            @foreach ($subtasks as $node)
-                                @include('livewire.tasks.partials.main-panel-subtask', [
-                                    'item' => $node,
-                                    'depth' => 0,
-                                    'missionId' => $mission->id,
-                                    'selectedSubtaskId' => $selectedSubtaskId,
-                                    'editingSubtaskId' => $editingSubtaskId,
-                                    'siblingsCount' => $rootSubtaskCount,
-                                    'maxSubtasks' => $maxSubtasks,
-                                ])
-                            @endforeach
-                            @if (! $canAddMissionSubtask)
-                                <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
-                            @endif
-                        @else
-                            @if ($canAddMissionSubtask)
-                                <div class="subtasks-empty">
+                            <div class="title-line">
+                                @if ($editingMissionId === $mission->id)
+                                    <input
+                                        type="text"
+                                        class="inline-input"
+                                        data-mission-input="{{ $mission->id }}"
+                                        wire:model.defer="editingMissionTitle"
+                                        wire:keydown.enter.prevent="saveMissionEdit({{ $mission->id }})"
+                                        wire:keydown.shift.enter.prevent="missionShiftEnter({{ $mission->id }})"
+                                        wire:keydown.escape="cancelMissionEdit"
+                                        wire:blur="saveMissionEdit({{ $mission->id }})"
+                                    />
+                                @else
+                                    <span class="title" wire:click.stop="startMissionEdit({{ $mission->id }})">
+                                        {{ $mission->title ?: 'Sem título' }}
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="task-actions" wire:click.stop>
+                                @if ($canAddMissionSubtask)
                                     <button
                                         type="button"
-                                        class="subtasks-empty-btn"
+                                        class="task-quick-btn"
+                                        title="Adicionar subtarefa (Shift + Enter)"
                                         wire:click.stop="createSubtaskForMission({{ $mission->id }})"
                                     >
                                         <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                                        <span>Adicionar subtarefa</span>
                                     </button>
-                                    <span class="subtask-hint">Shift + Enter para criar subtarefa</span>
-                                </div>
+                                @endif
+                                @include('livewire.tasks.partials.inline-menu')
+                            </div>
+                            {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
+                        </div>
+
+                        <div class="subtasks">
+                            @if ($hasSubtasks)
+                                @foreach ($subtasks as $node)
+                                    @include('livewire.tasks.partials.main-panel-subtask', [
+                                        'item' => $node,
+                                        'depth' => 0,
+                                        'missionId' => $mission->id,
+                                        'selectedSubtaskId' => $selectedSubtaskId,
+                                        'editingSubtaskId' => $editingSubtaskId,
+                                        'siblingsCount' => $rootSubtaskCount,
+                                        'maxSubtasks' => $maxSubtasks,
+                                    ])
+                                @endforeach
+                                @if (! $canAddMissionSubtask)
+                                    <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
+                                @endif
                             @else
-                                <div class="subtasks-empty">
-                                    <span class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</span>
-                                </div>
+                                @if ($canAddMissionSubtask)
+                                    <div class="subtasks-empty">
+                                        <button
+                                            type="button"
+                                            class="subtasks-empty-btn"
+                                            wire:click.stop="createSubtaskForMission({{ $mission->id }})"
+                                        >
+                                            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                                            <span>Adicionar subtarefa</span>
+                                        </button>
+                                        <span class="subtask-hint">Shift + Enter para criar subtarefa</span>
+                                    </div>
+                                @else
+                                    <div class="subtasks-empty">
+                                        <span class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</span>
+                                    </div>
+                                @endif
                             @endif
-                        @endif
+                        </div>
                     </div>
                 @empty
                     <div class="task ghost">
