@@ -48,3 +48,5 @@ Homestead.yaml
 # OS generated
 .DS_Store
 Thumbs.db
+
+yarn.lock
