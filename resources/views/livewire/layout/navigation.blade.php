@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire layout navigation interface. --}}
 <?php
 
 use App\Livewire\Actions\Logout;

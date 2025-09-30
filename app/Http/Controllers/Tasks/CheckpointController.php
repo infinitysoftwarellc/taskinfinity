@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the tasks area related to checkpoint.
 namespace App\Http\Controllers\Tasks;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

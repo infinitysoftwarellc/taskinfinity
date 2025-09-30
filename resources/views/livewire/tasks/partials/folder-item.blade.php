@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks partials folder item interface. --}}
 @php
     $menuKey = 'folder-' . $folder->id;
     $lists = $folder->lists ?? collect();

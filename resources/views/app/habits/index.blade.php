@@ -1,3 +1,4 @@
+{{-- This Blade view renders the app habits index interface. --}}
 {{-- resources/views/app/habits/index.blade.php --}} 
 <x-app-layout>
     <div class="flex min-h-screen bg-zinc-100 dark:bg-zinc-950">

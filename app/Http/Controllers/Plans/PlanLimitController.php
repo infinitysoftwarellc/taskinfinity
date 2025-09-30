@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the plans area related to plan limit.
 namespace App\Http\Controllers\Plans;
 
 use App\Http\Controllers\Controller;

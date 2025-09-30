@@ -1,3 +1,4 @@
+{{-- This Blade view renders the app shared navigation interface. --}}
 @php
     $items = [
         [

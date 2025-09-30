@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks board interface. --}}
 <div class="app {{ $isListView ? 'list-view' : '' }}">
     <livewire:tasks.rail
         :primary-buttons="data_get($rail, 'primary', [])"

@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components layouts app header interface. --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>

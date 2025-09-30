@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire pages auth reset password interface. --}}
 <?php
 
 use Illuminate\Auth\Events\PasswordReset;

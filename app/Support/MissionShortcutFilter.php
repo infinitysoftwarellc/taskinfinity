@@ -1,5 +1,6 @@
 <?php
 
+// This support class offers helper logic for mission shortcut filter.
 namespace App\Support;
 
 use Carbon\CarbonImmutable;

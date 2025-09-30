@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the auth area related to verify email.
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;

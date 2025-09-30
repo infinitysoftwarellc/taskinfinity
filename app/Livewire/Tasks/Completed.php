@@ -1,5 +1,6 @@
 <?php
 
+// This Livewire class manages completed behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Models\Mission;

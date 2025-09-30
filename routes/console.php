@@ -1,5 +1,6 @@
 <?php
 
+// This routes file registers console commands for the artisan tooling section.
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 

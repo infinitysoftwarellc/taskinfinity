@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the rituals area related to ritual entry.
 namespace App\Http\Controllers\Rituals;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

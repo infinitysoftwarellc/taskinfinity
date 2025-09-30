@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the preferences area related to user theme preference.
 namespace App\Http\Controllers\Preferences;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

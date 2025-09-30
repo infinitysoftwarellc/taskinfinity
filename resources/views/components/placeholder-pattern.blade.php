@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components placeholder pattern interface. --}}
 @props([
     'id' => uniqid(),
 ])

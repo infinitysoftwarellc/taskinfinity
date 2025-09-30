@@ -1,3 +1,4 @@
+{{-- This Blade view renders the flux icon chevrons up down interface. --}}
 {{-- Ícone do Font Awesome --}}
 
 @props([

@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks rail interface. --}}
 @php
     $iconMap = [
         'list-checks' => 'fa-solid fa-list-check',

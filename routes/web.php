@@ -1,5 +1,6 @@
 <?php
 
+// This routes file registers HTTP endpoints for the web section.
 use App\Http\Controllers\Ai\AiRequestController;
 use App\Http\Controllers\Economy\EconomyWalletController;
 use App\Http\Controllers\Gamification\AbilityController;

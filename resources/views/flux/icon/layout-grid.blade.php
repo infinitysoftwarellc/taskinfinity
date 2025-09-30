@@ -1,3 +1,4 @@
+{{-- This Blade view renders the flux icon layout grid interface. --}}
 {{-- Ícone do Font Awesome --}}
 
 @props([

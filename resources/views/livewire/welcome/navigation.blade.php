@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire welcome navigation interface. --}}
 <nav class="-mx-3 flex flex-1 justify-end">
     @auth
         <a

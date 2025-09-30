@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire auth verify email interface. --}}
 <?php
 
 use App\Livewire\Actions\Logout;

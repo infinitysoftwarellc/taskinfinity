@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire profile update password form interface. --}}
 <?php
 
 use Illuminate\Support\Facades\Auth;

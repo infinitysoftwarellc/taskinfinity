@@ -1,3 +1,4 @@
+{{-- This Blade view renders the flux icon book open text interface. --}}
 {{-- Ícone do Font Awesome --}}
 
 @props([

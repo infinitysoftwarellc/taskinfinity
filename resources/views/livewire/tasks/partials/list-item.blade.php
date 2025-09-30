@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks partials list item interface. --}}
 @php
     $menuKey = 'list-' . $list->id;
     $isActive = $currentListId === $list->id;

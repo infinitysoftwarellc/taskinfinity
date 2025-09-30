@@ -1,5 +1,6 @@
 <?php
 
+// This service provider configures application services for the app service scope.
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;

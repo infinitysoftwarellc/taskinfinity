@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire pages auth login interface. --}}
 <?php
 
 use App\Livewire\Forms\LoginForm;

@@ -1,5 +1,6 @@
 <?php
 
+// This service provider configures application services for the fortify service scope.
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;

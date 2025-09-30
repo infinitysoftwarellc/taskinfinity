@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks partials main panel subtask interface. --}}
 @props([
     'item' => [],
     'depth' => 0,

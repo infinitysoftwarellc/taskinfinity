@@ -1,3 +1,4 @@
+{{-- This Blade view renders the layouts guest interface. --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>

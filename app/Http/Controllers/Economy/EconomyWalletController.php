@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the economy area related to economy wallet.
 namespace App\Http\Controllers\Economy;
 
 use App\Http\Controllers\Controller;

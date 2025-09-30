@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks partials menu content interface. --}}
 @php
     $context = $context ?? 'static';
     $isDetails = $context === 'details';

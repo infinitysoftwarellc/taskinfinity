@@ -1,3 +1,4 @@
+{{-- This Blade view renders the partials head interface. --}}
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 

@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire settings profile interface. --}}
 <?php
 
 use App\Models\User;

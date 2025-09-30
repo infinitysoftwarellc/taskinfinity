@@ -1,5 +1,6 @@
 <?php
 
+// This Livewire class manages rail behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use Livewire\Component;

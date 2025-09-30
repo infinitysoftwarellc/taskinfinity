@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the ai area related to ai request.
 namespace App\Http\Controllers\Ai;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

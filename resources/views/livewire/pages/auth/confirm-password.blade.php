@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire pages auth confirm password interface. --}}
 <?php
 
 use Illuminate\Support\Facades\Auth;

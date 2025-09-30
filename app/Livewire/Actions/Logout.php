@@ -1,5 +1,6 @@
 <?php
 
+// This Livewire class manages logout behaviour for the actions experience.
 namespace App\Livewire\Actions;
 
 use Illuminate\Support\Facades\Auth;

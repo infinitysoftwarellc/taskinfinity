@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire auth login interface. --}}
 <?php
 
 use App\Models\User;

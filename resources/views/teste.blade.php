@@ -1,3 +1,4 @@
+{{-- This Blade view renders the teste interface. --}}
 <!doctype html>
 <html lang="pt-BR">
 <head>

@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the store area related to purchase.
 namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

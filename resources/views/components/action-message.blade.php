@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components action message interface. --}}
 @props(['on'])
 
 <div x-data="{ shown: false, timeout: null }"

@@ -1,3 +1,4 @@
+{{-- This Blade view renders the profile interface. --}}
 <x-app-layout>
     <div class="flex min-h-screen bg-zinc-100 dark:bg-zinc-950">
         @include('app.shared.navigation')

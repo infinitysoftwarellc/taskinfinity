@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks details interface. --}}
 @php
     $missionData = is_array($mission) ? $mission : null;
     $activeSubtaskContext = $missionData['active_subtask'] ?? null;

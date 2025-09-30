@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire profile update profile information form interface. --}}
 <?php
 
 use App\Models\User;

@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the habits area related to habit monthly stat.
 namespace App\Http\Controllers\Habits;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

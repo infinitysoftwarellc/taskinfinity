@@ -1,5 +1,6 @@
 <?php
 
+// This Livewire class manages sidebar behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Models\Folder;

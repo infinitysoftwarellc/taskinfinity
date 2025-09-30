@@ -1,5 +1,6 @@
 <?php
 
+// This Livewire class manages login form behaviour for the forms experience.
 namespace App\Livewire\Forms;
 
 use Illuminate\Auth\Events\Lockout;
