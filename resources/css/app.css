@@ -829,6 +829,10 @@ body {
     display: flex;
     flex-direction: column;
 }
+.task-block {
+    display: flex;
+    flex-direction: column;
+}
 .task {
     display: grid;
     grid-template-columns: 28px 1fr auto;
