@@ -87,7 +87,10 @@
                 <i class="fa-solid fa-turn-down" aria-hidden="true"></i>
             </button>
         @endif
-        @include('livewire.tasks.partials.inline-menu')
+        @include('livewire.tasks.partials.inline-menu', [
+            'context' => 'main',
+            'missionId' => $missionId,
+        ])
     </div>
 </div>
 

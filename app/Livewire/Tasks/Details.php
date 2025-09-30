@@ -167,6 +167,70 @@ class Details extends Component
             ->toArray();
     }
 
+    #[On('tasks-inline-action')]
+    public function handleInlineAction(?int $missionId = null, string $action = '', ?string $value = null): void
+    {
+        if (! $missionId) {
+            return;
+        }
+
+        if ($this->missionId !== $missionId) {
+            $this->loadMission($missionId);
+        }
+
+        if ($this->missionId !== $missionId) {
+            return;
+        }
+
+        switch ($action) {
+            case 'due-shortcut':
+                if ($value !== null) {
+                    $this->applyDueShortcut($value);
+                }
+
+                break;
+            case 'set-date':
+                if ($value) {
+                    $this->selectDueDate($value);
+                }
+
+                break;
+            case 'clear-date':
+                $this->clearDueDate();
+
+                break;
+            case 'set-priority':
+                $priority = is_numeric($value) ? (int) $value : 0;
+                $this->setPriority($priority);
+
+                break;
+            case 'toggle-star':
+                $this->toggleStar();
+
+                break;
+            case 'move-list':
+                $this->showMoveListMenu = true;
+
+                break;
+            case 'start-pomodoro':
+                $this->startPomodoro();
+
+                break;
+            case 'duplicate':
+                $this->duplicateMission();
+
+                break;
+            case 'delete':
+                $this->deleteMission();
+
+                break;
+            case 'create-subtask':
+                $this->openSubtaskForm();
+
+                break;
+        }
+    }
+
     public function startDescriptionEdit(): void
     {
         if (! $this->missionId || ! is_array($this->mission)) {
