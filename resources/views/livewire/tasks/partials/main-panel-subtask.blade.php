@@ -146,6 +146,7 @@
                 'missionId' => $missionId,
                 'subtaskId' => $item['id'] ?? null,
                 'dueDate' => $dueDate,
+                'priority' => $item['priority'] ?? null,
             ])
         </div>
     </div>

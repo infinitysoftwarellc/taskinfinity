@@ -9,6 +9,7 @@
     $inlineSubtaskArg = ($isSubtask && $missionId && $subtaskId !== null)
         ? ', ' . $subtaskId
         : '';
+    $currentPriority = is_numeric($priority ?? null) ? (int) $priority : 0;
 @endphp
 
 <div class="ti-floating-menu" role="none">
@@ -90,9 +91,10 @@
         <span class="ti-menu-section-label">Prioridade</span>
         <div class="ti-menu-flag-list">
             <button
-                class="ti-menu-flag is-high"
+                @class(['ti-menu-flag', 'is-high', 'is-active' => $currentPriority === 3])
                 type="button"
                 data-menu-item
+                aria-pressed="{{ $currentPriority === 3 ? 'true' : 'false' }}"
                 @if ($isDetails)
                     wire:click="setPriority(3)"
                 @elseif ($missionId)
@@ -103,9 +105,10 @@
                 <span>Alta</span>
             </button>
             <button
-                class="ti-menu-flag is-medium"
+                @class(['ti-menu-flag', 'is-medium', 'is-active' => $currentPriority === 2])
                 type="button"
                 data-menu-item
+                aria-pressed="{{ $currentPriority === 2 ? 'true' : 'false' }}"
                 @if ($isDetails)
                     wire:click="setPriority(2)"
                 @elseif ($missionId)
@@ -116,9 +119,10 @@
                 <span>Média</span>
             </button>
             <button
-                class="ti-menu-flag is-low"
+                @class(['ti-menu-flag', 'is-low', 'is-active' => $currentPriority === 1])
                 type="button"
                 data-menu-item
+                aria-pressed="{{ $currentPriority === 1 ? 'true' : 'false' }}"
                 @if ($isDetails)
                     wire:click="setPriority(1)"
                 @elseif ($missionId)
@@ -129,9 +133,10 @@
                 <span>Baixa</span>
             </button>
             <button
-                class="ti-menu-flag is-none"
+                @class(['ti-menu-flag', 'is-none', 'is-active' => $currentPriority === 0])
                 type="button"
                 data-menu-item
+                aria-pressed="{{ $currentPriority === 0 ? 'true' : 'false' }}"
                 @if ($isDetails)
                     wire:click="setPriority(0)"
                 @elseif ($missionId)
