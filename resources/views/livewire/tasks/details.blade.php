@@ -243,35 +243,22 @@
             </div>
         @else
             <div class="ti-description">
-                <div class="ti-format-toolbar" role="toolbar" aria-label="Formatação de texto">
-                    <button type="button" title="Negrito"><i class="fa-solid fa-bold" aria-hidden="true"></i></button>
-                    <button type="button" title="Itálico"><i class="fa-solid fa-italic" aria-hidden="true"></i></button>
-                    <button type="button" title="Sublinhado"><i class="fa-solid fa-underline" aria-hidden="true"></i></button>
-                    <button type="button" title="Tachado"><i class="fa-solid fa-strikethrough" aria-hidden="true"></i></button>
-                    <span class="ti-toolbar-separator"></span>
-                    <button type="button" title="Lista"><i class="fa-solid fa-list" aria-hidden="true"></i></button>
-                    <button type="button" title="Checklist"><i class="fa-solid fa-square-check" aria-hidden="true"></i></button>
-                    <button type="button" title="Citação"><i class="fa-solid fa-quote-right" aria-hidden="true"></i></button>
-                    <span class="ti-toolbar-separator"></span>
-                    <button type="button" title="Inserir link"><i class="fa-solid fa-link" aria-hidden="true"></i></button>
-                    <button type="button" title="Inserir imagem"><i class="fa-solid fa-image" aria-hidden="true"></i></button>
-                </div>
-
                 <div class="ti-description-content {{ $isEditingDescription ? 'is-editing' : '' }}">
                     @if ($isEditingDescription)
-                        <div class="ti-description-editor">
-                            <textarea
-                                wire:model.defer="descriptionDraft"
-                                placeholder="Descreva a missão com mais detalhes"
-                                aria-label="Editar descrição da missão"
-                            ></textarea>
+                        <div class="ti-description-editor" data-quill-editor>
+                            <input type="hidden" data-quill-input wire:model.defer="descriptionDraft">
+
+                            <div class="ti-description-editor-surface" wire:ignore>
+                                <div class="ti-quill-toolbar" data-quill-toolbar></div>
+                                <div class="ti-quill-container" data-quill-container></div>
+                            </div>
 
                             <div class="ti-description-actions">
                                 <button type="button" class="ghost" wire:click="cancelDescriptionEdit">Cancelar</button>
                                 <button type="button" class="primary" wire:click="saveDescription">Salvar</button>
                             </div>
                         </div>
-                    @elseif ($mission['description'])
+                    @elseif (! empty($mission['description']))
                         <div
                             class="ti-description-display"
                             role="button"
@@ -280,7 +267,7 @@
                             wire:keydown.enter.prevent="startDescriptionEdit"
                             wire:keydown.space.prevent="startDescriptionEdit"
                         >
-                            <p>{!! nl2br(e($mission['description'])) !!}</p>
+                            <div class="ti-description-html">{!! $mission['description'] !!}</div>
                         </div>
                     @else
                         <div
@@ -403,3 +390,22 @@
         </div>
     @endif
 </aside>
+
+@once
+    @push('styles')
+        <link
+            rel="stylesheet"
+            href="https://cdn.quilljs.com/1.3.7/quill.snow.css"
+            integrity="sha384-jNvm9X3qoL1M23JycQexzDva8PU15ag8RSXGsAi7z74oQ1d0N+PMIvWn5a2CXiIc"
+            crossorigin="anonymous"
+        />
+    @endpush
+
+    @push('scripts')
+        <script
+            src="https://cdn.quilljs.com/1.3.7/quill.min.js"
+            integrity="sha384-O5zU9lFNX3ob18J7hsouKUT1zsVXni4eWh05rq6ArlTc95xJMu38xpv8uKXu95Pr"
+            crossorigin="anonymous"
+        ></script>
+    @endpush
+@endonce

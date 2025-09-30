@@ -269,10 +269,9 @@ class Details extends Component
             return;
         }
 
-        $description = (string) $this->descriptionDraft;
-        $normalized = str_replace(["\r\n", "\r"], "\n", $description);
+        $normalized = $this->normalizeDescriptionHtml((string) $this->descriptionDraft);
 
-        if (trim($normalized) === '') {
+        if ($normalized === null) {
             $mission->description = null;
         } else {
             $mission->description = $normalized;
@@ -1139,6 +1138,33 @@ class Details extends Component
                 fn ($query) => $query->whereNull('list_id')
             )
             ->max('position') + 1;
+    }
+
+    private function normalizeDescriptionHtml(string $html): ?string
+    {
+        $trimmed = trim($html);
+
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $allowedTags = '<p><br><strong><b><em><i><u><s><ol><ul><li><a><blockquote><pre><code><span><img>';
+
+        $sanitized = strip_tags($trimmed, $allowedTags);
+        $sanitized = preg_replace('/\s+on[a-zA-Z]+="[^"]*"/i', '', $sanitized) ?? $sanitized;
+        $sanitized = preg_replace("/\s+on[a-zA-Z]+='[^']*'/i", '', $sanitized) ?? $sanitized;
+        $sanitized = preg_replace('/href\s*=\s*"javascript:[^"]*"/i', 'href="#"', $sanitized) ?? $sanitized;
+        $sanitized = preg_replace("/href\s*=\s*'javascript:[^']*'/i", 'href="#"', $sanitized) ?? $sanitized;
+
+        $plain = strip_tags($sanitized);
+        $plain = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $plain);
+        $plain = trim(preg_replace('/\s+/u', ' ', html_entity_decode($plain, ENT_QUOTES | ENT_HTML5) ?: ''));
+
+        if ($plain === '') {
+            return null;
+        }
+
+        return trim($sanitized);
     }
 
     private function nextCheckpointPosition(int $missionId, ?int $parentId = null): int
