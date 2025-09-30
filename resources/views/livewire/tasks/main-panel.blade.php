@@ -139,7 +139,12 @@
                                         <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                                     </button>
                                 @endif
-                                <div class="title-line">
+                                <div
+                                    class="title-line"
+                                    @if ($editingMissionId !== $mission->id)
+                                        wire:click.stop="selectMission({{ $mission->id }})"
+                                    @endif
+                                >
                                     @if ($editingMissionId === $mission->id)
                                         <input
                                             type="text"
@@ -152,16 +157,23 @@
                                             wire:blur="saveMissionEdit({{ $mission->id }})"
                                         />
                                     @else
-                                        <span class="title" wire:click.stop="startMissionEdit({{ $mission->id }})">
+                                        <span class="title">
                                             {{ $mission->title ?: 'Sem título' }}
                                         </span>
                                     @endif
                                 </div>
                             </div>
                             <div class="task-date">
-                                @if ($dueLabel)
-                                    <span class="{{ $dueClass }}">{{ $dueLabel }}</span>
-                                @endif
+                                <label class="task-date-button" title="Alterar data da tarefa">
+                                    <span class="{{ $mission->due_at ? $dueClass : 'task-due is-empty' }}">
+                                        {{ $dueLabel ?? 'Definir data' }}
+                                    </span>
+                                    <input
+                                        type="date"
+                                        value="{{ $missionDueDate }}"
+                                        wire:change="runInlineAction({{ $mission->id }}, 'set-date', $event.target.value)"
+                                    >
+                                </label>
                             </div>
                             <div class="task-menu" wire:click.stop>
                                 @include('livewire.tasks.partials.inline-menu', [
