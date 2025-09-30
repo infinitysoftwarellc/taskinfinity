@@ -16,7 +16,7 @@ return new class extends Migration
         DB::table('missions')
             ->where('status', 'done')
             ->update([
-                'completed_at' => DB::raw('COALESCE(updated_at, created_at, NOW())'),
+                'completed_at' => DB::raw('COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)'),
             ]);
     }
 
