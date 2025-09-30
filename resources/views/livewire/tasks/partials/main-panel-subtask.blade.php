@@ -101,7 +101,12 @@
                 </button>
             @endif
 
-            <div class="title-line">
+            <div
+                class="title-line"
+                @if (! $isEditing)
+                    wire:click.stop="selectSubtask({{ $missionId }}, {{ $item['id'] }})"
+                @endif
+            >
                 @if ($isEditing)
                     <input
                         type="text"
@@ -114,7 +119,7 @@
                         wire:blur="saveSubtaskEdit({{ $item['id'] }})"
                     />
                 @else
-                    <span class="title" wire:click.stop="startSubtaskEdit({{ $item['id'] }})">
+                    <span class="title">
                         {{ $title !== '' ? $title : 'Sem título' }}
                     </span>
                 @endif
@@ -122,9 +127,16 @@
         </div>
 
         <div class="subtask-date">
-            @if ($dueLabel)
-                <span class="{{ $dueClass }}">{{ $dueLabel }}</span>
-            @endif
+            <label class="subtask-date-button" title="Alterar data da subtarefa">
+                <span class="{{ $item['due_at'] ? $dueClass : 'subtask-due is-empty' }}">
+                    {{ $dueLabel ?? 'Definir data' }}
+                </span>
+                <input
+                    type="date"
+                    value="{{ $dueDate }}"
+                    wire:change="runInlineAction({{ $missionId }}, 'set-date', $event.target.value, {{ $item['id'] }})"
+                >
+            </label>
         </div>
 
         <div class="subtask-menu" wire:click.stop>
