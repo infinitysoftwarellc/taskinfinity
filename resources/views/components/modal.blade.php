@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components modal interface. --}}
 @props([
     'name',
     'show' => false,

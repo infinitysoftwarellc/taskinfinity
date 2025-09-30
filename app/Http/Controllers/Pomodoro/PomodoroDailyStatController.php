@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the pomodoro area related to pomodoro daily stat.
 namespace App\Http\Controllers\Pomodoro;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

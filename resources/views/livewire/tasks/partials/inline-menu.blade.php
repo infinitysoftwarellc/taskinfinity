@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks partials inline menu interface. --}}
 <div class="ti-inline-menu" data-menu wire:click.stop>
     <button class="icon ghost" type="button" title="Mais opções" data-menu-trigger>
         <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>

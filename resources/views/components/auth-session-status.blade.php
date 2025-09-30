@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components auth session status interface. --}}
 @props(['status'])
 
 @if ($status)

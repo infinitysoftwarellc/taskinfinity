@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire settings delete user form interface. --}}
 <?php
 
 use App\Livewire\Actions\Logout;

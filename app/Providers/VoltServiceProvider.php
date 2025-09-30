@@ -1,5 +1,6 @@
 <?php
 
+// This service provider configures application services for the volt service scope.
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;

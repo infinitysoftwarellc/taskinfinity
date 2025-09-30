@@ -1,5 +1,6 @@
 <?php
 
+// This model class represents ability data within the application.
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;

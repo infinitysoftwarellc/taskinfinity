@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the player area related to player state.
 namespace App\Http\Controllers\Player;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

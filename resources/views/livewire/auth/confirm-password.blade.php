@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire auth confirm password interface. --}}
 <x-layouts.auth>
     <div class="flex flex-col gap-6">
         <x-auth-header

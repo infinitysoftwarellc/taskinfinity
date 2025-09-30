@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the goals area related to goal step.
 namespace App\Http\Controllers\Goals;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

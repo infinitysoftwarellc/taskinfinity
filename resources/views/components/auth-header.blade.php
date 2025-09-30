@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components auth header interface. --}}
 @props([
     'title',
     'description',

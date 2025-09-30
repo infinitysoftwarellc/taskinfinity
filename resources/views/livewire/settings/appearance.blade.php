@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire settings appearance interface. --}}
 <?php
 
 use Livewire\Volt\Component;

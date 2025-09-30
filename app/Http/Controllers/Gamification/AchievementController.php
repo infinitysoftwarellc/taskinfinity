@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the gamification area related to achievement.
 namespace App\Http\Controllers\Gamification;
 
 use App\Http\Controllers\Controller;

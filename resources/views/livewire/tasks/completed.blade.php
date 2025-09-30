@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks completed interface. --}}
 <div class="app completed-view">
     <livewire:tasks.rail
         :primary-buttons="data_get($rail, 'primary', [])"

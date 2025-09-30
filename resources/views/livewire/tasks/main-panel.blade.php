@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks main panel interface. --}}
 @php
     $userTimezone = auth()->user()?->timezone ?? config('app.timezone');
 @endphp

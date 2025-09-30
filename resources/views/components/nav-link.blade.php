@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components nav link interface. --}}
 @props(['active'])
 
 @php

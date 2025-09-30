@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components input otp interface. --}}
 @props([
     'digits' => 6,
     'name' => 'code',

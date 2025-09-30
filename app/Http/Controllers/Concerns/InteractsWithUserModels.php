@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the concerns area related to interacts with user models.
 namespace App\Http\Controllers\Concerns;
 
 use Illuminate\Database\Eloquent\Model;

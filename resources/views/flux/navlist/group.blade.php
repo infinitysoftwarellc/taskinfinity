@@ -1,3 +1,4 @@
+{{-- This Blade view renders the flux navlist group interface. --}}
 @props([
     'expandable' => false,
     'expanded' => true,

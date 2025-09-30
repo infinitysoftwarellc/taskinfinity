@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components dropdown interface. --}}
 @props(['align' => 'right', 'width' => '48', 'contentClasses' => 'py-1 bg-white dark:bg-gray-700'])
 
 @php

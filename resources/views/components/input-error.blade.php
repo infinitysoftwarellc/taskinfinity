@@ -1,3 +1,4 @@
+{{-- This Blade view renders the components input error interface. --}}
 @props(['messages'])
 
 @if ($messages)

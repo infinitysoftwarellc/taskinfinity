@@ -1,5 +1,6 @@
 <?php
 
+// This model class represents user data within the application.
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;

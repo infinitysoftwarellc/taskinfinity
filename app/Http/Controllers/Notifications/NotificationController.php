@@ -1,5 +1,6 @@
 <?php
 
+// This controller orchestrates HTTP requests for the notifications area related to notification.
 namespace App\Http\Controllers\Notifications;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;

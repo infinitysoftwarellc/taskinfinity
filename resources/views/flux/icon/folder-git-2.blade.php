@@ -1,3 +1,4 @@
+{{-- This Blade view renders the flux icon folder git 2 interface. --}}
 {{-- Ícone do Font Awesome --}}
 
 @props([

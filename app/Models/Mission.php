@@ -1,5 +1,6 @@
 <?php
 
+// This model class represents mission data within the application.
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;

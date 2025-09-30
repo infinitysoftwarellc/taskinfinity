@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire tasks sidebar interface. --}}
 @php
     $workspaceStyle = $workspaceExpanded ? 'padding-left:8px;' : 'padding-left:8px; display:none;';
     $iconMap = [

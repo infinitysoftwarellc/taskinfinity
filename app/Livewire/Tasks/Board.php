@@ -1,5 +1,6 @@
 <?php
 
+// This Livewire class manages board behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Support\MissionShortcutFilter;

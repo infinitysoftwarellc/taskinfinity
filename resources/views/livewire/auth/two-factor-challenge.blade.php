@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire auth two factor challenge interface. --}}
 <x-layouts.auth>
     <div class="flex flex-col gap-6">
         <div

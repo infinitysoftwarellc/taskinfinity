@@ -1,3 +1,4 @@
+{{-- This Blade view renders the app settings index interface. --}}
 {{-- resources/views/app/settings/index.blade.php --}}
 <x-app-layout>
     <div class="flex min-h-screen bg-zinc-100 dark:bg-zinc-950">

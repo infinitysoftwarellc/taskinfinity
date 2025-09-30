@@ -1,5 +1,6 @@
 <?php
 
+// This Livewire class manages details behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Models\Checkpoint;

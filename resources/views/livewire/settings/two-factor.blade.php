@@ -1,3 +1,4 @@
+{{-- This Blade view renders the livewire settings two factor interface. --}}
 <?php
 
 use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;

@@ -1,5 +1,6 @@
 <?php
 
+// This routes file registers HTTP endpoints for the auth section.
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
