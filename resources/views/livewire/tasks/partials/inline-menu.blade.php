@@ -3,7 +3,16 @@
         <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
     </button>
 
-    <div class="ti-inline-dropdown" role="menu">
-        @include('livewire.tasks.partials.menu-content')
+    <div class="ti-inline-dropdown" role="dialog" aria-modal="true" aria-hidden="true">
+        <button
+            class="ti-inline-backdrop"
+            type="button"
+            aria-label="Fechar menu"
+            data-menu-dismiss
+        ></button>
+
+        <div class="ti-inline-dialog" role="menu">
+            @include('livewire.tasks.partials.menu-content')
+        </div>
     </div>
 </div>

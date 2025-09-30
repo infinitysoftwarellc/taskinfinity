@@ -1576,8 +1576,7 @@ body {
 .ti-title{margin:0; font: 700 24px/1.2 'Inter',ui-sans-serif; letter-spacing:.2px; color:var(--text);}
 .ti-header .actions{display:flex; gap:6px;}
 .ti-menu { position: relative; }
-.ti-menu-dropdown,
-.ti-inline-dropdown {
+.ti-menu-dropdown {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
@@ -1601,10 +1600,62 @@ body {
     transform: translateY(0);
 }
 .ti-inline-menu { position: relative; }
+.ti-inline-dropdown {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background: rgba(10, 12, 18, .45);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(.96);
+    transition: opacity .2s ease, transform .2s ease;
+    z-index: 90;
+}
+.ti-inline-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    z-index: 0;
+    appearance: none;
+    padding: 0;
+}
+.ti-inline-dialog {
+    position: relative;
+    background: var(--panel-2);
+    border: 1px solid rgba(124, 139, 210, .2);
+    border-radius: 16px;
+    width: min(90vw, 320px);
+    max-height: min(80vh, 520px);
+    box-shadow: 0 22px 58px rgba(10, 12, 18, .55);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+}
 .ti-inline-menu.is-open .ti-inline-dropdown {
     opacity: 1;
     pointer-events: auto;
-    transform: translateY(0);
+    transform: scale(1);
+}
+.ti-inline-dialog .ti-floating-menu {
+    padding: 18px;
+    overflow-y: auto;
+    max-height: 100%;
+}
+body.ti-inline-menu-open {
+    overflow: hidden;
+}
+@media (max-width: 600px) {
+    .ti-inline-dialog {
+        width: min(94vw, 360px);
+        max-height: min(85vh, 560px);
+    }
 }
 .ti-floating-menu {
     display: flex;

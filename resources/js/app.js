@@ -80,12 +80,25 @@ function onTaskExpanderClick(event) {
 /* ────────────────────────────────────────────────────────────────── */
 /* MENUS FLOTANTES                                                    */
 /* ────────────────────────────────────────────────────────────────── */
+function setMenuState(menu, open) {
+  if (!menu) return;
+  menu.classList.toggle('is-open', open);
+  const dropdown = menu.querySelector('.ti-inline-dropdown');
+  if (dropdown) {
+    dropdown.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+}
+
 function closeAllMenus(except) {
   document.querySelectorAll('[data-menu].is-open').forEach((menu) => {
     if (!except || menu !== except) {
-      menu.classList.remove('is-open');
+      setMenuState(menu, false);
     }
   });
+
+  if (!document.querySelector('[data-menu].is-open')) {
+    document.body.classList.remove('ti-inline-menu-open');
+  }
 }
 
 function onMenuToggle(event) {
@@ -100,11 +113,15 @@ function onMenuToggle(event) {
   if (!container) return false;
 
   const isOpen = container.classList.contains('is-open');
+  const willOpen = !isOpen;
+
   closeAllMenus(container);
-  if (!isOpen) {
-    container.classList.add('is-open');
-  } else {
-    container.classList.remove('is-open');
+  setMenuState(container, willOpen);
+
+  if (willOpen) {
+    document.body.classList.add('ti-inline-menu-open');
+  } else if (!document.querySelector('[data-menu].is-open')) {
+    document.body.classList.remove('ti-inline-menu-open');
   }
 
   return true;
@@ -198,10 +215,27 @@ function setupDelegatedClick() {
   if (document.__delegated_click_wired) return;
   document.__delegated_click_wired = true;
 
+  if (!document.__menu_keyboard_wired) {
+    document.__menu_keyboard_wired = true;
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && document.querySelector('[data-menu].is-open')) {
+        closeAllMenus();
+      }
+    });
+  }
+
   document.addEventListener(
     'click',
     (e) => {
       const t = e.target;
+
+      const dismiss = t.closest('[data-menu-dismiss]');
+      if (dismiss) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllMenus();
+        return true;
+      }
 
       if (!t.closest('[data-menu]')) {
         closeAllMenus();
