@@ -280,14 +280,15 @@
                     <div class="ti-description">
                         <div class="ti-description-content {{ $isEditingDescription ? 'is-editing' : '' }}">
                             @if ($isEditingDescription)
-                                <div class="ti-description-editor">
+                                <div class="ti-description-editor" data-quill-editor>
                                     <!-- Input hidden que guarda o valor -->
-                                    <input type="hidden" id="descriptionDraft" wire:model.defer="descriptionDraft">
+                                    <input type="hidden" id="descriptionDraft" wire:model.defer="descriptionDraft"
+                                        data-quill-input>
 
                                     <!-- Área do editor -->
                                     <div class="ti-description-editor-surface">
-                                        <div id="quill-toolbar"></div>
-                                        <div id="quill-container" style="min-height:150px;"></div>
+                                        <div id="quill-toolbar" data-quill-toolbar></div>
+                                        <div id="quill-container" data-quill-container style="min-height:150px;"></div>
                                     </div>
 
                                     <div class="ti-description-actions">
