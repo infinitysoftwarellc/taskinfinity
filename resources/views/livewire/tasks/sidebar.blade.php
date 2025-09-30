@@ -104,36 +104,10 @@
 
         <div class="sidebar-section-header">
             <h6>Tags</h6>
-            <button class="btn-new" type="button" title="Nova tag" wire:click.prevent="toggleTagForm">
+            <button class="btn-new" type="button" title="Nova tag" wire:click.prevent="openTagModal">
                 <i class="fa-solid fa-plus" aria-hidden="true"></i>
             </button>
         </div>
-
-        @if ($showTagForm)
-            <form class="sidebar-form" wire:submit.prevent="createTag">
-                <div class="form-row">
-                    <input
-                        wire:model.defer="newTagName"
-                        class="sidebar-input"
-                        type="text"
-                        placeholder="Nome da tag"
-                    />
-                </div>
-                <div class="form-row">
-                    <label class="sidebar-color">
-                        <span>Cor</span>
-                        <input wire:model.defer="newTagColor" type="color" />
-                    </label>
-                </div>
-                @error('newTagName')
-                    <p class="form-error">{{ $message }}</p>
-                @enderror
-                <div class="form-actions">
-                    <button class="btn-primary" type="submit">Criar</button>
-                    <button class="btn-link" type="button" wire:click="toggleTagForm">Cancelar</button>
-                </div>
-            </form>
-        @endif
 
         <div class="tags">
             @forelse ($tags as $tag)
@@ -278,6 +252,73 @@
                             {{ $editingListId || $editingFolderId ? 'Salvar alterações' : 'Criar' }}
                         </button>
                         <button class="btn-link" type="button" wire:click="closeCreateModal">Cancelar</button>
+                    </footer>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    @if ($showTagModal)
+        <div class="ti-modal-backdrop" wire:click="closeTagModal">
+            <div
+                class="ti-modal"
+                wire:click.stop
+                wire:keydown.escape.window="closeTagModal"
+                tabindex="-1"
+            >
+                <form class="ti-modal-form" wire:submit.prevent="createTag">
+                    <header class="ti-modal-header">
+                        <div>
+                            <h3>Nova tag</h3>
+                            <p>Categorize missões rapidamente com nome e cor.</p>
+                        </div>
+                        <button class="ti-modal-close" type="button" wire:click="closeTagModal">
+                            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                        </button>
+                    </header>
+
+                    <div class="ti-modal-body">
+                        <div class="ti-modal-row">
+                            <label class="ti-modal-label" for="tag-name">Nome</label>
+                            <input
+                                id="tag-name"
+                                type="text"
+                                class="ti-modal-control"
+                                placeholder="Ex.: Prioridade alta"
+                                wire:model.defer="newTagName"
+                                autofocus
+                            />
+                            @error('newTagName')
+                                <p class="ti-modal-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="ti-modal-row">
+                            <span class="ti-modal-label">Cor</span>
+                            <div class="ti-color-grid">
+                                @foreach ($colorPalette as $color)
+                                    <button
+                                        type="button"
+                                        class="ti-color-swatch {{ $newTagColor === $color ? 'is-selected' : '' }}"
+                                        style="--swatch-color: {{ $color }}"
+                                        wire:click="$set('newTagColor', '{{ $color }}')"
+                                    ></button>
+                                @endforeach
+                                <label class="ti-color-custom">
+                                    <input class="ti-color-input" type="color" wire:model="newTagColor" />
+                                    <span class="ti-color-preview" style="--swatch-color: {{ $newTagColor }}"></span>
+                                    <span class="ti-color-label">Custom</span>
+                                </label>
+                            </div>
+                            @error('newTagColor')
+                                <p class="ti-modal-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <footer class="ti-modal-actions">
+                        <button class="btn-primary" type="submit">Criar tag</button>
+                        <button class="btn-link" type="button" wire:click="closeTagModal">Cancelar</button>
                     </footer>
                 </form>
             </div>
