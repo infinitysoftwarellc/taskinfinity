@@ -19,8 +19,8 @@
             $activeSubtask = $missionData['active_subtask'] ?? null;
             $isSubtask = !empty($activeSubtask);
         @endphp
-        @if ($showDatePicker ?? false)
-            <div class="ti-date-overlay" wire:click="closeDatePicker"></div>
+        @if (($showDatePicker ?? false) || ($showSubtaskDatePicker ?? false))
+            <div class="ti-date-overlay" wire:click="closeAllDatePickers"></div>
         @endif
 
         <div class="ti-details-wrapper">
@@ -55,30 +55,80 @@
                             <!-- Separador visual -->
                             <span class="ti-topbar-separator" aria-hidden="true">|</span>
 
-                            <!-- Bloco de status e metadados -->
-                            <div class="ti-subtask-status-block">
-                                <!-- Status da subtarefa -->
-                                <span class="ti-subtask-status">
-                                    {{ $activeSubtask['is_done'] ?? false ? 'Concluída' : 'Em andamento' }}
-                                </span>
+                            <!-- Grupo de metadados -->
+                            <div class="ti-subtask-meta-group">
+                                <!-- Data de criação -->
+                                <div class="ti-subtask-meta">
+                                    <span class="ti-subtask-meta-label">Criada</span>
+                                    <span class="ti-subtask-meta-value {{ $createdClass }}">
+                                        {{ $createdLabel }}
+                                    </span>
+                                </div>
 
-                                <!-- Grupo de metadados -->
-                                <div class="ti-subtask-meta-group">
-                                    <!-- Data de criação -->
-                                    <div class="ti-subtask-meta">
-                                        <span class="ti-subtask-meta-label">Data</span>
-                                        <span class="ti-subtask-meta-value {{ $createdClass }}">
-                                            {{ $createdLabel }}
-                                        </span>
-                                    </div>
+                                <!-- Prazo com seletor -->
+                                <div class="ti-subtask-meta ti-subtask-date" wire:keydown.escape.window="closeAllDatePickers">
+                                    <span class="ti-subtask-meta-label">Prazo</span>
+                                    <button class="pill {{ $showSubtaskDatePicker ?? false ? 'is-active' : '' }}" type="button"
+                                        title="Adicionar data" wire:click="toggleSubtaskDatePicker">
+                                        <i class="fa-solid fa-calendar" aria-hidden="true"></i>
+                                        <span class="ti-subtask-meta-value {{ $dueClass }}">{{ $dueLabel }}</span>
+                                    </button>
 
-                                    <!-- Prazo -->
-                                    <div class="ti-subtask-meta">
-                                        <span class="ti-subtask-meta-label">Prazo</span>
-                                        <span class="ti-subtask-meta-value {{ $dueClass }}">
-                                            {{ $dueLabel }}
-                                        </span>
-                                    </div>
+                                    @if (($showSubtaskDatePicker ?? false) && $subtaskCalendar)
+                                        <div class="ti-date-popover" wire:click.stop>
+                                            <div class="ti-date-header">
+                                                <button class="nav" type="button" title="Mês anterior"
+                                                    wire:click="moveSubtaskPicker(-1)">
+                                                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                                                </button>
+                                                <span class="label">{{ $subtaskCalendar['label'] ?? '' }}</span>
+                                                <button class="nav" type="button" title="Próximo mês"
+                                                    wire:click="moveSubtaskPicker(1)">
+                                                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                                                </button>
+                                            </div>
+
+                                            <div class="ti-date-grid">
+                                                @foreach ($subtaskCalendar['weekDays'] ?? [] as $weekDay)
+                                                    <span class="weekday">{{ $weekDay }}</span>
+                                                @endforeach
+
+                                                @foreach ($subtaskCalendar['weeks'] ?? [] as $weekIndex => $week)
+                                                    @foreach ($week as $dayIndex => $day)
+                                                        @php
+                                                            $classes = [];
+                                                            if (!($day['isCurrentMonth'] ?? false)) {
+                                                                $classes[] = 'is-muted';
+                                                            }
+                                                            if ($day['isToday'] ?? false) {
+                                                                $classes[] = 'is-today';
+                                                            }
+                                                            if ($day['isSelected'] ?? false) {
+                                                                $classes[] = 'is-selected';
+                                                            }
+                                                            $classAttr = implode(' ', $classes);
+                                                        @endphp
+                                                        <button class="day {{ $classAttr }}" type="button"
+                                                            wire:key="subtask-calendar-day-{{ $weekIndex }}-{{ $dayIndex }}-{{ $day['date'] }}"
+                                                            wire:click="selectSubtaskDueDate({{ $activeSubtask['id'] }}, '{{ $day['date'] }}')">
+                                                            {{ $day['label'] ?? '' }}
+                                                        </button>
+                                                    @endforeach
+                                                @endforeach
+                                            </div>
+
+                                            <div class="ti-date-footer">
+                                                @if ($subtaskCalendar['hasSelected'] ?? false)
+                                                    <button class="link" type="button"
+                                                        wire:click="clearSubtaskDueDate({{ $activeSubtask['id'] }})">Remover
+                                                        data</button>
+                                                @else
+                                                    <button class="link disabled" type="button" disabled>Sem data
+                                                        definida</button>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 
@@ -93,6 +143,32 @@
 
 
                         <div class="ti-topbar-right">
+                            <div class="ti-priority-selector">
+                                <button class="icon ghost" type="button" title="Prioridade">
+                                    <i class="fa-solid fa-flag" aria-hidden="true"></i>
+                                    <span class="ti-priority-current">{{ $mission['priority_label'] ?? 'Nenhuma' }}</span>
+                                </button>
+
+                                <div class="ti-priority-menu" role="menu">
+                                    <button class="ti-priority-option is-high" type="button" role="menuitem"
+                                        wire:click="setPriority(3)">
+                                        <span class="dot"></span> Alta
+                                    </button>
+                                    <button class="ti-priority-option is-medium" type="button" role="menuitem"
+                                        wire:click="setPriority(2)">
+                                        <span class="dot"></span> Média
+                                    </button>
+                                    <button class="ti-priority-option is-low" type="button" role="menuitem"
+                                        wire:click="setPriority(1)">
+                                        <span class="dot"></span> Baixa
+                                    </button>
+                                    <button class="ti-priority-option is-none" type="button" role="menuitem"
+                                        wire:click="setPriority(0)">
+                                        <span class="dot"></span> Nenhuma
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="ti-menu">
                                 <button class="icon ghost" title="Mais opções">
                                     <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
@@ -118,7 +194,7 @@
 
                             <span class="ti-topbar-separator" aria-hidden="true">|</span>
 
-                            <div class="ti-date-picker-container" wire:keydown.escape.window="closeDatePicker">
+                            <div class="ti-date-picker-container" wire:keydown.escape.window="closeAllDatePickers">
                                 <div class="ti-date-actions">
                                     <button class="pill {{ $showDatePicker ?? false ? 'is-active' : '' }}"
                                         type="button" title="Adicionar data" wire:click="toggleDatePicker">
