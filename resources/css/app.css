@@ -828,17 +828,24 @@ body {
 .task-list {
     display: flex;
     flex-direction: column;
+    gap: 12px;
 }
 .task-block {
     display: flex;
     flex-direction: column;
+    background: rgba(15, 18, 30, 0.85);
+    border: 1px solid rgba(40, 48, 72, 0.6);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(4, 8, 20, 0.32);
+    overflow: hidden;
 }
 .task {
     display: grid;
-    grid-template-columns: 28px 1fr auto;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
+    gap: 12px;
+    padding: 14px 18px;
+    background: rgba(18, 22, 36, 0.88);
 }
 .task:hover {
     background: var(--hover);
@@ -873,10 +880,13 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 }
 .task .title-line .title {
     font-size: 14px;
     font-weight: 600;
+    color: var(--text);
+    word-break: break-word;
 }
 .inline-input {
     width: 100%;
@@ -935,13 +945,12 @@ body {
 
 .task.done .title {
     color: var(--muted);
-    text-decoration: line-through;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 /* Subtarefas */
 .task.has-subtasks {
-    grid-template-columns: 28px 16px 1fr auto;
+    grid-template-columns: 28px 16px minmax(0, 1fr) auto;
 }
 .expander {
     width: 16px;
@@ -958,24 +967,26 @@ body {
 }
 
 .subtasks {
-    padding: 0 16px 4px 60px;
+    padding: 12px 18px 18px 60px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    background: rgba(15, 18, 30, 0.6);
+    border-top: 1px solid rgba(40, 48, 72, 0.45);
 }
 .subtasks .subtask {
     display: grid;
-    grid-template-columns: 18px 1fr auto;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
+    gap: 10px;
+    padding: 10px 12px;
     margin-left: calc(var(--subtask-depth, 0) * 18px);
     border-radius: 8px;
     transition: background .15s ease, box-shadow .15s ease;
     cursor: pointer;
 }
 .subtasks .subtask.has-children {
-    grid-template-columns: 18px 16px 1fr auto;
+    grid-template-columns: 18px 16px minmax(0, 1fr) auto;
 }
 .subtasks .subtask:hover {
     background: rgba(16, 18, 32, .9);
@@ -998,9 +1009,9 @@ body {
     font-size: 13px;
     font-weight: 600;
     color: var(--text);
+    word-break: break-word;
 }
 .subtasks .subtask.done .title {
-    text-decoration: line-through;
     color: var(--muted);
 }
 .subtasks .subtask-actions {
@@ -1100,6 +1111,60 @@ body {
     padding: 8px 10px;
     outline: none;
     font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .task {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .task .title-line {
+        flex: 1 1 calc(100% - 44px);
+    }
+
+    .task.has-subtasks {
+        gap: 10px;
+    }
+
+    .task.has-subtasks .title-line {
+        flex-basis: 100%;
+    }
+
+    .task .task-actions {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 6px;
+        gap: 10px;
+    }
+
+    .subtasks {
+        padding: 12px 14px 16px 44px;
+    }
+
+    .subtasks .subtask {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px;
+        margin-left: calc(var(--subtask-depth, 0) * 12px);
+    }
+
+    .subtasks .title {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .subtasks .subtask-actions {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 6px;
+        gap: 10px;
+    }
 }
 
 /* Details */
