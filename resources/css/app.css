@@ -1469,6 +1469,7 @@ body {
 .ti-topbar-left{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
 .ti-topbar-right{margin-left:auto; display:flex; align-items:center; gap:10px;}
 .ti-topbar-separator{color:#3b4155; font-weight:600; letter-spacing:1px;}
+.ti-details.is-subtask .ti-topbar .ti-subtask-status{font:500 13px/1.3 "Inter",ui-sans-serif;color:var(--muted);}
 .ti-check{width:30px;height:30px;border-radius:10px;border:1px solid #252b3f;background:linear-gradient(135deg,rgba(17,21,36,.7),rgba(12,15,27,.9));display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s ease;color:#4de49b;box-shadow:inset 0 0 0 1px rgba(77,228,155,.1)}
 .ti-check:hover{box-shadow:inset 0 0 0 1px rgba(77,228,155,.35);}
 .ti-check-mark{width:14px;height:14px;border-radius:4px;border:2px solid currentColor;display:inline-block;position:relative;}
@@ -1481,6 +1482,8 @@ body {
   padding:6px 10px; border-radius:10px;
   background: #121522; border:1px solid #1e2230; color:#cdd7ff;
 }
+.ti-topbar .pill.ghost{background:transparent;border-color:#2a3044;color:#96a2c7;}
+.ti-topbar .pill.ghost:hover{background:rgba(122,162,255,.08);border-color:rgba(122,162,255,.35);color:#d7dcff;}
 .ti-topbar .pill.is-active{border-color:var(--blue); box-shadow:0 0 0 1px rgba(122,162,255,.35); color:#fff;}
 .ti-topbar .pill i{width:16px;height:16px;stroke-width:1.8}
 .ti-topbar .icon.ghost{opacity:.9}
@@ -1801,6 +1804,7 @@ body.ti-inline-menu-open {
 .ti-description-display:hover,.ti-description-empty:hover{background:rgba(122,162,255,.04);}
 .ti-description-display:focus-visible,.ti-description-empty:focus-visible{box-shadow:0 0 0 2px rgba(122,162,255,.35);}
 .ti-description-empty p{color:var(--muted);}
+.ti-details.is-subtask .ti-description-content.is-static{border:1px dashed #2a3044;border-radius:10px;padding:16px;background:rgba(17,22,36,.6);}
 
 .ti-illustrations{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; padding:16px;}
 .ti-illustrations img{width:100%; border-radius:12px; border:1px solid #1c2235; object-fit:cover; min-height:120px; box-shadow:0 14px 30px rgba(10,12,18,.45);}
