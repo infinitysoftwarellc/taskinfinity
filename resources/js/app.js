@@ -198,26 +198,30 @@ function setupDelegatedClick() {
   if (document.__delegated_click_wired) return;
   document.__delegated_click_wired = true;
 
-  document.addEventListener('click', (e) => {
-    const t = e.target;
+  document.addEventListener(
+    'click',
+    (e) => {
+      const t = e.target;
 
-    if (!t.closest('[data-menu]')) {
-      closeAllMenus();
-    }
+      if (!t.closest('[data-menu]')) {
+        closeAllMenus();
+      }
 
-    // ordem: específicos → genéricos
-    if (onCheckboxClick(e)) return;
-    if (onTaskExpanderClick(e)) return;
-    if (onMenuToggle(e)) return;
+      // ordem: específicos → genéricos
+      if (onCheckboxClick(e)) return;
+      if (onTaskExpanderClick(e)) return;
+      if (onMenuToggle(e)) return;
 
-    const menuItem = t.closest('[data-menu-item]');
-    if (menuItem) {
-      closeAllMenus();
-      return;
-    }
+      const menuItem = t.closest('[data-menu-item]');
+      if (menuItem) {
+        closeAllMenus();
+        return;
+      }
 
-    if (onGenericToggles(e)) return;
-  });
+      if (onGenericToggles(e)) return;
+    },
+    { capture: true }
+  );
 }
 
 /* ────────────────────────────────────────────────────────────────── */
