@@ -288,6 +288,7 @@ function collectSubtaskOrder(container) {
     .filter(Boolean);
 }
 
+// Inicializa o arrastar-e-soltar das missões na página Tasks.
 function setupSortableTasks(root = document) {
   const containers = root.querySelectorAll('[data-sortable-tasks]:not([data-sortable-ready])');
 
@@ -328,6 +329,7 @@ function setupSortableTasks(root = document) {
   });
 }
 
+// Garante o arrastar-e-soltar das subtarefas dentro da página Tasks.
 function setupSortableSubtasks(root = document) {
   const containers = root.querySelectorAll('[data-subtask-container]:not([data-sortable-ready])');
 

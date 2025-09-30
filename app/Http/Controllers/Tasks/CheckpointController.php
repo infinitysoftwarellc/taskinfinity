@@ -1,6 +1,5 @@
 <?php
 
-// This controller orchestrates HTTP requests for the tasks area related to checkpoint.
 namespace App\Http\Controllers\Tasks;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;
@@ -9,10 +8,16 @@ use App\Models\Checkpoint;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+/**
+ * Controlador dedicado às subtarefas (checkpoints) exibidas na Tasks page.
+ */
 class CheckpointController extends Controller
 {
     use InteractsWithUserModels;
 
+    /**
+     * Lista subtarefas do usuário autenticado, com filtro opcional por missão.
+     */
     public function index(Request $request)
     {
         $query = Checkpoint::query()
@@ -26,6 +31,9 @@ class CheckpointController extends Controller
         return response()->json($query->get());
     }
 
+    /**
+     * Cria uma nova subtarefa vinculada a uma missão.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -41,6 +49,9 @@ class CheckpointController extends Controller
         return response()->json($checkpoint, 201);
     }
 
+    /**
+     * Mostra os dados de uma subtarefa específica.
+     */
     public function show(Request $request, Checkpoint $checkpoint)
     {
         $this->guardUserModel($checkpoint->mission, $request);
@@ -48,6 +59,9 @@ class CheckpointController extends Controller
         return response()->json($checkpoint);
     }
 
+    /**
+     * Atualiza atributos editáveis da subtarefa.
+     */
     public function update(Request $request, Checkpoint $checkpoint)
     {
         $this->guardUserModel($checkpoint->mission, $request);
@@ -64,6 +78,9 @@ class CheckpointController extends Controller
         return response()->json($checkpoint);
     }
 
+    /**
+     * Remove uma subtarefa pertencente ao usuário.
+     */
     public function destroy(Request $request, Checkpoint $checkpoint)
     {
         $this->guardUserModel($checkpoint->mission, $request);

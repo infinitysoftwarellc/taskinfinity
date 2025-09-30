@@ -1,18 +1,32 @@
 <?php
 
-// This Livewire class manages rail behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use Livewire\Component;
 
+/**
+ * Componente que representa a barra lateral (rail) da página de tarefas.
+ */
 class Rail extends Component
 {
+    /**
+     * Botões principais (filtros/atalhos) exibidos no rail.
+     */
     public array $primaryButtons = [];
 
+    /**
+     * Botões secundários (configurações, etc.) exibidos no rail.
+     */
     public array $secondaryButtons = [];
 
+    /**
+     * Texto do avatar/resumo do usuário.
+     */
     public string $avatarLabel = 'Você';
 
+    /**
+     * Preenche as propriedades com os dados vindos da board.
+     */
     public function mount(
         array $primaryButtons = [],
         array $secondaryButtons = [],
@@ -33,6 +47,9 @@ class Rail extends Component
         $this->avatarLabel = $avatarLabel;
     }
 
+    /**
+     * Retorna a view responsável por desenhar o rail na página de tarefas.
+     */
     public function render()
     {
         return view('livewire.tasks.rail');

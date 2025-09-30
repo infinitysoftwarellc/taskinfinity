@@ -1,6 +1,5 @@
 <?php
 
-// This controller orchestrates HTTP requests for the tasks area related to attachment.
 namespace App\Http\Controllers\Tasks;
 
 use App\Http\Controllers\Concerns\InteractsWithUserModels;
@@ -9,10 +8,16 @@ use App\Models\Attachment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+/**
+ * Controlador de anexos utilizados no fluxo da Tasks page.
+ */
 class AttachmentController extends Controller
 {
     use InteractsWithUserModels;
 
+    /**
+     * Lista anexos pertencentes ao usuário, filtrando opcionalmente por missão.
+     */
     public function index(Request $request)
     {
         $query = Attachment::query()
@@ -26,6 +31,9 @@ class AttachmentController extends Controller
         return response()->json($query->get());
     }
 
+    /**
+     * Salva um novo anexo associado a uma missão.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -44,6 +52,9 @@ class AttachmentController extends Controller
         return response()->json($attachment, 201);
     }
 
+    /**
+     * Exibe detalhes de um anexo específico.
+     */
     public function show(Request $request, Attachment $attachment)
     {
         $this->guardUserModel($attachment, $request);
@@ -51,6 +62,9 @@ class AttachmentController extends Controller
         return response()->json($attachment);
     }
 
+    /**
+     * Atualiza metadados do anexo armazenado.
+     */
     public function update(Request $request, Attachment $attachment)
     {
         $this->guardUserModel($attachment, $request);
@@ -68,6 +82,9 @@ class AttachmentController extends Controller
         return response()->json($attachment);
     }
 
+    /**
+     * Remove um anexo vinculado à Tasks page.
+     */
     public function destroy(Request $request, Attachment $attachment)
     {
         $this->guardUserModel($attachment, $request);

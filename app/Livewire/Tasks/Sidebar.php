@@ -1,6 +1,5 @@
 <?php
 
-// This Livewire class manages sidebar behaviour for the tasks experience.
 namespace App\Livewire\Tasks;
 
 use App\Models\Folder;
@@ -13,8 +12,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
+/**
+ * Componente da barra lateral da página de tarefas, responsável por listas, pastas e tags.
+ */
 class Sidebar extends Component
 {
+    /**
+     * Eventos monitorados para atualizar a barra lateral automaticamente.
+     */
     protected $listeners = ['tasks-updated' => '$refresh'];
 
     public string $workspaceTitle = 'Workspace';
@@ -69,6 +74,9 @@ class Sidebar extends Component
 
     public string $newTagColor = '#7aa2ff';
 
+    /**
+     * Inicializa a barra lateral com os filtros selecionados.
+     */
     public function mount(?int $currentListId = null, ?string $currentShortcut = null, bool $completedView = false): void
     {
         $this->currentListId = $currentListId;
@@ -77,6 +85,9 @@ class Sidebar extends Component
         $this->ensureFormDefaults();
     }
 
+    /**
+     * Abre o modal para criar ou editar listas e pastas.
+     */
     public function openCreateModal(string $entity = 'list', ?int $id = null): void
     {
         $type = $entity === 'folder' ? 'folder' : 'list';
@@ -97,22 +108,34 @@ class Sidebar extends Component
         }
     }
 
+    /**
+     * Fecha o modal e limpa os dados temporários do formulário.
+     */
     public function closeCreateModal(): void
     {
         $this->showCreateModal = false;
         $this->resetCreateForm('list');
     }
 
+    /**
+     * Controla a abertura de menus contextuais de cada item.
+     */
     public function toggleMenu(string $key): void
     {
         $this->openMenuId = $this->openMenuId === $key ? null : $key;
     }
 
+    /**
+     * Força o fechamento de qualquer menu aberto na sidebar.
+     */
     public function closeMenu(): void
     {
         $this->openMenuId = null;
     }
 
+    /**
+     * Roteia o salvamento para lista ou pasta conforme o estado atual.
+     */
     public function saveList(): void
     {
         if ($this->editingFolderId) {
@@ -130,6 +153,9 @@ class Sidebar extends Component
         $this->saveTaskList();
     }
 
+    /**
+     * Cria uma cópia da lista selecionada mantendo os dados principais.
+     */
     public function duplicateList(int $listId): void
     {
         $user = Auth::user();
@@ -165,6 +191,9 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
+    /**
+     * Duplica uma pasta inteira com suas listas filhas.
+     */
     public function duplicateFolder(int $folderId): void
     {
         $user = Auth::user();
@@ -220,6 +249,9 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
+    /**
+     * Alterna a fixação (pin) de uma lista específica.
+     */
     public function togglePin(int $listId): void
     {
         $user = Auth::user();
@@ -243,6 +275,9 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
+    /**
+     * Alterna a fixação de uma pasta.
+     */
     public function togglePinFolder(int $folderId): void
     {
         $user = Auth::user();
@@ -266,6 +301,9 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
+    /**
+     * Arquiva ou desarquiva uma lista sem removê-la definitivamente.
+     */
     public function toggleArchive(int $listId): void
     {
         $user = Auth::user();
@@ -293,6 +331,9 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
+    /**
+     * Arquiva ou restaura uma pasta e suas listas filhas.
+     */
     public function toggleArchiveFolder(int $folderId): void
     {
         $user = Auth::user();
@@ -326,6 +367,9 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
+    /**
+     * Arquiva definitivamente uma lista do usuário.
+     */
     public function deleteList(int $listId): void
     {
         $user = Auth::user();
@@ -352,6 +396,9 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
+    /**
+     * Exclui uma pasta juntamente com suas listas relacionadas.
+     */
     public function deleteFolder(int $folderId): void
     {
         $user = Auth::user();
@@ -374,6 +421,9 @@ class Sidebar extends Component
         $this->closeMenu();
     }
 
+    /**
+     * Exibe o modal para criação de novas tags.
+     */
     public function openTagModal(): void
     {
         $this->resetValidation();
@@ -383,12 +433,18 @@ class Sidebar extends Component
         $this->showTagModal = true;
     }
 
+    /**
+     * Fecha o modal de tags e limpa o formulário.
+     */
     public function closeTagModal(): void
     {
         $this->showTagModal = false;
         $this->resetTagForm();
     }
 
+    /**
+     * Salva uma nova tag associada às tarefas do usuário.
+     */
     public function createTag(): void
     {
         $user = Auth::user();
@@ -423,6 +479,9 @@ class Sidebar extends Component
         $this->showTagModal = false;
     }
 
+    /**
+     * Renderiza a view com listas, pastas e tags formatadas para a Tasks page.
+     */
     public function render()
     {
         $this->ensureFormDefaults();
@@ -572,6 +631,9 @@ class Sidebar extends Component
         ]);
     }
 
+    /**
+     * Salva as informações da lista preenchidas no modal.
+     */
     protected function saveTaskList(): void
     {
         $user = Auth::user();
@@ -660,6 +722,9 @@ class Sidebar extends Component
         $this->closeCreateModal();
     }
 
+    /**
+     * Persiste os dados da pasta editada ou recém-criada.
+     */
     protected function saveFolder(): void
     {
         $user = Auth::user();
