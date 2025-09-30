@@ -18,6 +18,7 @@ class Mission extends Model
         'labels_json',
         'is_starred',
         'status',
+        'completed_at',
         'position',
         'xp_reward',
         'due_at',
@@ -27,7 +28,27 @@ class Mission extends Model
         'labels_json' => 'array',
         'is_starred' => 'boolean',
         'due_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $mission): void {
+            if (! $mission->isDirty('status')) {
+                return;
+            }
+
+            if ($mission->status === 'done') {
+                if (! $mission->completed_at) {
+                    $mission->completed_at = now();
+                }
+
+                return;
+            }
+
+            $mission->completed_at = null;
+        });
+    }
 
     public function user()
     {

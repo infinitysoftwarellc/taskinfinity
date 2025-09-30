@@ -121,11 +121,17 @@
         </div>
 
         <h6 style="margin-top:14px"> </h6>
-        <div class="completed">
+        <a
+            wire:navigate
+            class="completed {{ ($completedActive ?? false) ? 'is-active' : '' }}"
+            href="{{ $completedHref ?? '#' }}"
+        >
             <i class="icon fa-solid fa-square-check" aria-hidden="true"></i>
-            {{ $completedLabel }}
-            <span class="count" style="margin-left:auto">{{ $completedCount }}</span>
-        </div>
+            <span class="label">{{ $completedLabel }}</span>
+            @if (($completedCount ?? 0) > 0)
+                <span class="count">{{ $completedCount }}</span>
+            @endif
+        </a>
     </aside>
 
     {{-- MODAL DENTRO DO MESMO ELEMENTO RAIZ --}}

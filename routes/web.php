@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::view('pomodoro', 'app.pomodoro.index')->name('app.pomodoro');
     Route::view('habitos', 'app.habits.index')->name('app.habits');
     Route::view('configuracoes', 'app.settings.index')->name('app.settings');
+    Route::view('completed', 'app.tasks.completed')->name('tasks.completed');
 
     Route::resource('lists', TaskListController::class);
 

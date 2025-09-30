@@ -22,6 +22,8 @@ class Sidebar extends Component
 
     public ?string $currentShortcut = null;
 
+    public bool $completedView = false;
+
     public bool $showCreateModal = false;
 
     public string $newListType = 'list';
@@ -66,10 +68,11 @@ class Sidebar extends Component
 
     public string $newTagColor = '#7aa2ff';
 
-    public function mount(?int $currentListId = null, ?string $currentShortcut = null): void
+    public function mount(?int $currentListId = null, ?string $currentShortcut = null, bool $completedView = false): void
     {
         $this->currentListId = $currentListId;
         $this->currentShortcut = $currentShortcut;
+        $this->completedView = $completedView;
         $this->ensureFormDefaults();
     }
 
@@ -437,6 +440,8 @@ class Sidebar extends Component
                 'tags' => collect(),
                 'completedLabel' => 'Completed',
                 'completedCount' => 0,
+                'completedActive' => $this->completedView,
+                'completedHref' => route('tasks.completed'),
                 'showTagModal' => $this->showTagModal,
                 'viewTypes' => $this->viewTypes,
                 'colorPalette' => $this->colorPalette,
@@ -554,6 +559,8 @@ class Sidebar extends Component
             'tags' => $tags,
             'completedLabel' => 'Completed',
             'completedCount' => $completedTasks,
+            'completedActive' => $this->completedView,
+            'completedHref' => route('tasks.completed'),
             'showTagModal' => $this->showTagModal,
             'viewTypes' => $this->viewTypes,
             'colorPalette' => $this->colorPalette,
