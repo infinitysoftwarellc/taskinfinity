@@ -104,7 +104,7 @@ class Details extends Component
         $this->missionId = $mission->id;
         $checkpoints = collect($mission->checkpoints ?? []);
 
-        $subtasks = $this->buildCheckpointTree($checkpoints);
+        $subtasks = $this->buildCheckpointTree($checkpoints, $timezone);
 
         $this->mission = [
             'id' => $mission->id,
@@ -761,7 +761,7 @@ class Details extends Component
         $clone->updated_at = now();
         $clone->save();
 
-        $tree = $this->buildCheckpointTree(collect($mission->checkpoints ?? []));
+        $tree = $this->buildCheckpointTree(collect($mission->checkpoints ?? []), $this->userTimezone());
 
         if ($tree !== []) {
             $this->replicateCheckpointBranch($tree, $clone->id, null);
@@ -849,7 +849,7 @@ class Details extends Component
     /**
      * Monta uma árvore de subtarefas respeitando a ordem e o limite de profundidade.
      */
-    private function buildCheckpointTree(Collection $checkpoints): array
+    private function buildCheckpointTree(Collection $checkpoints, ?string $timezone = null): array
     {
         if ($checkpoints->isEmpty()) {
             return [];
@@ -857,13 +857,15 @@ class Details extends Component
 
         $parentColumn = $this->checkpointParentColumn();
 
+        $timezone = $timezone ?? $this->userTimezone();
+
         $grouped = $checkpoints->groupBy(function ($checkpoint) use ($parentColumn) {
             $parentId = $parentColumn ? ($checkpoint->{$parentColumn} ?? null) : null;
 
             return $parentId === null ? '__root__' : (string) $parentId;
         });
 
-        return $this->buildCheckpointBranch($grouped, null, 0);
+        return $this->buildCheckpointBranch($grouped, null, 0, $timezone);
     }
 
     private function checkpointParentColumn(): ?string
@@ -883,20 +885,23 @@ class Details extends Component
         return $parentColumn !== '' ? $parentColumn : null;
     }
 
-    private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth): array
+    private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth, string $timezone): array
     {
         $key = $parentId === null ? '__root__' : (string) $parentId;
 
-        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth) {
+        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth, $timezone) {
             return [
                 'id' => $checkpoint->id,
                 'title' => $checkpoint->title,
                 'is_done' => (bool) $checkpoint->is_done,
                 'position' => $checkpoint->position,
                 'xp_reward' => $checkpoint->xp_reward,
+                'created_at' => $checkpoint->created_at?->copy()->setTimezone($timezone),
+                'updated_at' => $checkpoint->updated_at?->copy()->setTimezone($timezone),
+                'due_at' => $checkpoint->due_at?->copy()->setTimezone($timezone),
                 'children' => $depth >= 6
                     ? []
-                    : $this->buildCheckpointBranch($grouped, $checkpoint->id, $depth + 1),
+                    : $this->buildCheckpointBranch($grouped, $checkpoint->id, $depth + 1, $timezone),
             ];
         })->values()->toArray();
     }

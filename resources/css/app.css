@@ -1470,6 +1470,13 @@ body {
 .ti-topbar-right{margin-left:auto; display:flex; align-items:center; gap:10px;}
 .ti-topbar-separator{color:#3b4155; font-weight:600; letter-spacing:1px;}
 .ti-details.is-subtask .ti-topbar .ti-subtask-status{font:500 13px/1.3 "Inter",ui-sans-serif;color:var(--muted);}
+.ti-details.is-subtask .ti-topbar .ti-subtask-status-block{display:flex; flex-direction:column; gap:8px;}
+.ti-details.is-subtask .ti-topbar .ti-subtask-meta-group{display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap;}
+.ti-details.is-subtask .ti-topbar .ti-subtask-meta{display:flex; flex-direction:column; gap:2px;}
+.ti-details.is-subtask .ti-topbar .ti-subtask-meta-label{font:700 10px/1 "Inter",ui-sans-serif; letter-spacing:.5px; text-transform:uppercase; color:#616986;}
+.ti-details.is-subtask .ti-topbar .ti-subtask-meta-value{font:600 12px/1.3 "Inter",ui-sans-serif; color:#dfe4ff;}
+.ti-details.is-subtask .ti-topbar .ti-subtask-meta-value.is-empty{color:#7b82a6;}
+.ti-details.is-subtask .ti-topbar .ti-subtask-quick-actions{display:flex; align-items:center; gap:8px; margin-right:4px;}
 .ti-check{width:30px;height:30px;border-radius:10px;border:1px solid #252b3f;background:linear-gradient(135deg,rgba(17,21,36,.7),rgba(12,15,27,.9));display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s ease;color:#4de49b;box-shadow:inset 0 0 0 1px rgba(77,228,155,.1)}
 .ti-check:hover{box-shadow:inset 0 0 0 1px rgba(77,228,155,.35);}
 .ti-check-mark{width:14px;height:14px;border-radius:4px;border:2px solid currentColor;display:inline-block;position:relative;}

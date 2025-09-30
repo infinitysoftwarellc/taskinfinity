@@ -30,6 +30,20 @@
         <!-- Top bar -->
         <div class="ti-details-top">
             @if ($isSubtask)
+                @php
+                    $subtaskCreated = $activeSubtask['created_at'] ?? null;
+                    $subtaskDue = $activeSubtask['due_at'] ?? null;
+                    $createdLabel = $subtaskCreated instanceof \Carbon\CarbonInterface
+                        ? $subtaskCreated->format('d/m/Y')
+                        : '—';
+                    $dueLabel = $subtaskDue instanceof \Carbon\CarbonInterface
+                        ? $subtaskDue->format('d/m/Y')
+                        : ($mission['due_at'] instanceof \Carbon\CarbonInterface
+                            ? $mission['due_at']->format('d/m/Y')
+                            : 'Sem prazo');
+                    $createdClass = $createdLabel === '—' ? 'is-empty' : '';
+                    $dueClass = $dueLabel === 'Sem prazo' ? 'is-empty' : '';
+                @endphp
                 <div class="ti-topbar">
                     <div class="ti-topbar-left">
                         <button
@@ -44,30 +58,57 @@
 
                         <span class="ti-topbar-separator" aria-hidden="true">|</span>
 
-                        <span class="ti-subtask-status">
-                            {{ ($activeSubtask['is_done'] ?? false) ? 'Concluída' : 'Em andamento' }}
-                        </span>
+                        <div class="ti-subtask-status-block">
+                            <span class="ti-subtask-status">
+                                {{ ($activeSubtask['is_done'] ?? false) ? 'Concluída' : 'Em andamento' }}
+                            </span>
+
+                            <div class="ti-subtask-meta-group">
+                                <div class="ti-subtask-meta">
+                                    <span class="ti-subtask-meta-label">Data</span>
+                                    <span class="ti-subtask-meta-value {{ $createdClass }}">{{ $createdLabel }}</span>
+                                </div>
+                                <div class="ti-subtask-meta">
+                                    <span class="ti-subtask-meta-label">Prazo</span>
+                                    <span class="ti-subtask-meta-value {{ $dueClass }}">{{ $dueLabel }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="ti-topbar-right">
-                        <button
-                            class="pill"
-                            type="button"
-                            title="Adicionar subtarefa filha"
-                            wire:click="openSubtaskForm({{ $activeSubtask['id'] }})"
-                        >
-                            <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                            <span>Adicionar subtarefa</span>
-                        </button>
-                        <button
-                            class="pill ghost"
-                            type="button"
-                            title="Voltar para tarefa principal"
-                            wire:click="clearSelectedSubtask"
-                        >
-                            <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
-                            <span>Subir nível</span>
-                        </button>
+                        <div class="ti-subtask-quick-actions">
+                            <button
+                                class="pill"
+                                type="button"
+                                title="Adicionar subtarefa filha"
+                                wire:click="openSubtaskForm({{ $activeSubtask['id'] }})"
+                            >
+                                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                                <span>Adicionar subtarefa</span>
+                            </button>
+                            <button
+                                class="pill ghost"
+                                type="button"
+                                title="Voltar para tarefa principal"
+                                wire:click="clearSelectedSubtask"
+                            >
+                                <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+                                <span>Subir nível</span>
+                            </button>
+                        </div>
+
+                        <div class="ti-menu">
+                            <button class="icon ghost" title="Mais opções">
+                                <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                            </button>
+                            <div class="ti-menu-dropdown" role="menu">
+                                @include('livewire.tasks.partials.menu-content', [
+                                    'context' => 'details',
+                                    'subtaskId' => $activeSubtask['id'] ?? null,
+                                ])
+                            </div>
+                        </div>
                     </div>
                 </div>
             @else
