@@ -85,9 +85,19 @@ function onTaskExpanderClick(event) {
 function setMenuState(menu, open) {
   if (!menu) return;
   menu.classList.toggle('is-open', open);
-  const dropdown = menu.querySelector('.ti-inline-dropdown');
-  if (dropdown) {
-    dropdown.setAttribute('aria-hidden', open ? 'false' : 'true');
+  const trigger = menu.querySelector('[data-menu-trigger]');
+  if (trigger) {
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  const inlineDropdown = menu.querySelector('.ti-inline-dropdown');
+  if (inlineDropdown) {
+    inlineDropdown.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+
+  const simpleDropdown = menu.querySelector('.ti-menu-dropdown');
+  if (simpleDropdown) {
+    simpleDropdown.setAttribute('aria-hidden', open ? 'false' : 'true');
   }
 }
 

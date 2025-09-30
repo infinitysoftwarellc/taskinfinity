@@ -6,6 +6,8 @@
     $isDoneContext = $isSubtaskContext
         ? (bool) ($activeSubtaskContext['is_done'] ?? false)
         : ($missionData['status'] ?? null) === 'done';
+    $priorityValue = isset($missionData['priority']) ? (int) $missionData['priority'] : 0;
+    $priorityLabel = $missionData['priority_label'] ?? 'Nenhuma';
 @endphp
 
 <aside @class([
@@ -122,21 +124,22 @@
                         <button class="icon ghost" type="button" title="Prioridade">
                             <i class="fa-solid fa-flag" aria-hidden="true"></i>
                         </button>
+                        <span class="ti-priority-current">{{ $priorityLabel }}</span>
 
                         <div class="ti-priority-menu" role="menu">
-                            <button class="ti-priority-option is-high" type="button" role="menuitem"
+                            <button @class(['ti-priority-option', 'is-high', 'is-active' => $priorityValue === 3]) type="button" role="menuitem"
                                 wire:click="setPriority(3)">
                                 <span class="dot"></span> Alta
                             </button>
-                            <button class="ti-priority-option is-medium" type="button" role="menuitem"
+                            <button @class(['ti-priority-option', 'is-medium', 'is-active' => $priorityValue === 2]) type="button" role="menuitem"
                                 wire:click="setPriority(2)">
                                 <span class="dot"></span> Média
                             </button>
-                            <button class="ti-priority-option is-low" type="button" role="menuitem"
+                            <button @class(['ti-priority-option', 'is-low', 'is-active' => $priorityValue === 1]) type="button" role="menuitem"
                                 wire:click="setPriority(1)">
                                 <span class="dot"></span> Baixa
                             </button>
-                            <button class="ti-priority-option is-none" type="button" role="menuitem"
+                            <button @class(['ti-priority-option', 'is-none', 'is-active' => $priorityValue === 0]) type="button" role="menuitem"
                                 wire:click="setPriority(0)">
                                 <span class="dot"></span> Nenhuma
                             </button>
@@ -239,21 +242,22 @@
                         <button class="icon ghost" type="button" title="Prioridade">
                             <i class="fa-solid fa-flag" aria-hidden="true"></i>
                         </button>
+                        <span class="ti-priority-current">{{ $priorityLabel }}</span>
 
                         <div class="ti-priority-menu" role="menu">
-                            <button class="ti-priority-option is-high" type="button" role="menuitem"
+                            <button @class(['ti-priority-option', 'is-high', 'is-active' => $priorityValue === 3]) type="button" role="menuitem"
                                 wire:click="setPriority(3)">
                                 <span class="dot"></span> Alta
                             </button>
-                            <button class="ti-priority-option is-medium" type="button" role="menuitem"
+                            <button @class(['ti-priority-option', 'is-medium', 'is-active' => $priorityValue === 2]) type="button" role="menuitem"
                                 wire:click="setPriority(2)">
                                 <span class="dot"></span> Média
                             </button>
-                            <button class="ti-priority-option is-low" type="button" role="menuitem"
+                            <button @class(['ti-priority-option', 'is-low', 'is-active' => $priorityValue === 1]) type="button" role="menuitem"
                                 wire:click="setPriority(1)">
                                 <span class="dot"></span> Baixa
                             </button>
-                            <button class="ti-priority-option is-none" type="button" role="menuitem"
+                            <button @class(['ti-priority-option', 'is-none', 'is-active' => $priorityValue === 0]) type="button" role="menuitem"
                                 wire:click="setPriority(0)">
                                 <span class="dot"></span> Nenhuma
                             </button>
@@ -383,14 +387,15 @@
                 </div>
 
                 <div class="ti-footer-actions">
-                    <div class="ti-menu">
-                        <button class="icon ghost" title="Mais opções">
+                    <div class="ti-menu" data-menu>
+                        <button class="icon ghost" title="Mais opções" type="button" data-menu-trigger aria-haspopup="true" aria-expanded="false">
                             <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
                         </button>
-                        <div class="ti-menu-dropdown" role="menu">
+                        <div class="ti-menu-dropdown" role="menu" aria-hidden="true">
                             @include('livewire.tasks.partials.menu-content', [
                                 'context' => 'details',
                                 'subtaskId' => $activeSubtask['id'] ?? null,
+                                'priority' => $priorityValue,
                             ])
                         </div>
                     </div>

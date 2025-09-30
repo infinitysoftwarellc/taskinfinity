@@ -41,6 +41,7 @@ body {
     grid-template-areas: "rail sidebar main details";
     max-width: 1440px;
     margin: 0 auto;
+    align-items: stretch;
 }
 
 .app.completed-view {
@@ -1485,6 +1486,8 @@ body {
   overflow:hidden;
   position:relative;
   min-height: 420px;
+  height:100%;
+  max-height:100%;
   display:flex;
   flex-direction:column;
 }
@@ -1636,8 +1639,9 @@ body {
 .ti-menu { position: relative; }
 .ti-menu-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    bottom: calc(100% + 8px);
     right: 0;
+    top: auto;
     background: var(--panel-2);
     border: 1px solid rgba(124, 139, 210, .2);
     border-radius: 12px;
@@ -1646,13 +1650,12 @@ body {
     box-shadow: 0 18px 48px rgba(10, 12, 18, .55);
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-6px);
+    transform: translateY(6px);
     transition: .18s ease;
     z-index: 40;
     overflow: hidden;
 }
-.ti-menu:hover .ti-menu-dropdown,
-.ti-menu:focus-within .ti-menu-dropdown {
+.ti-menu.is-open .ti-menu-dropdown {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
@@ -1793,6 +1796,12 @@ body.ti-inline-menu-open {
     border-color: rgba(122, 162, 255, .45);
     color: #ffffff;
 }
+.ti-menu-flag.is-active {
+    background: rgba(122, 162, 255, .18);
+    border-color: rgba(122, 162, 255, .6);
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(122, 162, 255, .25);
+}
 .ti-menu-flag.is-high i { color: #ff5a64; }
 .ti-menu-flag.is-medium i { color: #ffa14f; }
 .ti-menu-flag.is-low i { color: #6ea6ff; }
@@ -1842,8 +1851,8 @@ body.ti-inline-menu-open {
 .ti-illustrations{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; padding:16px;}
 .ti-illustrations img{width:100%; border-radius:12px; border:1px solid #1c2235; object-fit:cover; min-height:120px; box-shadow:0 14px 30px rgba(10,12,18,.45);}
 
-.ti-priority-selector{position:relative;}
-.ti-priority-current{font:600 12px/1 'Inter',ui-sans-serif;color:#97a2c4;margin-left:6px;}
+.ti-priority-selector{position:relative;display:flex;align-items:center;gap:8px;}
+.ti-priority-current{font:600 12px/1 'Inter',ui-sans-serif;color:#97a2c4;}
 .ti-priority-menu{position:absolute; top:calc(100% + 10px); right:0; display:flex; flex-direction:column; gap:4px; background:var(--panel-2); border:1px solid rgba(124,139,210,.2); border-radius:12px; padding:10px; width:180px; box-shadow:0 18px 48px rgba(10,12,18,.55); opacity:0; pointer-events:none; transform:translateY(-6px); transition:.18s ease; z-index:40;}
 .ti-priority-selector:hover .ti-priority-menu,
 .ti-priority-selector:focus-within .ti-priority-menu{opacity:1; pointer-events:auto; transform:translateY(0);}
@@ -1853,6 +1862,8 @@ body.ti-inline-menu-open {
 .ti-priority-option.is-medium .dot{background:#ffa14f;}
 .ti-priority-option.is-low .dot{background:#6ea6ff;}
 .ti-priority-option.is-none .dot{background:#5c647f;}
+.ti-priority-option.is-active{background:rgba(122,162,255,.18);color:#ffffff;box-shadow:inset 0 0 0 1px rgba(122,162,255,.2);}
+.ti-priority-option.is-active .dot{box-shadow:0 0 0 2px rgba(122,162,255,.45);}
 .ti-priority-option:hover{background:rgba(122,162,255,.12); color:#ffffff;}
 
 /* subtasks */
@@ -1968,7 +1979,7 @@ body.ti-inline-menu-open {
 .ti-list-selector-toggle i{width:18px;height:18px;}
 .ti-list-selector-toggle .chevron{margin-left:auto;width:16px;height:16px;color:#67729a;transition:transform .18s ease;}
 .ti-list-selector.is-open .ti-list-selector-toggle .chevron{transform:rotate(180deg);}
-.ti-list-selector .ti-list-dropdown{position:absolute;right:0;top:calc(100% + 8px);width:220px;background:var(--panel-2);border:1px solid rgba(124,139,210,.25);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;box-shadow:0 18px 48px rgba(10,12,18,.55);z-index:40;overflow:hidden;}
+.ti-list-selector .ti-list-dropdown{position:absolute;right:0;bottom:calc(100% + 8px);top:auto;width:220px;background:var(--panel-2);border:1px solid rgba(124,139,210,.25);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;box-shadow:0 18px 48px rgba(10,12,18,.55);z-index:40;overflow-y:auto;max-height:260px;overscroll-behavior:contain;}
 .ti-list-option{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:transparent;border:none;color:#cdd6ff;font:500 13px/1.3 'Inter',ui-sans-serif;text-align:left;cursor:pointer;transition:.15s ease;}
 .ti-list-option:hover{background:rgba(122,162,255,.12);color:#fff;}
 .ti-list-option.is-active{background:rgba(122,162,255,.18);color:#fff;}

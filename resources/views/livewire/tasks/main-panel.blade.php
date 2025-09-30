@@ -185,6 +185,7 @@
                                     'context' => 'main',
                                     'missionId' => $mission->id,
                                     'dueDate' => $missionDueDate,
+                                    'priority' => $mission->priority,
                                 ])
                             </div>
                             {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}

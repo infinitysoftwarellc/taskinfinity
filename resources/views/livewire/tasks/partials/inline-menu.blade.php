@@ -18,10 +18,14 @@
                 $menuMissionId = $missionId ?? null;
                 $menuSubtaskId = $subtaskId ?? null;
             @endphp
+            @php
+                $menuPriority = $priority ?? null;
+            @endphp
             @include('livewire.tasks.partials.menu-content', [
                 'context' => $menuContext,
                 'missionId' => $menuMissionId,
                 'subtaskId' => $menuSubtaskId,
+                'priority' => $menuPriority,
             ])
         </div>
     </div>
