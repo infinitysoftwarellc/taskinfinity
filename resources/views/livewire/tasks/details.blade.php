@@ -261,7 +261,14 @@
             </div>
             @if (! $isSubtask)
                 <div class="actions">
-                    <button class="icon ghost" title="Editar"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                    <button
+                        class="icon ghost"
+                        type="button"
+                        title="Editar descrição"
+                        wire:click="startDescriptionEdit"
+                    >
+                        <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                    </button>
                     <div class="ti-menu">
                         <button class="icon ghost" title="Mais opções">
                             <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
