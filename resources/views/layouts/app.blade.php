@@ -25,6 +25,7 @@
 </head>
 
 <body>
+    <livewire:layout.navigation />
     <main>
         {{ $slot }}
     </main>

@@ -35,6 +35,7 @@ use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Livewire\Volt\Volt;
 
 Route::view('/', 'welcome');
 Route::view('/teste', 'teste');
@@ -54,6 +55,20 @@ Route::middleware('auth')->group(function () {
     Route::view('habitos', 'app.habits.index')->name('app.habits');
     Route::view('configuracoes', 'app.settings.index')->name('app.settings');
     Route::view('completed', 'app.tasks.completed')->name('tasks.completed');
+
+    Volt::route('configuracoes/perfil', 'settings.profile')
+        ->name('profile.edit');
+
+    Volt::route('configuracoes/senha', 'settings.password')
+        ->name('password.edit')
+        ->middleware('password.confirm');
+
+    Volt::route('configuracoes/aparencia', 'settings.appearance')
+        ->name('appearance.edit');
+
+    Volt::route('two-factor', 'settings.two-factor')
+        ->name('two-factor.show')
+        ->middleware('password.confirm');
 
     Route::resource('lists', TaskListController::class);
 
