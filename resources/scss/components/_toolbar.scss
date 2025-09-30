@@ -1,0 +1,87 @@
+@use '../abstracts/mixins' as mixins;
+@use '../abstracts/variables' as vars;
+
+.toolbar {
+    @include mixins.flex-stack(row, center, flex-start, 10px);
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+
+    .spacer {
+        flex: 1;
+    }
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+
+    .bubble {
+        margin-left: 8px;
+        @include mixins.pill();
+    }
+}
+
+.icon-btn {
+    @include mixins.icon-button();
+
+    &:hover {
+        background: var(--hover);
+        color: var(--text);
+    }
+}
+
+.add-row {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    @include mixins.flex-stack(row, center, flex-start, 10px);
+}
+
+.add-input {
+    @include mixins.soft-input(10px 12px, $radius: 12px);
+
+    &::placeholder {
+        color: var(--muted);
+    }
+}
+
+.add-select {
+    @include mixins.soft-input(10px 12px, $radius: 12px);
+    min-width: 140px;
+
+    &:focus {
+        border-color: var(--accent);
+    }
+}
+
+.form-error {
+    margin: 6px 16px 0;
+    color: #f87171;
+    font-size: 12px;
+}
+
+.empty-state {
+    margin: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    background: var(--panel-2);
+    color: var(--muted);
+    text-align: center;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.btn-new {
+    @include mixins.button-reset;
+    padding: 4px;
+    margin-left: auto;
+    color: #9ca3af;
+    transition: color vars.$transition-medium;
+
+    &:hover {
+        color: #ffffff;
+    }
+}

@@ -1,0 +1,41 @@
+$font-family-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu,
+    Cantarell, 'Noto Sans', 'Helvetica Neue', Arial, 'Apple Color Emoji',
+    'Segoe UI Emoji';
+
+$transition-fast: 0.15s ease;
+$transition-medium: 0.2s ease;
+
+$radius-lg: 16px;
+$radius-md: 12px;
+$radius-sm: 10px;
+
+$theme-base: (
+    bg: #0b0d12,
+    panel: #12151c,
+    'panel-2': #0f1218,
+    hover: #181c25,
+    border: #1f2430,
+    text: #e7ebf3,
+    muted: #97a2b2,
+    'muted-2': #6d7585,
+    accent: #7aa2ff,
+    brand: #7aa2ff,
+    success: #2ecc71,
+    warning: #ffcc66,
+    radius: 16px,
+    shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55)
+);
+
+$theme-elevated: (
+    bg: #15171c,
+    panel: #0f1116,
+    'panel-2': #0b0d12,
+    text: #e8eaee,
+    muted: #9aa3b2,
+    border: #232632,
+    brand: #7aa2ff,
+    'blue': #7aa2ff,
+    radius: 16px,
+    'r': 12px,
+    shadow: 0 10px 40px rgba(0, 0, 0, 0.45)
+);

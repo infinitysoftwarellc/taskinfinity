@@ -1,0 +1,5 @@
+@use '../abstracts/mixins' as mixins;
+
+* {
+    @include mixins.scrollbars(#1b2230, #0e1219);
+}
