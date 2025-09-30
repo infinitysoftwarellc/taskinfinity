@@ -22,7 +22,7 @@ class Sidebar extends Component
      */
     protected $listeners = ['tasks-updated' => '$refresh'];
 
-    public string $workspaceTitle = 'Workspace';
+    public string $workspaceTitle = 'Listas';
 
     public ?int $currentListId = null;
 

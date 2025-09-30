@@ -1,6 +1,6 @@
 {{-- This Blade view renders the livewire tasks sidebar interface. --}}
 @php
-    $workspaceStyle = $workspaceExpanded ? 'padding-left:8px;' : 'padding-left:8px; display:none;';
+    $workspaceStyle = $workspaceExpanded ? '' : 'display:none;';
     $iconMap = [
         'list-checks' => 'fa-solid fa-list-check',
         'sun' => 'fa-solid fa-sun',
@@ -53,18 +53,10 @@
                 aria-expanded="{{ $workspaceExpanded ? 'true' : 'false' }}"
             >
                 <i class="chev fa-solid fa-chevron-down" aria-hidden="true"></i>
-                <span class="title">{{ $workspaceTitle ?? 'Workspace' }}</span>
+                <span class="title">{{ $workspaceTitle ?? 'Listas' }}</span>
                 @if ($workspaceBadge)
                     <span class="badge">{{ $workspaceBadge }}</span>
                 @endif
-            </button>
-            <button
-                class="workspace-add"
-                type="button"
-                title="Nova lista"
-                wire:click.stop="openCreateModal('list')"
-            >
-                <i class="fa-solid fa-plus" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -90,16 +82,6 @@
                     <li class="muted">Nenhuma lista ou pasta criada ainda.</li>
                 @endif
 
-                <li>
-                    <button
-                        class="nav-item nav-action"
-                        type="button"
-                        wire:click.stop="openCreateModal('list')"
-                    >
-                        <i class="icon fa-solid fa-plus" aria-hidden="true"></i>
-                        <span class="label">Nova lista ou pasta</span>
-                    </button>
-                </li>
             </ul>
         </div>
 
