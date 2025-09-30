@@ -399,6 +399,100 @@ function setupDetailsKeyboard() {
   });
 }
 
+const QUILL_TOOLBAR_MARKUP = `
+  <span class="ql-formats">
+    <button class="ql-bold"></button>
+    <button class="ql-italic"></button>
+    <button class="ql-underline"></button>
+    <button class="ql-strike"></button>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-list" value="ordered"></button>
+    <button class="ql-list" value="bullet"></button>
+    <button class="ql-list" value="check"></button>
+    <button class="ql-blockquote"></button>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-link"></button>
+    <button class="ql-image"></button>
+  </span>
+`;
+
+function initQuillEditors(root = document) {
+  const wrappers = root.querySelectorAll('[data-quill-editor]:not([data-quill-ready])');
+
+  if (!wrappers.length) {
+    return;
+  }
+
+  if (typeof window.Quill === 'undefined') {
+    if (!window.__quillEditorWaiter) {
+      window.__quillEditorWaiter = setInterval(() => {
+        if (typeof window.Quill !== 'undefined') {
+          clearInterval(window.__quillEditorWaiter);
+          window.__quillEditorWaiter = null;
+          initQuillEditors(document);
+        }
+      }, 150);
+    }
+
+    return;
+  }
+
+  wrappers.forEach((wrapper) => {
+    const hiddenInput = wrapper.querySelector('[data-quill-input]');
+    const toolbarEl = wrapper.querySelector('[data-quill-toolbar]');
+    const containerEl = wrapper.querySelector('[data-quill-container]');
+
+    if (!hiddenInput || !toolbarEl || !containerEl) {
+      return;
+    }
+
+    if (!toolbarEl.dataset.quillToolbarReady) {
+      toolbarEl.innerHTML = QUILL_TOOLBAR_MARKUP;
+      toolbarEl.dataset.quillToolbarReady = 'true';
+    }
+
+    toolbarEl.classList.add('ql-toolbar', 'ql-snow');
+
+    const quill = new window.Quill(containerEl, {
+      theme: 'snow',
+      placeholder: 'Descreva a missão com mais detalhes',
+      modules: {
+        toolbar: toolbarEl,
+      },
+    });
+
+    const initialValue = hiddenInput.value ? String(hiddenInput.value).trim() : '';
+
+    let isApplyingInitialValue = true;
+
+    if (initialValue) {
+      quill.clipboard.dangerouslyPasteHTML(initialValue);
+    } else {
+      quill.setContents([]);
+    }
+
+    setTimeout(() => {
+      isApplyingInitialValue = false;
+    }, 0);
+
+    quill.on('text-change', () => {
+      if (isApplyingInitialValue) return;
+
+      const html = quill.root.innerHTML;
+
+      if (hiddenInput.value !== html) {
+        hiddenInput.value = html;
+        hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+
+    wrapper.dataset.quillReady = 'true';
+    wrapper.__quill = quill;
+  });
+}
+
 /* ────────────────────────────────────────────────────────────────── */
 /* BOOT: DOM pronto                                                   */
 /* ────────────────────────────────────────────────────────────────── */
@@ -407,6 +501,7 @@ function boot(root = document) {
   setupInputs(root);     // 3) inputs que criam itens dinamicamente
   setupFocusListeners();
   setupDetailsKeyboard();
+  initQuillEditors(root);
 }
 
 /* DOMContentLoaded (primeiro carregamento) */
