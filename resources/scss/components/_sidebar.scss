@@ -1,0 +1,122 @@
+@use '../abstracts/mixins' as mixins;
+@use '../abstracts/variables' as vars;
+
+.sidebar-section-header {
+    @include mixins.flex-stack(row, center, space-between);
+    margin: 14px 8px 6px;
+
+    h6 {
+        margin: 0;
+    }
+}
+
+.sidebar-form {
+    padding: 0 8px 12px;
+    @include mixins.flex-stack(column, flex-start, flex-start, 8px);
+
+    .form-row {
+        @include mixins.flex-stack(column, flex-start, flex-start, 6px);
+    }
+}
+
+.sidebar-input {
+    @include mixins.soft-input(8px 10px);
+
+    &::placeholder {
+        color: var(--muted);
+    }
+}
+
+.sidebar-color {
+    @include mixins.flex-stack(row, center, space-between, 12px);
+    font-size: 12px;
+    color: var(--muted);
+
+    input[type='color'] {
+        width: 38px;
+        height: 24px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: transparent;
+        padding: 0;
+    }
+}
+
+.form-actions {
+    @include mixins.flex-stack(row, center, flex-start, 10px);
+}
+
+.btn-primary {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #0b0d12;
+    cursor: pointer;
+    font-weight: 600;
+    transition: vars.$transition-fast;
+
+    &:hover {
+        filter: brightness(1.1);
+    }
+}
+
+.btn-link {
+    @include mixins.button-reset;
+    color: var(--muted);
+    font-size: 13px;
+    text-decoration: underline;
+    transition: vars.$transition-fast;
+
+    &:hover {
+        color: var(--text);
+    }
+}
+
+.toolbar-link {
+    margin-right: 12px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: vars.$transition-fast;
+
+    &:hover {
+        color: var(--text);
+    }
+}
+
+.tags {
+    @include mixins.flex-stack(column, flex-start, flex-start, 6px);
+}
+
+.tag {
+    @include mixins.flex-stack(row, center, flex-start, 10px);
+    padding: 8px 10px;
+    border-radius: 10px;
+    color: var(--text);
+    text-decoration: none;
+    transition: vars.$transition-fast;
+
+    &:hover {
+        background: var(--hover);
+    }
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+}
+
+.completed {
+    @include mixins.flex-stack(row, center, flex-start, 10px);
+    padding: 10px;
+    border-radius: 10px;
+    color: var(--muted);
+    transition: vars.$transition-fast;
+
+    &:hover {
+        background: var(--hover);
+        color: var(--text);
+    }
+}
