@@ -13,7 +13,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="applyDueShortcut('today')" @endif
             >
-                <i data-lucide="sun"></i>
+                <i class="fa-solid fa-sun" aria-hidden="true"></i>
                 <span>Hoje</span>
             </button>
             <button
@@ -22,7 +22,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="applyDueShortcut('tomorrow')" @endif
             >
-                <i data-lucide="sunrise"></i>
+                <i class="fa-solid fa-cloud-sun" aria-hidden="true"></i>
                 <span>Amanhã</span>
             </button>
             <button
@@ -31,11 +31,11 @@
                 data-menu-item
                 @if ($isDetails) wire:click="applyDueShortcut('next7')" @endif
             >
-                <i data-lucide="calendar-range"></i>
+                <i class="fa-solid fa-calendar-week" aria-hidden="true"></i>
                 <span>7 dias</span>
             </button>
             <label class="ti-menu-icon is-picker">
-                <i data-lucide="calendar-search"></i>
+                <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
                 <span>Customizar</span>
                 <input
                     class="ti-menu-date-input"
@@ -50,7 +50,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="applyDueShortcut('clear')" @endif
             >
-                <i data-lucide="calendar-x"></i>
+                <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i>
                 <span>Remover</span>
             </button>
         </div>
@@ -65,7 +65,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="setPriority(3)" @endif
             >
-                <i data-lucide="flag"></i>
+                <i class="fa-solid fa-flag" aria-hidden="true"></i>
                 <span>Alta</span>
             </button>
             <button
@@ -74,7 +74,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="setPriority(2)" @endif
             >
-                <i data-lucide="flag"></i>
+                <i class="fa-solid fa-flag" aria-hidden="true"></i>
                 <span>Média</span>
             </button>
             <button
@@ -83,7 +83,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="setPriority(1)" @endif
             >
-                <i data-lucide="flag"></i>
+                <i class="fa-solid fa-flag" aria-hidden="true"></i>
                 <span>Baixa</span>
             </button>
             <button
@@ -92,7 +92,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="setPriority(0)" @endif
             >
-                <i data-lucide="flag"></i>
+                <i class="fa-solid fa-flag" aria-hidden="true"></i>
                 <span>Nenhuma</span>
             </button>
         </div>
@@ -106,12 +106,12 @@
                 data-menu-item
                 @if ($isDetails) wire:click="openSubtaskForm" @endif
             >
-                <i data-lucide="list-plus"></i>
+                <i class="fa-solid fa-square-plus" aria-hidden="true"></i>
                 <span>Adicionar subtarefa</span>
             </button>
             @if (! $isDetails)
                 <button class="ti-menu-action" type="button" data-menu-item>
-                    <i data-lucide="git-branch"></i>
+                    <i class="fa-solid fa-code-branch" aria-hidden="true"></i>
                     <span>Vincular tarefa pai</span>
                 </button>
             @endif
@@ -121,7 +121,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="toggleStar" @endif
             >
-                <i data-lucide="pin"></i>
+                <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
                 <span>Fixar</span>
             </button>
             <button
@@ -130,7 +130,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="toggleMoveListMenu" @endif
             >
-                <i data-lucide="arrow-right-left"></i>
+                <i class="fa-solid fa-right-left" aria-hidden="true"></i>
                 <span>Mover para outra lista</span>
             </button>
             <button
@@ -139,7 +139,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="startPomodoro" @endif
             >
-                <i data-lucide="timer"></i>
+                <i class="fa-solid fa-stopwatch" aria-hidden="true"></i>
                 <span>Iniciar Pomodoro</span>
             </button>
             <button
@@ -148,7 +148,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="duplicateMission" @endif
             >
-                <i data-lucide="copy"></i>
+                <i class="fa-solid fa-copy" aria-hidden="true"></i>
                 <span>Duplicar</span>
             </button>
             <button
@@ -157,7 +157,7 @@
                 data-menu-item
                 @if ($isDetails) wire:click="deleteMission" @endif
             >
-                <i data-lucide="trash-2"></i>
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
                 <span>Excluir</span>
             </button>
         </div>

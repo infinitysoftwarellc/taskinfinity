@@ -14,6 +14,8 @@ use Livewire\Component;
 
 class MainPanel extends Component
 {
+    public const MAX_SUBTASKS = 7;
+
     protected $listeners = ['tasks-updated' => '$refresh'];
 
     /**
@@ -455,6 +457,10 @@ class MainPanel extends Component
             return;
         }
 
+        if ($this->reachedSubtaskLimit($mission->id, null)) {
+            return;
+        }
+
         $payload = [
             'mission_id' => $mission->id,
             'title' => 'Nova subtarefa',
@@ -497,6 +503,10 @@ class MainPanel extends Component
 
         $column = $this->checkpointParentColumn();
         $parentId = $column ? ($checkpoint->{$column} ?? null) : null;
+
+        if ($this->reachedSubtaskLimit($checkpoint->mission_id, $parentId)) {
+            return;
+        }
 
         $payload = [
             'mission_id' => $checkpoint->mission_id,
@@ -543,6 +553,10 @@ class MainPanel extends Component
         if (! $column) {
             $this->createSiblingSubtask($checkpointId);
 
+            return;
+        }
+
+        if ($this->reachedSubtaskLimit($checkpoint->mission_id, $checkpoint->id)) {
             return;
         }
 
@@ -713,6 +727,7 @@ class MainPanel extends Component
             'selectedSubtaskId' => $this->selectedSubtaskId,
             'showListSelector' => $showListSelector,
             'listView' => $this->currentListId !== null,
+            'maxSubtasks' => self::MAX_SUBTASKS,
         ]);
     }
 
@@ -766,6 +781,21 @@ class MainPanel extends Component
         $position = (int) $query->max('position');
 
         return $position + 1;
+    }
+
+    private function reachedSubtaskLimit(int $missionId, ?int $parentId = null): bool
+    {
+        $query = Checkpoint::query()->where('mission_id', $missionId);
+
+        if ($column = $this->checkpointParentColumn()) {
+            if ($parentId === null) {
+                $query->whereNull($column);
+            } else {
+                $query->where($column, $parentId);
+            }
+        }
+
+        return $query->count() >= self::MAX_SUBTASKS;
     }
 
     private function attachCheckpointTree(Collection $missions): void

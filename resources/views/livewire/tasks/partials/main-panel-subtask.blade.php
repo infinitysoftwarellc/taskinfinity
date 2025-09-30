@@ -4,6 +4,8 @@
     'missionId',
     'selectedSubtaskId' => null,
     'editingSubtaskId' => null,
+    'siblingsCount' => 0,
+    'maxSubtasks' => 7,
 ])
 
 @php
@@ -12,6 +14,10 @@
     $isActive = ($item['id'] ?? null) === $selectedSubtaskId;
     $isEditing = ($item['id'] ?? null) === $editingSubtaskId;
     $title = trim((string) ($item['title'] ?? ''));
+    $childrenCount = $children->count();
+    $hasChildren = $childrenCount > 0;
+    $canAddChild = $childrenCount < $maxSubtasks;
+    $canAddSibling = $siblingsCount < $maxSubtasks;
 @endphp
 
 <div
@@ -23,7 +29,11 @@
     @class([
         'done' => $isDone,
         'is-active' => $isActive,
+        'has-children' => $hasChildren,
     ])
+    @if($hasChildren)
+        aria-expanded="true"
+    @endif
 >
     <button
         class="checkbox {{ $isDone ? 'checked' : '' }}"
@@ -31,6 +41,11 @@
         aria-label="Marcar subtarefa"
         wire:click.stop="toggleSubtaskCompletion({{ $missionId }}, {{ $item['id'] }})"
     ></button>
+    @if ($hasChildren)
+        <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+        </button>
+    @endif
 
     <div class="title-line">
         @if ($isEditing)
@@ -52,22 +67,26 @@
     </div>
 
     <div class="subtask-actions" wire:click.stop>
-        <button
-            type="button"
-            class="subtask-quick-btn"
-            title="Adicionar subtarefa irmã"
-            wire:click.stop="createSiblingSubtask({{ $item['id'] }})"
-        >
-            <i data-lucide="plus"></i>
-        </button>
-        <button
-            type="button"
-            class="subtask-quick-btn"
-            title="Adicionar subtarefa filha"
-            wire:click.stop="createChildSubtask({{ $item['id'] }})"
-        >
-            <i data-lucide="corner-down-right"></i>
-        </button>
+        @if ($canAddSibling)
+            <button
+                type="button"
+                class="subtask-quick-btn"
+                title="Adicionar subtarefa irmã"
+                wire:click.stop="createSiblingSubtask({{ $item['id'] }})"
+            >
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            </button>
+        @endif
+        @if ($canAddChild)
+            <button
+                type="button"
+                class="subtask-quick-btn"
+                title="Adicionar subtarefa filha"
+                wire:click.stop="createChildSubtask({{ $item['id'] }})"
+            >
+                <i class="fa-solid fa-turn-down" aria-hidden="true"></i>
+            </button>
+        @endif
         @include('livewire.tasks.partials.inline-menu')
     </div>
 </div>
@@ -81,7 +100,12 @@
                 'missionId' => $missionId,
                 'selectedSubtaskId' => $selectedSubtaskId,
                 'editingSubtaskId' => $editingSubtaskId,
+                'siblingsCount' => $childrenCount,
+                'maxSubtasks' => $maxSubtasks,
             ])
         @endforeach
+        @if (! $canAddChild)
+            <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
+        @endif
     </div>
 @endif
