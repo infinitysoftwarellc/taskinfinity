@@ -14,7 +14,41 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item
+                        icon="user-circle"
+                        :href="route('profile')"
+                        :current="request()->routeIs('profile')"
+                        wire:navigate
+                    >
+                        {{ __('Profile') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="check-square"
+                        :href="route('tasks.index')"
+                        :current="request()->routeIs('tasks.*')"
+                        wire:navigate
+                    >
+                        {{ __('Tasks') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="timer"
+                        :href="route('app.pomodoro')"
+                        :current="request()->routeIs('app.pomodoro')"
+                        wire:navigate
+                    >
+                        {{ __('Pomodoro') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="leaf"
+                        :href="route('app.habits')"
+                        :current="request()->routeIs('app.habits')"
+                        wire:navigate
+                    >
+                        {{ __('Habits') }}
+                    </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 
@@ -61,15 +95,9 @@
 
                     <flux:menu.separator />
 
-                    <flux:menu.radio.group>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
-                    </flux:menu.radio.group>
-
-                    <flux:menu.separator />
-
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
-                        <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full" data-test="logout-button">
+                        <flux:menu.item as="button" type="submit" icon="log-out" class="w-full" data-test="logout-button">
                             {{ __('Log Out') }}
                         </flux:menu.item>
                     </form>
@@ -111,15 +139,9 @@
 
                     <flux:menu.separator />
 
-                    <flux:menu.radio.group>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
-                    </flux:menu.radio.group>
-
-                    <flux:menu.separator />
-
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
-                        <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full" data-test="logout-button">
+                        <flux:menu.item as="button" type="submit" icon="log-out" class="w-full" data-test="logout-button">
                             {{ __('Log Out') }}
                         </flux:menu.item>
                     </form>
