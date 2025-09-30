@@ -59,6 +59,25 @@
                 $maxSubtasks = $maxSubtasks ?? 7;
             @endphp
 
+            @php
+                $today = \Illuminate\Support\Carbon::now($userTimezone)->startOfDay();
+                $tomorrow = $today->copy()->addDay();
+                $monthAbbr = [
+                    1 => 'Jan',
+                    2 => 'Fev',
+                    3 => 'Mar',
+                    4 => 'Abr',
+                    5 => 'Mai',
+                    6 => 'Jun',
+                    7 => 'Jul',
+                    8 => 'Ago',
+                    9 => 'Set',
+                    10 => 'Out',
+                    11 => 'Nov',
+                    12 => 'Dez',
+                ];
+            @endphp
+
             <div class="task-list">
                 @forelse ($allMissions as $mission)
                     @php
@@ -70,6 +89,30 @@
                         $rootSubtaskCount = $subtasks->count();
                         $canAddMissionSubtask = $rootSubtaskCount < $maxSubtasks;
                         $missionDueDate = optional(optional($mission->due_at)->setTimezone($userTimezone))->format('Y-m-d');
+                        $dueLabel = null;
+                        $dueClass = 'task-due';
+
+                        if ($mission->due_at) {
+                            $missionDue = $mission->due_at->copy()->setTimezone($userTimezone);
+                            $missionDueDay = $missionDue->copy()->startOfDay();
+
+                            if ($missionDueDay->equalTo($today)) {
+                                $dueLabel = 'Hoje';
+                                $dueClass .= ' is-today';
+                            } elseif ($missionDueDay->equalTo($tomorrow)) {
+                                $dueLabel = 'Amanhã';
+                                $dueClass .= ' is-tomorrow';
+                            } elseif ($missionDueDay->lessThan($today)) {
+                                $monthKey = (int) $missionDueDay->format('n');
+                                $monthLabel = $monthAbbr[$monthKey] ?? $missionDueDay->format('M');
+                                $dueLabel = $missionDueDay->format('d') . ' ' . $monthLabel;
+                                $dueClass .= ' is-overdue';
+                            } else {
+                                $monthKey = (int) $missionDueDay->format('n');
+                                $monthLabel = $monthAbbr[$monthKey] ?? $missionDueDay->format('M');
+                                $dueLabel = $missionDueDay->format('d') . ' ' . $monthLabel;
+                            }
+                        }
                     @endphp
 
                     <div class="task-block" wire:key="mission-flat-{{ $mission->id }}">
@@ -119,6 +162,9 @@
                                     >
                                         <i class="fa-solid fa-plus" aria-hidden="true"></i>
                                     </button>
+                                @endif
+                                @if ($dueLabel)
+                                    <span class="{{ $dueClass }}">{{ $dueLabel }}</span>
                                 @endif
                                 @include('livewire.tasks.partials.inline-menu', [
                                     'context' => 'main',

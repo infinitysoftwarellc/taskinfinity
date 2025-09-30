@@ -1002,6 +1002,18 @@ body {
     justify-content: flex-end;
     gap: 6px;
 }
+.task-due {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(203, 210, 228, .85);
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    text-transform: none;
+}
+.task-due.is-overdue {
+    color: #f87171;
+}
 .task .meta {
     color: var(--muted);
     font-size: 12px;
@@ -1107,6 +1119,18 @@ body {
     align-items: center;
     justify-content: flex-end;
     gap: 6px;
+}
+.subtask-due {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(203, 210, 228, .8);
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    text-transform: none;
+}
+.subtask-due.is-overdue {
+    color: #f87171;
 }
 .subtasks .subtask .inline-input {
     font-size: 13px;
