@@ -90,6 +90,7 @@
                         $missionDueDate = optional(optional($mission->due_at)->setTimezone($userTimezone))->format('Y-m-d');
                         $dueLabel = null;
                         $dueClass = 'task-due';
+                        $priority = (int) ($mission->priority ?? 0);
 
                         if ($mission->due_at) {
                             $missionDue = $mission->due_at->copy()->setTimezone($userTimezone);
@@ -127,7 +128,11 @@
                                 'done' => $mission->status === 'done',
                                 'is-active' => $isActive,
                                 'has-subtasks' => $hasSubtasks,
+                                'priority-high' => $priority === 3,
+                                'priority-medium' => $priority === 2,
+                                'priority-low' => $priority === 1,
                             ])
+                            data-priority="{{ $priority }}"
                             @if($hasSubtasks)
                                 aria-expanded="true"
                             @endif

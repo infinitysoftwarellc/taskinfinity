@@ -704,6 +704,14 @@ body {
     overflow: auto;
     display: flex;
     flex-direction: column;
+    background: #0f1116;
+    margin: 0 15px;
+}
+
+.main.panel {
+    background: #0f1116;
+    border: none;
+    box-shadow: none;
 }
 .toolbar {
     display: flex;
@@ -964,7 +972,7 @@ body {
     cursor: pointer;
 }
 .checkbox.checked {
-    background: linear-gradient(135deg, var(--brand), #a78bfa);
+    background: #2ecc71;
     border-color: transparent;
 }
 .checkbox.checked::after {
@@ -974,6 +982,24 @@ body {
     border-right: 2px solid white;
     border-bottom: 2px solid white;
     transform: rotate(40deg);
+}
+
+.task[data-priority="3"] .checkbox.checked,
+.subtask[data-priority="3"] .checkbox.checked,
+.ti-subtask-row[data-priority="3"] .checkbox.checked {
+    background: #ff5a64;
+}
+
+.task[data-priority="2"] .checkbox.checked,
+.subtask[data-priority="2"] .checkbox.checked,
+.ti-subtask-row[data-priority="2"] .checkbox.checked {
+    background: #ffa14f;
+}
+
+.task[data-priority="1"] .checkbox.checked,
+.subtask[data-priority="1"] .checkbox.checked,
+.ti-subtask-row[data-priority="1"] .checkbox.checked {
+    background: #6ea6ff;
 }
 
 .task-label {

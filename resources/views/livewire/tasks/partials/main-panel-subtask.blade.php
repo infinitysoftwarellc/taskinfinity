@@ -25,6 +25,7 @@
     $dueLabel = null;
     $dueClass = 'subtask-due';
     $rawDueAt = $item['due_at'] ?? null;
+    $priority = (int) ($item['priority'] ?? 0);
 
     if ($rawDueAt instanceof \Carbon\CarbonInterface) {
         $dueAt = $rawDueAt->copy()->setTimezone($timezone);
@@ -84,7 +85,11 @@
             'done' => $isDone,
             'is-active' => $isActive,
             'has-children' => $hasChildren,
+            'priority-high' => $priority === 3,
+            'priority-medium' => $priority === 2,
+            'priority-low' => $priority === 1,
         ])
+        data-priority="{{ $priority }}"
         @if($hasChildren)
             aria-expanded="true"
         @endif
