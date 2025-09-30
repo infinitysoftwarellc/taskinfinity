@@ -529,13 +529,32 @@ class MainPanel extends Component
             return;
         }
 
-        $mission = Mission::create([
-            'user_id' => $user->id,
-            'list_id' => $reference->list_id,
-            'title' => 'Nova tarefa',
-            'status' => 'active',
-            'position' => $this->nextPosition($user->id, $reference->list_id),
-        ]);
+        $position = $reference->position ?? 0;
+        $mission = null;
+
+        DB::transaction(function () use ($user, $reference, $position, &$mission) {
+            Mission::query()
+                ->where('user_id', $user->id)
+                ->when(
+                    $reference->list_id !== null,
+                    fn ($query) => $query->where('list_id', $reference->list_id),
+                    fn ($query) => $query->whereNull('list_id')
+                )
+                ->where('position', '>', $position)
+                ->increment('position');
+
+            $mission = Mission::create([
+                'user_id' => $user->id,
+                'list_id' => $reference->list_id,
+                'title' => 'Nova tarefa',
+                'status' => 'active',
+                'position' => $position + 1,
+            ]);
+        });
+
+        if (! $mission) {
+            return;
+        }
 
         $this->editingMissionId = $mission->id;
         $this->editingMissionTitle = $mission->title;

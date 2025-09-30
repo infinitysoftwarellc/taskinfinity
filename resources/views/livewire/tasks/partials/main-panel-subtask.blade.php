@@ -94,55 +94,40 @@
             aria-label="Marcar subtarefa"
             wire:click.stop="toggleSubtaskCompletion({{ $missionId }}, {{ $item['id'] }})"
         ></button>
-        @if ($hasChildren)
-            <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
-                <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-            </button>
-        @endif
-
-        <div class="title-line">
-            @if ($isEditing)
-                <input
-                    type="text"
-                    class="inline-input"
-                    data-subtask-input="{{ $item['id'] }}"
-                    wire:model.defer="editingSubtaskTitle"
-                    wire:keydown.enter.prevent="saveSubtaskEdit({{ $item['id'] }})"
-                    wire:keydown.shift.enter.prevent="saveSubtaskEdit({{ $item['id'] }}, false, true)"
-                    wire:keydown.escape="cancelSubtaskEdit"
-                    wire:blur="saveSubtaskEdit({{ $item['id'] }})"
-                />
-            @else
-                <span class="title" wire:click.stop="startSubtaskEdit({{ $item['id'] }})">
-                    {{ $title !== '' ? $title : 'Sem título' }}
-                </span>
+        <div class="subtask-label">
+            @if ($hasChildren)
+                <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
+                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                </button>
             @endif
+
+            <div class="title-line">
+                @if ($isEditing)
+                    <input
+                        type="text"
+                        class="inline-input"
+                        data-subtask-input="{{ $item['id'] }}"
+                        wire:model.defer="editingSubtaskTitle"
+                        wire:keydown.enter.prevent="saveSubtaskEdit({{ $item['id'] }})"
+                        wire:keydown.shift.enter.prevent="saveSubtaskEdit({{ $item['id'] }}, false, true)"
+                        wire:keydown.escape="cancelSubtaskEdit"
+                        wire:blur="saveSubtaskEdit({{ $item['id'] }})"
+                    />
+                @else
+                    <span class="title" wire:click.stop="startSubtaskEdit({{ $item['id'] }})">
+                        {{ $title !== '' ? $title : 'Sem título' }}
+                    </span>
+                @endif
+            </div>
         </div>
 
-        <div class="subtask-actions" wire:click.stop>
-            @if ($canAddSibling)
-                <button
-                    type="button"
-                    class="subtask-quick-btn"
-                    title="Adicionar subtarefa irmã"
-                    wire:click.stop="createSiblingSubtask({{ $item['id'] }})"
-                >
-                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                </button>
-            @endif
-            @if ($canAddChild)
-                <button
-                    type="button"
-                    class="subtask-quick-btn"
-                    title="Adicionar subtarefa filha"
-                    wire:click.stop="createChildSubtask({{ $item['id'] }})"
-                >
-                    <i class="fa-solid fa-turn-down" aria-hidden="true"></i>
-                </button>
-            @endif
+        <div class="subtask-date">
             @if ($dueLabel)
                 <span class="{{ $dueClass }}">{{ $dueLabel }}</span>
             @endif
+        </div>
+
+        <div class="subtask-menu" wire:click.stop>
             @include('livewire.tasks.partials.inline-menu', [
                 'context' => 'main',
                 'missionId' => $missionId,
