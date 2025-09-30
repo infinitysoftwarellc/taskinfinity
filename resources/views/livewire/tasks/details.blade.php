@@ -250,10 +250,6 @@
                     </div>
                     @if (!$isSubtask)
                         <div class="actions">
-                            <button class="icon ghost" type="button" title="Editar descrição"
-                                wire:click="startDescriptionEdit">
-                                <i class="fa-solid fa-pen" aria-hidden="true"></i>
-                            </button>
                             <div class="ti-menu">
                                 <button class="icon ghost" title="Mais opções">
                                     <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
@@ -278,41 +274,11 @@
                     </div>
                 @else
                     <div class="ti-description">
-                        <div class="ti-description-content {{ $isEditingDescription ? 'is-editing' : '' }}">
-                            @if ($isEditingDescription)
-                                <div class="ti-description-editor" data-quill-editor>
-                                    <!-- Input hidden que guarda o valor -->
-                                    <input type="hidden" id="descriptionDraft" wire:model.defer="descriptionDraft"
-                                        data-quill-input>
-
-                                    <!-- Área do editor -->
-                                    <div class="ti-description-editor-surface">
-                                        <div id="quill-toolbar" data-quill-toolbar></div>
-                                        <div id="quill-container" data-quill-container style="min-height:150px;"></div>
-                                    </div>
-
-                                    <div class="ti-description-actions">
-                                        <button type="button" class="ghost"
-                                            wire:click="cancelDescriptionEdit">Cancelar</button>
-                                        <button type="button" class="primary"
-                                            wire:click="saveDescription">Salvar</button>
-                                    </div>
-                                </div>
-                            @elseif (!empty($mission['description']))
-                                <div class="ti-description-display" role="button" tabindex="0"
-                                    wire:click="startDescriptionEdit"
-                                    wire:keydown.enter.prevent="startDescriptionEdit"
-                                    wire:keydown.space.prevent="startDescriptionEdit">
-                                    <div class="ti-description-html">{!! $mission['description'] !!}</div>
-                                </div>
-                            @else
-                                <div class="ti-description-empty" role="button" tabindex="0"
-                                    wire:click="startDescriptionEdit"
-                                    wire:keydown.enter.prevent="startDescriptionEdit"
-                                    wire:keydown.space.prevent="startDescriptionEdit">
-                                    <p class="muted">Adicione detalhes ou cole notas importantes aqui…</p>
-                                </div>
-                            @endif
+                        <div class="ti-description-content has-inline-editor">
+                            <livewire:missions.inline-description
+                                :mission-id="$missionData['id']"
+                                :key="'mission-inline-description-' . $missionData['id']"
+                            />
                         </div>
                     </div>
                 @endif
@@ -427,15 +393,3 @@
     @endif
 </aside>
 
-@once
-    @push('styles')
-        <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css"
-            integrity="sha384-jNvm9X3qoL1M23JycQexzDva8PU15ag8RSXGsAi7z74oQ1d0N+PMIvWn5a2CXiIc" crossorigin="anonymous" />
-    @endpush
-
-    @push('scripts')
-        <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"
-            integrity="sha384-O5zU9lFNX3ob18J7hsouKUT1zsVXni4eWh05rq6ArlTc95xJMu38xpv8uKXu95Pr" crossorigin="anonymous">
-        </script>
-    @endpush
-@endonce
