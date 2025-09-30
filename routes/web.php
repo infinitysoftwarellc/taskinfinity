@@ -50,6 +50,10 @@ Route::view('profile', 'profile')
 require __DIR__.'/auth.php';
 
 Route::middleware('auth')->group(function () {
+    Route::view('pomodoro', 'app.pomodoro.index')->name('app.pomodoro');
+    Route::view('habitos', 'app.habits.index')->name('app.habits');
+    Route::view('configuracoes', 'app.settings.index')->name('app.settings');
+
     Route::resource('lists', TaskListController::class);
 
     Route::get('tasks/{taskList?}', function (Request $request, ?TaskList $taskList = null) {
