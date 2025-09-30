@@ -115,7 +115,10 @@
                                         <i class="fa-solid fa-plus" aria-hidden="true"></i>
                                     </button>
                                 @endif
-                                @include('livewire.tasks.partials.inline-menu')
+                                @include('livewire.tasks.partials.inline-menu', [
+                                    'context' => 'main',
+                                    'missionId' => $mission->id,
+                                ])
                             </div>
                             {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
                         </div>

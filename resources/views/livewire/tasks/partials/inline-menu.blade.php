@@ -12,7 +12,14 @@
         ></button>
 
         <div class="ti-inline-dialog" role="menu">
-            @include('livewire.tasks.partials.menu-content')
+            @php
+                $menuContext = $context ?? null;
+                $menuMissionId = $missionId ?? null;
+            @endphp
+            @include('livewire.tasks.partials.menu-content', [
+                'context' => $menuContext,
+                'missionId' => $menuMissionId,
+            ])
         </div>
     </div>
 </div>

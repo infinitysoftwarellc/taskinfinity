@@ -16,7 +16,10 @@ class MainPanel extends Component
 {
     public const MAX_SUBTASKS = 7;
 
-    protected $listeners = ['tasks-updated' => '$refresh'];
+    protected $listeners = [
+        'tasks-updated' => '$refresh',
+        'task-selected' => 'syncSelectedMission',
+    ];
 
     /**
      * Lista atualmente exibida (null significa visão geral "All").
@@ -65,6 +68,12 @@ class MainPanel extends Component
     public string $editingSubtaskTitle = '';
 
     public ?string $shortcut = null;
+
+    public function syncSelectedMission(?int $missionId = null, ?int $checkpointId = null): void
+    {
+        $this->selectedMissionId = $missionId;
+        $this->selectedSubtaskId = $checkpointId;
+    }
 
     public function mount(?int $currentListId = null, ?string $shortcut = null): void
     {
@@ -168,6 +177,45 @@ class MainPanel extends Component
         $this->dispatch('task-selected', $mission->id, null);
 
         $this->startMissionEdit($mission->id, $mission);
+    }
+
+    public function runInlineAction(int $missionId, string $action, ?string $value = null): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $query = Mission::query()
+            ->where('user_id', $user->id)
+            ->when($this->currentListId, fn ($builder) => $builder->where('list_id', $this->currentListId));
+
+        if ($this->shortcut) {
+            MissionShortcutFilter::apply($query, $this->shortcut, $user->timezone ?? config('app.timezone'));
+        }
+
+        $mission = $query->find($missionId);
+
+        if (! $mission) {
+            return;
+        }
+
+        $this->selectedMissionId = $mission->id;
+        $this->selectedSubtaskId = null;
+        $this->dispatch('task-selected', $mission->id, null);
+
+        if ($action === 'create-subtask') {
+            $this->createSubtaskForMission($mission->id);
+
+            return;
+        }
+
+        if ($action === 'set-date' && ($value === null || $value === '')) {
+            return;
+        }
+
+        $this->dispatch('tasks-inline-action', $mission->id, $action, $value);
     }
 
     public function selectSubtask(int $missionId, int $checkpointId): void

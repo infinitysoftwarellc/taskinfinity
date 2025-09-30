@@ -1,6 +1,7 @@
 @php
     $context = $context ?? 'static';
     $isDetails = $context === 'details';
+    $missionId = $missionId ?? null;
 @endphp
 
 <div class="ti-floating-menu" role="none">
@@ -11,7 +12,11 @@
                 class="ti-menu-icon"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="applyDueShortcut('today')" @endif
+                @if ($isDetails)
+                    wire:click="applyDueShortcut('today')"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'today')"
+                @endif
             >
                 <i class="fa-solid fa-sun" aria-hidden="true"></i>
                 <span>Hoje</span>
@@ -20,7 +25,11 @@
                 class="ti-menu-icon"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="applyDueShortcut('tomorrow')" @endif
+                @if ($isDetails)
+                    wire:click="applyDueShortcut('tomorrow')"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'tomorrow')"
+                @endif
             >
                 <i class="fa-solid fa-cloud-sun" aria-hidden="true"></i>
                 <span>Amanhã</span>
@@ -29,7 +38,11 @@
                 class="ti-menu-icon"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="applyDueShortcut('next7')" @endif
+                @if ($isDetails)
+                    wire:click="applyDueShortcut('next7')"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'next7')"
+                @endif
             >
                 <i class="fa-solid fa-calendar-week" aria-hidden="true"></i>
                 <span>7 dias</span>
@@ -41,14 +54,23 @@
                     class="ti-menu-date-input"
                     type="date"
                     aria-label="Escolher data personalizada"
-                    @if ($isDetails) wire:model.live="menuDate" wire:change="applyMenuDate" @endif
+                    @if ($isDetails)
+                        wire:model.live="menuDate"
+                        wire:change="applyMenuDate"
+                    @elseif ($missionId)
+                        wire:change="runInlineAction({{ $missionId }}, 'set-date', $event.target.value)"
+                    @endif
                 >
             </label>
             <button
                 class="ti-menu-icon"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="applyDueShortcut('clear')" @endif
+                @if ($isDetails)
+                    wire:click="applyDueShortcut('clear')"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'clear')"
+                @endif
             >
                 <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i>
                 <span>Remover</span>
@@ -63,7 +85,11 @@
                 class="ti-menu-flag is-high"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="setPriority(3)" @endif
+                @if ($isDetails)
+                    wire:click="setPriority(3)"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'set-priority', 3)"
+                @endif
             >
                 <i class="fa-solid fa-flag" aria-hidden="true"></i>
                 <span>Alta</span>
@@ -72,7 +98,11 @@
                 class="ti-menu-flag is-medium"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="setPriority(2)" @endif
+                @if ($isDetails)
+                    wire:click="setPriority(2)"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'set-priority', 2)"
+                @endif
             >
                 <i class="fa-solid fa-flag" aria-hidden="true"></i>
                 <span>Média</span>
@@ -81,7 +111,11 @@
                 class="ti-menu-flag is-low"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="setPriority(1)" @endif
+                @if ($isDetails)
+                    wire:click="setPriority(1)"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'set-priority', 1)"
+                @endif
             >
                 <i class="fa-solid fa-flag" aria-hidden="true"></i>
                 <span>Baixa</span>
@@ -90,7 +124,11 @@
                 class="ti-menu-flag is-none"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="setPriority(0)" @endif
+                @if ($isDetails)
+                    wire:click="setPriority(0)"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'set-priority', 0)"
+                @endif
             >
                 <i class="fa-solid fa-flag" aria-hidden="true"></i>
                 <span>Nenhuma</span>
@@ -104,22 +142,24 @@
                 class="ti-menu-action"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="openSubtaskForm" @endif
+                @if ($isDetails)
+                    wire:click="openSubtaskForm"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'create-subtask')"
+                @endif
             >
                 <i class="fa-solid fa-square-plus" aria-hidden="true"></i>
                 <span>Adicionar subtarefa</span>
             </button>
-            @if (! $isDetails)
-                <button class="ti-menu-action" type="button" data-menu-item>
-                    <i class="fa-solid fa-code-branch" aria-hidden="true"></i>
-                    <span>Vincular tarefa pai</span>
-                </button>
-            @endif
             <button
                 class="ti-menu-action"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="toggleStar" @endif
+                @if ($isDetails)
+                    wire:click="toggleStar"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'toggle-star')"
+                @endif
             >
                 <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
                 <span>Fixar</span>
@@ -128,7 +168,11 @@
                 class="ti-menu-action"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="toggleMoveListMenu" @endif
+                @if ($isDetails)
+                    wire:click="toggleMoveListMenu"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'move-list')"
+                @endif
             >
                 <i class="fa-solid fa-right-left" aria-hidden="true"></i>
                 <span>Mover para outra lista</span>
@@ -137,7 +181,11 @@
                 class="ti-menu-action"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="startPomodoro" @endif
+                @if ($isDetails)
+                    wire:click="startPomodoro"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'start-pomodoro')"
+                @endif
             >
                 <i class="fa-solid fa-stopwatch" aria-hidden="true"></i>
                 <span>Iniciar Pomodoro</span>
@@ -146,7 +194,11 @@
                 class="ti-menu-action"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="duplicateMission" @endif
+                @if ($isDetails)
+                    wire:click="duplicateMission"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'duplicate')"
+                @endif
             >
                 <i class="fa-solid fa-copy" aria-hidden="true"></i>
                 <span>Duplicar</span>
@@ -155,7 +207,11 @@
                 class="ti-menu-action danger"
                 type="button"
                 data-menu-item
-                @if ($isDetails) wire:click="deleteMission" @endif
+                @if ($isDetails)
+                    wire:click="deleteMission"
+                @elseif ($missionId)
+                    wire:click="runInlineAction({{ $missionId }}, 'delete')"
+                @endif
             >
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
                 <span>Excluir</span>
