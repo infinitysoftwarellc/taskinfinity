@@ -13,7 +13,7 @@
         <script src="https://kit.fontawesome.com/c9cfb44e99.js" crossorigin="anonymous"></script>
 
         <!-- Scripts -->
-        @vite(['resources/scss/app.scss', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
     <body class="font-sans text-gray-900 antialiased">
