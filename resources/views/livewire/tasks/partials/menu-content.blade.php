@@ -5,6 +5,9 @@
     $subtaskId = $subtaskId ?? null;
     $isSubtask = $subtaskId !== null;
     $customDateValue = $isDetails ? ($menuDate ?? '') : ($dueDate ?? '');
+    $inlineSubtaskArg = ($isSubtask && $missionId && $subtaskId !== null)
+        ? ', ' . $subtaskId
+        : '';
 @endphp
 
 <div class="ti-floating-menu" role="none">
@@ -18,7 +21,7 @@
                 @if ($isDetails)
                     wire:click="applyDueShortcut('today')"
                 @elseif ($missionId)
-                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'today')"
+                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'today'{{ $inlineSubtaskArg }})"
                 @endif
             >
                 <i class="fa-solid fa-sun" aria-hidden="true"></i>
@@ -31,7 +34,7 @@
                 @if ($isDetails)
                     wire:click="applyDueShortcut('tomorrow')"
                 @elseif ($missionId)
-                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'tomorrow')"
+                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'tomorrow'{{ $inlineSubtaskArg }})"
                 @endif
             >
                 <i class="fa-solid fa-cloud-sun" aria-hidden="true"></i>
@@ -44,7 +47,7 @@
                 @if ($isDetails)
                     wire:click="applyDueShortcut('next7')"
                 @elseif ($missionId)
-                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'next7')"
+                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'next7'{{ $inlineSubtaskArg }})"
                 @endif
             >
                 <i class="fa-solid fa-calendar-week" aria-hidden="true"></i>
@@ -62,7 +65,7 @@
                         wire:model.live="menuDate"
                         wire:change="applyMenuDate"
                     @elseif ($missionId)
-                        wire:change="runInlineAction({{ $missionId }}, 'set-date', $event.target.value)"
+                        wire:change="runInlineAction({{ $missionId }}, 'set-date', $event.target.value{{ $inlineSubtaskArg }})"
                     @endif
                 >
             </label>
@@ -73,7 +76,7 @@
                 @if ($isDetails)
                     wire:click="applyDueShortcut('clear')"
                 @elseif ($missionId)
-                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'clear')"
+                    wire:click="runInlineAction({{ $missionId }}, 'due-shortcut', 'clear'{{ $inlineSubtaskArg }})"
                 @endif
             >
                 <i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i>
