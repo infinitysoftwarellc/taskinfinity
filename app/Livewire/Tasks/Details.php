@@ -47,7 +47,6 @@ class Details extends Component
     /**
      * Controle de exibição do seletor de data para subtarefas.
      */
-    public bool $showSubtaskDatePicker = false;
 
     /**
      * Data usada como cursor no calendário do seletor.
@@ -57,7 +56,6 @@ class Details extends Component
     /**
      * Data usada como cursor no calendário de subtarefas.
      */
-    public ?string $subtaskPickerCursorDate = null;
 
     /**
      * Data atualmente selecionada pelo usuário no calendário.
@@ -67,7 +65,6 @@ class Details extends Component
     /**
      * Data atualmente selecionada no calendário de subtarefas.
      */
-    public ?string $subtaskPickerSelectedDate = null;
 
     /**
      * Data escolhida através do menu contextual de datas.
@@ -127,11 +124,8 @@ class Details extends Component
             $this->newSubtaskParentLabel = null;
             $this->menuDate = null;
             $this->showDatePicker = false;
-            $this->showSubtaskDatePicker = false;
             $this->pickerCursorDate = null;
             $this->pickerSelectedDate = null;
-            $this->subtaskPickerCursorDate = null;
-            $this->subtaskPickerSelectedDate = null;
             $this->selectedSubtaskId = null;
 
             return;
@@ -203,15 +197,12 @@ class Details extends Component
             ? CarbonImmutable::createFromFormat('Y-m-d', $this->pickerSelectedDate, $timezone)->startOfMonth()->format('Y-m-d')
             : CarbonImmutable::now($timezone)->startOfMonth()->format('Y-m-d');
         $this->showDatePicker = false;
-        $this->showSubtaskDatePicker = false;
         $this->menuDate = $this->pickerSelectedDate;
         $this->showMoveListMenu = false;
         $this->showSubtaskForm = false;
         $this->newSubtaskTitle = '';
         $this->newSubtaskParentId = null;
         $this->newSubtaskParentLabel = null;
-        $this->subtaskPickerSelectedDate = null;
-        $this->subtaskPickerCursorDate = null;
         $this->applyActiveSubtaskContext($checkpointId);
 
         $this->availableLists = TaskList::query()
@@ -443,8 +434,6 @@ class Details extends Component
         });
 
         $this->loadMission($missionId, $this->selectedSubtaskId);
-
-        $this->dispatch('tasks-updated');
     }
 
     /**
@@ -488,9 +477,6 @@ class Details extends Component
             'mission' => $this->mission,
             'missionTags' => $this->missionTags,
             'pickerCalendar' => $this->mission ? $this->buildCalendar() : null,
-            'subtaskCalendar' => $this->mission && ($this->mission['active_subtask'] ?? null)
-                ? $this->buildSubtaskCalendar()
-                : null,
             'selectedSubtaskId' => $this->selectedSubtaskId,
             'maxSubtasks' => self::MAX_SUBTASKS,
         ]);
@@ -534,36 +520,11 @@ class Details extends Component
     }
 
     /**
-     * Alterna o seletor de data específico das subtarefas.
-     */
-    public function toggleSubtaskDatePicker(): void
-    {
-        if (! $this->missionId || ! $this->selectedSubtaskId) {
-            return;
-        }
-
-        $this->showSubtaskDatePicker = ! $this->showSubtaskDatePicker;
-
-        if ($this->showSubtaskDatePicker) {
-            $this->resolveSubtaskCursor($this->userTimezone());
-        }
-    }
-
-    /**
-     * Fecha o seletor de data das subtarefas.
-     */
-    public function closeSubtaskDatePicker(): void
-    {
-        $this->showSubtaskDatePicker = false;
-    }
-
-    /**
      * Fecha todos os seletores de data abertos no painel.
      */
     public function closeAllDatePickers(): void
     {
         $this->closeDatePicker();
-        $this->closeSubtaskDatePicker();
     }
 
     /**
@@ -625,14 +586,12 @@ class Details extends Component
             return;
         }
 
-        $timezone = $this->userTimezone();
-        $today = CarbonImmutable::now($timezone)->startOfDay();
-
         if ($this->selectedSubtaskId) {
-            $this->applySubtaskShortcut($this->selectedSubtaskId, $shortcut);
-
             return;
         }
+
+        $timezone = $this->userTimezone();
+        $today = CarbonImmutable::now($timezone)->startOfDay();
 
         $target = match ($shortcut) {
             'today' => $today,
@@ -661,8 +620,6 @@ class Details extends Component
         }
 
         if ($this->selectedSubtaskId) {
-            $this->selectSubtaskDueDate($this->selectedSubtaskId, $this->menuDate);
-
             return;
         }
 
@@ -681,20 +638,6 @@ class Details extends Component
         $timezone = $this->userTimezone();
         $cursor = $this->resolveCursor($timezone)->addMonths($offset);
         $this->pickerCursorDate = $cursor->startOfMonth()->format('Y-m-d');
-    }
-
-    /**
-     * Navega entre meses dentro do seletor de datas de subtarefas.
-     */
-    public function moveSubtaskPicker(int $offset): void
-    {
-        if (! $this->missionId || ! $this->selectedSubtaskId) {
-            return;
-        }
-
-        $timezone = $this->userTimezone();
-        $cursor = $this->resolveSubtaskCursor($timezone)->addMonths($offset);
-        $this->subtaskPickerCursorDate = $cursor->startOfMonth()->format('Y-m-d');
     }
 
     /**
@@ -766,71 +709,6 @@ class Details extends Component
     }
 
     /**
-     * Limpa a data de entrega de uma subtarefa específica.
-     */
-    public function clearSubtaskDueDate(int $checkpointId): void
-    {
-        if (! $this->missionId) {
-            return;
-        }
-
-        $checkpoint = $this->resolveCheckpoint($checkpointId);
-
-        if (! $checkpoint) {
-            return;
-        }
-
-        if (! $this->updateCheckpointDueDate($checkpoint, null)) {
-            return;
-        }
-
-        $this->menuDate = null;
-        $timezone = $this->userTimezone();
-        $this->subtaskPickerSelectedDate = null;
-        $this->subtaskPickerCursorDate = CarbonImmutable::now($timezone)->startOfMonth()->format('Y-m-d');
-        $this->showSubtaskDatePicker = false;
-
-        $this->loadMission($this->missionId, $checkpointId);
-        $this->dispatch('tasks-updated');
-    }
-
-    /**
-     * Define uma nova data de entrega para a subtarefa escolhida.
-     */
-    public function selectSubtaskDueDate(int $checkpointId, string $date): void
-    {
-        if (! $this->missionId || $date === '') {
-            return;
-        }
-
-        $timezone = $this->userTimezone();
-
-        try {
-            $selectedLocal = CarbonImmutable::createFromFormat('Y-m-d', $date, $timezone);
-        } catch (\Throwable) {
-            return;
-        }
-
-        $checkpoint = $this->resolveCheckpoint($checkpointId);
-
-        if (! $checkpoint) {
-            return;
-        }
-
-        if (! $this->updateCheckpointDueDate($checkpoint, $selectedLocal)) {
-            return;
-        }
-
-        $this->menuDate = $selectedLocal->format('Y-m-d');
-        $this->subtaskPickerSelectedDate = $selectedLocal->format('Y-m-d');
-        $this->subtaskPickerCursorDate = $selectedLocal->startOfMonth()->format('Y-m-d');
-        $this->showSubtaskDatePicker = false;
-
-        $this->loadMission($this->missionId, $checkpointId);
-        $this->dispatch('tasks-updated');
-    }
-
-    /**
      * Marca ou desmarca a missão como favorita.
      */
     public function toggleStar(): void
@@ -851,54 +729,6 @@ class Details extends Component
         $mission->save();
 
         $this->loadMission($mission->id);
-        $this->dispatch('tasks-updated');
-    }
-
-    /**
-     * Aplica atalhos de data às subtarefas.
-     */
-    private function applySubtaskShortcut(int $checkpointId, string $shortcut): void
-    {
-        if (! $this->missionId) {
-            return;
-        }
-
-        $checkpoint = $this->resolveCheckpoint($checkpointId);
-
-        if (! $checkpoint) {
-            return;
-        }
-
-        if ($shortcut === 'clear') {
-            $this->clearSubtaskDueDate($checkpointId);
-
-            return;
-        }
-
-        $timezone = $this->userTimezone();
-        $today = CarbonImmutable::now($timezone)->startOfDay();
-
-        $target = match ($shortcut) {
-            'today' => $today,
-            'tomorrow' => $today->addDay(),
-            'next7' => $today->addDays(7),
-            default => null,
-        };
-
-        if (! $target) {
-            return;
-        }
-
-        if (! $this->updateCheckpointDueDate($checkpoint, $target)) {
-            return;
-        }
-
-        $this->menuDate = $target->format('Y-m-d');
-        $this->subtaskPickerSelectedDate = $target->format('Y-m-d');
-        $this->subtaskPickerCursorDate = $target->startOfMonth()->format('Y-m-d');
-        $this->showSubtaskDatePicker = false;
-
-        $this->loadMission($this->missionId, $checkpointId);
         $this->dispatch('tasks-updated');
     }
 
@@ -1312,9 +1142,6 @@ class Details extends Component
     {
         if (! is_array($this->mission)) {
             $this->selectedSubtaskId = null;
-            $this->showSubtaskDatePicker = false;
-            $this->subtaskPickerSelectedDate = null;
-            $this->subtaskPickerCursorDate = null;
 
             return;
         }
@@ -1325,9 +1152,6 @@ class Details extends Component
             $this->mission['active_subtask_path'] = [];
             $this->mission['parent_title'] = null;
             $this->menuDate = $this->pickerSelectedDate;
-            $this->showSubtaskDatePicker = false;
-            $this->subtaskPickerSelectedDate = null;
-            $this->subtaskPickerCursorDate = null;
 
             return;
         }
@@ -1340,9 +1164,6 @@ class Details extends Component
             $this->mission['active_subtask_path'] = [];
             $this->mission['parent_title'] = null;
             $this->menuDate = $this->pickerSelectedDate;
-            $this->showSubtaskDatePicker = false;
-            $this->subtaskPickerSelectedDate = null;
-            $this->subtaskPickerCursorDate = null;
 
             return;
         }
@@ -1351,22 +1172,7 @@ class Details extends Component
         $this->mission['active_subtask'] = $trail['node'];
         $this->mission['active_subtask_path'] = $trail['ancestors'];
         $this->mission['parent_title'] = $this->formatParentTitle($this->mission['title'] ?? '', $trail['ancestors']);
-
-        $activeNode = $trail['node'] ?? null;
-        $dueAt = $activeNode['due_at'] ?? null;
-        $timezone = $this->userTimezone();
-
-        if ($dueAt instanceof CarbonInterface) {
-            $this->menuDate = $dueAt->format('Y-m-d');
-            $this->subtaskPickerSelectedDate = $dueAt->format('Y-m-d');
-            $this->subtaskPickerCursorDate = $dueAt->copy()->setTimezone($timezone)->startOfMonth()->format('Y-m-d');
-        } else {
-            $this->menuDate = null;
-            $this->subtaskPickerSelectedDate = null;
-            $this->subtaskPickerCursorDate = CarbonImmutable::now($timezone)->startOfMonth()->format('Y-m-d');
-        }
-
-        $this->showSubtaskDatePicker = false;
+        $this->menuDate = null;
     }
 
     /**
@@ -1504,33 +1310,6 @@ class Details extends Component
     /**
      * Atualiza a data de entrega de uma subtarefa específica.
      */
-    private function updateCheckpointDueDate(Checkpoint $checkpoint, ?CarbonImmutable $localDate): bool
-    {
-        $current = $checkpoint->due_at;
-
-        if ($localDate === null) {
-            if ($current === null) {
-                return false;
-            }
-
-            $checkpoint->due_at = null;
-            $checkpoint->save();
-
-            return true;
-        }
-
-        $serverDate = $localDate->setTimezone(config('app.timezone'));
-
-        if ($current && $current->equalTo($serverDate)) {
-            return false;
-        }
-
-        $checkpoint->due_at = $serverDate;
-        $checkpoint->save();
-
-        return true;
-    }
-
     /**
      * Constrói os dados do calendário exibido no seletor de datas.
      */
@@ -1544,22 +1323,9 @@ class Details extends Component
     }
 
     /**
-     * Constrói o calendário usado pelo seletor de subtarefas.
-     */
-    private function buildSubtaskCalendar(): array
-    {
-        return $this->buildCalendarData(
-            $this->subtaskPickerSelectedDate,
-            $this->resolveSubtaskCursor($this->userTimezone()),
-            $this->userTimezone(),
-            true,
-        );
-    }
-
-    /**
      * Gera a matriz de semanas comum aos seletores de data.
      */
-    private function buildCalendarData(?string $selectedDate, CarbonImmutable $cursor, string $timezone, bool $isSubtask = false): array
+    private function buildCalendarData(?string $selectedDate, CarbonImmutable $cursor, string $timezone): array
     {
         $today = CarbonImmutable::now($timezone)->startOfDay();
         $selected = null;
@@ -1609,7 +1375,6 @@ class Details extends Component
             'weeks' => $weeks,
             'weekDays' => $this->weekDays(),
             'hasSelected' => (bool) $selectedDate,
-            'isSubtask' => $isSubtask,
         ];
     }
 
@@ -1639,36 +1404,6 @@ class Details extends Component
 
         $cursor = CarbonImmutable::now($timezone)->startOfMonth();
         $this->pickerCursorDate = $cursor->format('Y-m-d');
-
-        return $cursor;
-    }
-
-    /**
-     * Determina o cursor de datas usado no calendário de subtarefas.
-     */
-    private function resolveSubtaskCursor(string $timezone): CarbonImmutable
-    {
-        if ($this->subtaskPickerCursorDate) {
-            try {
-                return CarbonImmutable::createFromFormat('Y-m-d', $this->subtaskPickerCursorDate, $timezone)->startOfMonth();
-            } catch (\Throwable) {
-                // fallback below
-            }
-        }
-
-        if ($this->subtaskPickerSelectedDate) {
-            try {
-                $cursor = CarbonImmutable::createFromFormat('Y-m-d', $this->subtaskPickerSelectedDate, $timezone)->startOfMonth();
-                $this->subtaskPickerCursorDate = $cursor->format('Y-m-d');
-
-                return $cursor;
-            } catch (\Throwable) {
-                // fallback below
-            }
-        }
-
-        $cursor = CarbonImmutable::now($timezone)->startOfMonth();
-        $this->subtaskPickerCursorDate = $cursor->format('Y-m-d');
 
         return $cursor;
     }

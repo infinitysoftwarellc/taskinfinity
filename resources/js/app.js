@@ -362,6 +362,10 @@ function setupSortableSubtasks(root = document) {
 
     const sortable = new Sortable(container, {
       animation: 160,
+      swapThreshold: 0.18,
+      fallbackOnBody: true,
+      dragClass: 'is-dragging',
+      ghostClass: 'is-ghost',
       group: { name: `subtasks-${missionId}`, pull: true, put: true },
       draggable: '[data-subtask-node]',
       handle: isDetailsContainer ? '.ti-subtask-row' : '.subtask',
@@ -380,11 +384,15 @@ function setupSortableSubtasks(root = document) {
           return;
         }
 
-        const toOrder = collectSubtaskOrder(toContainer);
-        const fromOrder = fromContainer === toContainer ? toOrder : collectSubtaskOrder(fromContainer);
-
         const toParentId = parseNullableInt(toContainer.dataset.parentId);
         const fromParentId = parseNullableInt(fromContainer.dataset.parentId);
+
+        if (fromContainer === toContainer && evt.oldIndex === evt.newIndex && toParentId === fromParentId) {
+          return;
+        }
+
+        const toOrder = collectSubtaskOrder(toContainer);
+        const fromOrder = fromContainer === toContainer ? toOrder : collectSubtaskOrder(fromContainer);
 
         const payload = {
           moved_id: movedId,
