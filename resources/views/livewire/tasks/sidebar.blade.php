@@ -58,6 +58,15 @@
                     <span class="badge">{{ $workspaceBadge }}</span>
                 @endif
             </button>
+            <button
+                class="workspace-add"
+                type="button"
+                wire:click.prevent="openCreateModal('list')"
+                title="Criar lista ou pasta"
+            >
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span class="sr-only">Criar lista ou pasta</span>
+            </button>
         </div>
 
         <div class="workspace-content" style="{{ $workspaceStyle }}">
