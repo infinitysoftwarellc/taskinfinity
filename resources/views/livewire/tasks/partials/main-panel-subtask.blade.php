@@ -119,7 +119,7 @@
                         class="inline-input"
                         data-subtask-input="{{ $item['id'] }}"
                         wire:model.defer="editingSubtaskTitle"
-                        wire:keydown.enter.prevent="saveSubtaskEdit({{ $item['id'] }})"
+                        wire:keydown.enter.prevent="saveSubtaskEdit({{ $item['id'] }}, true)"
                         wire:keydown.shift.enter.prevent="saveSubtaskEdit({{ $item['id'] }}, false, true)"
                         wire:keydown.escape="cancelSubtaskEdit"
                         wire:blur="saveSubtaskEdit({{ $item['id'] }})"
@@ -135,7 +135,12 @@
         <div class="subtask-date">
             <label class="subtask-date-button" title="Alterar data da subtarefa">
                 <span class="{{ $rawDueAt ? $dueClass : 'subtask-due is-empty' }}">
-                    {{ $dueLabel ?? 'Definir data' }}
+                    @if ($dueLabel)
+                        {{ $dueLabel }}
+                    @else
+                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                        <span class="sr-only">Definir data</span>
+                    @endif
                 </span>
                 <input
                     type="date"
