@@ -85,6 +85,31 @@
                         $subtasksRelation = $relationLoaded ? $mission->getRelation('checkpointTree') : collect();
                         $subtasks = collect($subtasksRelation);
                         $hasSubtasks = $subtasks->isNotEmpty();
+                        $missionContainsSelectedSubtask = false;
+
+                        if ($selectedSubtaskId && $hasSubtasks) {
+                            $searchTree = function ($nodes) use (&$searchTree, $selectedSubtaskId) {
+                                foreach ($nodes as $node) {
+                                    if (($node['id'] ?? null) === $selectedSubtaskId) {
+                                        return true;
+                                    }
+
+                                    $children = $node['children'] ?? [];
+
+                                    if ($children instanceof \Illuminate\Support\Collection) {
+                                        $children = $children->all();
+                                    }
+
+                                    if (! empty($children) && $searchTree($children)) {
+                                        return true;
+                                    }
+                                }
+
+                                return false;
+                            };
+
+                            $missionContainsSelectedSubtask = $searchTree($subtasks->all());
+                        }
                         $rootSubtaskCount = $subtasks->count();
                         $canAddMissionSubtask = $rootSubtaskCount < $maxSubtasks;
                         $missionDueDate = optional(optional($mission->due_at)->setTimezone($userTimezone))->format('Y-m-d');
@@ -126,7 +151,8 @@
                             @class([
                                 'task',
                                 'done' => $mission->status === 'done',
-                                'is-active' => $isActive,
+                                'is-active' => $isActive && ! $missionContainsSelectedSubtask,
+                                'has-active-subtask' => $missionContainsSelectedSubtask,
                                 'has-subtasks' => $hasSubtasks,
                                 'priority-high' => $priority === 3,
                                 'priority-medium' => $priority === 2,
@@ -171,7 +197,12 @@
                             <div class="task-date">
                                 <label class="task-date-button" title="Alterar data da tarefa">
                                     <span class="{{ $mission->due_at ? $dueClass : 'task-due is-empty' }}">
-                                        {{ $dueLabel ?? 'Definir data' }}
+                                        @if ($dueLabel)
+                                            {{ $dueLabel }}
+                                        @else
+                                            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                                            <span class="sr-only">Definir data</span>
+                                        @endif
                                     </span>
                                     <input
                                         type="date"
