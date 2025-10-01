@@ -4,6 +4,7 @@ namespace App\Livewire\Pomodoro;
 
 use App\Models\PomodoroDailyStat;
 use App\Models\PomodoroPause;
+use App\Models\PomodoroPreference;
 use App\Models\PomodoroSession;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -15,9 +16,14 @@ class Timer extends Component
 {
     private const STOP_SAVE_THRESHOLD = 300; // 5 minutes
 
+    public int $focusMinutes = 25;
+    public int $shortBreakMinutes = 5;
+    public int $longBreakMinutes = 10;
+    public int $cyclesBeforeLongBreak = 4;
+
     public int $focusDuration = 25 * 60;
     public int $shortBreakDuration = 5 * 60;
-    public int $longBreakDuration = 15 * 60;
+    public int $longBreakDuration = 10 * 60;
 
     public int $remainingSeconds = 0;
     public bool $running = false;
@@ -36,16 +42,32 @@ class Timer extends Component
     public bool $allowSaveOnStop = false;
     public bool $showRecordModal = false;
     public array $recordModal = [];
+    public bool $showFocusConfig = false;
 
     protected ?PomodoroSession $sessionCache = null;
     protected ?PomodoroPause $pauseCache = null;
     protected string $timezone;
     protected int $focusSessionsSinceLongBreak = 0;
 
+    protected array $rules = [
+        'focusMinutes' => 'required|integer|min:1|max:180',
+        'shortBreakMinutes' => 'required|integer|min:1|max:60',
+        'longBreakMinutes' => 'required|integer|min:1|max:180',
+        'cyclesBeforeLongBreak' => 'required|integer|min:1|max:12',
+    ];
+
+    protected array $validationAttributes = [
+        'focusMinutes' => 'pomodoro',
+        'shortBreakMinutes' => 'pausa curta',
+        'longBreakMinutes' => 'pausa longa',
+        'cyclesBeforeLongBreak' => 'pomodoros por intervalo',
+    ];
+
     public function mount(): void
     {
         $this->timezone = $this->userTimezone();
-        $this->remainingSeconds = $this->focusDuration;
+        $this->loadPreferences();
+        $this->remainingSeconds = $this->phaseDuration($this->phase);
         $this->loadActiveSession();
         $this->refreshStatistics();
         $this->refreshRecords();
@@ -55,6 +77,21 @@ class Timer extends Component
     public function hydrate(): void
     {
         $this->timezone = $this->userTimezone();
+    }
+
+    public function updated(string $property): void
+    {
+        if (! in_array($property, ['focusMinutes', 'shortBreakMinutes', 'longBreakMinutes', 'cyclesBeforeLongBreak'], true)) {
+            return;
+        }
+
+        $this->validateOnly($property);
+        $this->syncDurationsFromMinutes();
+        $this->persistFocusPreferences();
+
+        if (! $this->sessionId) {
+            $this->remainingSeconds = $this->phaseDuration($this->phase);
+        }
     }
 
     public function selectPhase(string $phase): void
@@ -70,6 +107,17 @@ class Timer extends Component
         $this->phase = $phase;
         $this->remainingSeconds = $this->phaseDuration($phase);
         $this->running = false;
+    }
+
+    public function openFocusConfig(): void
+    {
+        $this->loadPreferences();
+        $this->showFocusConfig = true;
+    }
+
+    public function closeFocusConfig(): void
+    {
+        $this->showFocusConfig = false;
     }
 
     public function render(): View
@@ -283,6 +331,66 @@ class Timer extends Component
         $this->updateFocusStreak();
     }
 
+    protected function loadPreferences(): void
+    {
+        $this->syncDurationsFromMinutes();
+
+        $user = Auth::user();
+        if (! $user) {
+            return;
+        }
+
+        $preference = PomodoroPreference::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'focus_minutes' => $this->focusMinutes,
+                'short_break_minutes' => $this->shortBreakMinutes,
+                'long_break_minutes' => $this->longBreakMinutes,
+                'cycles_before_long_break' => $this->cyclesBeforeLongBreak,
+            ]
+        );
+
+        $this->focusMinutes = $preference->focus_minutes;
+        $this->shortBreakMinutes = $preference->short_break_minutes;
+        $this->longBreakMinutes = $preference->long_break_minutes;
+        $this->cyclesBeforeLongBreak = $preference->cycles_before_long_break;
+
+        $this->syncDurationsFromMinutes();
+    }
+
+    protected function persistFocusPreferences(): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        PomodoroPreference::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'focus_minutes' => $this->focusMinutes,
+                'short_break_minutes' => $this->shortBreakMinutes,
+                'long_break_minutes' => $this->longBreakMinutes,
+                'cycles_before_long_break' => $this->cyclesBeforeLongBreak,
+            ]
+        );
+
+        $this->updateFocusStreak();
+    }
+
+    protected function syncDurationsFromMinutes(): void
+    {
+        $this->focusMinutes = max(1, $this->focusMinutes);
+        $this->shortBreakMinutes = max(1, $this->shortBreakMinutes);
+        $this->longBreakMinutes = max(1, $this->longBreakMinutes);
+        $this->cyclesBeforeLongBreak = max(1, $this->cyclesBeforeLongBreak);
+
+        $this->focusDuration = $this->focusMinutes * 60;
+        $this->shortBreakDuration = $this->shortBreakMinutes * 60;
+        $this->longBreakDuration = $this->longBreakMinutes * 60;
+    }
+
     protected function loadActiveSession(): void
     {
         $userId = Auth::id();
@@ -402,7 +510,10 @@ class Timer extends Component
         if ($phase === 'focus') {
             $this->focusSessionsSinceLongBreak++;
             if ($autoStartBreak) {
-                $nextPhase = $this->focusSessionsSinceLongBreak % 4 === 0 ? 'long_break' : 'short_break';
+                $cycleTarget = max(1, $this->cyclesBeforeLongBreak);
+                $nextPhase = $this->focusSessionsSinceLongBreak % $cycleTarget === 0
+                    ? 'long_break'
+                    : 'short_break';
                 $this->startPhase($nextPhase);
                 return;
             }
@@ -617,7 +728,7 @@ class Timer extends Component
         $this->pauseCache = null;
         $this->running = false;
         $this->phase = 'focus';
-        $this->remainingSeconds = $this->focusDuration;
+        $this->remainingSeconds = $this->phaseDuration('focus');
         $this->allowSaveOnStop = false;
     }
 
