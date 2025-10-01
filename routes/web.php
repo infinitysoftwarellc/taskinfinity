@@ -47,8 +47,6 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
-require __DIR__.'/auth.php';
-
 Route::middleware('auth')->group(function () {
     Route::get('pomodoro', PomodoroController::class)->name('app.pomodoro');
     Route::get('pomodoro/estatisticas', PomodoroStatisticsController::class)->name('app.pomodoro.stats');
