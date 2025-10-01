@@ -187,7 +187,7 @@ class Timer extends Component
     {
         $duration = $this->currentTargetDuration();
         if ($duration <= 0) {
-            return 0.0f;
+            return 0.0;
         }
 
         $ratio = max(0, min(1, 1 - ($this->remainingSeconds / $duration)));
