@@ -1,6 +1,5 @@
 <?php
 
-// This view component encapsulates shared markup for guest layout.
 namespace App\View\Components;
 
 use Illuminate\View\Component;

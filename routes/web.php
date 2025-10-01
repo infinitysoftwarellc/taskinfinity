@@ -132,3 +132,13 @@ Route::resource('sound-packs', SoundPackController::class);
 Route::resource('themes', ThemeController::class);
 Route::resource('plan-limits', PlanLimitController::class);
 Route::resource('store-items', StoreItemController::class)->only(['index', 'show']);
+
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+});

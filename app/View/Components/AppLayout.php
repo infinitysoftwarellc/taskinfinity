@@ -1,6 +1,5 @@
 <?php
 
-// This view component encapsulates shared markup for app layout.
 namespace App\View\Components;
 
 use Illuminate\View\Component;

@@ -1,6 +1,7 @@
 <?php
 
 // This routes file registers HTTP endpoints for the auth section.
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
@@ -8,6 +9,9 @@ use Livewire\Volt\Volt;
 Route::middleware('guest')->group(function () {
     Volt::route('register', 'auth.register')
         ->name('register');
+
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->name('register.store');
 
     Volt::route('login', 'auth.login')
         ->name('login');

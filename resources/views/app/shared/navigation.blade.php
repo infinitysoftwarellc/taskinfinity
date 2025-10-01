@@ -28,7 +28,7 @@
     ];
 @endphp
 
-<aside class="hidden w-64 shrink-0 border-r border-zinc-200 bg-white px-4 py-6 dark:border-zinc-700 dark:bg-zinc-900 lg:block">
+<aside class="hidden w-64 shrink-0 border-r border-zinc-200 bg-white px-4 py-6 lg:block">
     <nav class="flex flex-col gap-2">
         @foreach ($items as $item)
             <a
@@ -36,8 +36,8 @@
                 href="{{ $item['href'] }}"
                 @class([
                     'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
-                    'bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-white' => $item['active'],
-                    'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white' => ! $item['active'],
+                    'bg-zinc-200 text-zinc-900' => $item['active'],
+                    'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900' => ! $item['active'],
                 ])
                 aria-current="{{ $item['active'] ? 'page' : 'false' }}"
             >
