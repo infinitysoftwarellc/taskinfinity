@@ -2,36 +2,57 @@
 
 namespace App\Livewire\Pomodoro;
 
+use App\Models\PomodoroDailyStat;
+use App\Models\PomodoroPause;
+use App\Models\PomodoroSession;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class Timer extends Component
 {
-    private const STATE_KEY = 'pomodoro.state';
-    private const MAX_RECORDS = 5;
+    private const STOP_SAVE_THRESHOLD = 300; // 5 minutes
 
-    public int $totalSeconds = 20 * 60;
+    public int $focusDuration = 25 * 60;
+    public int $shortBreakDuration = 5 * 60;
+    public int $longBreakDuration = 15 * 60;
+
     public int $remainingSeconds = 0;
     public bool $running = false;
-    public ?int $lastTick = null;
-    public string $todaysKey = '';
+    public string $phase = 'focus';
+
+    public ?int $sessionId = null;
+    public ?int $activePauseId = null;
+
     public int $todaysPomo = 0;
-    public int $todaysFocusMinutes = 0;
+    public int $todaysFocusSeconds = 0;
     public int $totalPomo = 0;
-    public int $totalFocusMinutes = 0;
+    public int $totalFocusSeconds = 0;
     public array $records = [];
-    public ?string $currentSessionStartedAt = null;
+
+    public bool $showStopConfirmation = false;
+    public bool $allowSaveOnStop = false;
+
+    protected ?PomodoroSession $sessionCache = null;
+    protected ?PomodoroPause $pauseCache = null;
+    protected string $timezone;
+    protected int $focusSessionsSinceLongBreak = 0;
 
     public function mount(): void
     {
-        $this->loadState();
-        $this->syncWithCurrentDay();
+        $this->timezone = $this->userTimezone();
+        $this->remainingSeconds = $this->focusDuration;
+        $this->loadActiveSession();
+        $this->refreshStatistics();
+        $this->refreshRecords();
+        $this->updateFocusStreak();
     }
 
     public function hydrate(): void
     {
-        $this->syncWithCurrentDay();
+        $this->timezone = $this->userTimezone();
     }
 
     public function render(): View
@@ -41,30 +62,101 @@ class Timer extends Component
 
     public function toggleTimer(): void
     {
-        if ($this->running) {
-            $this->pauseTimer();
-        } else {
-            $this->startTimer();
+        if ($this->sessionId) {
+            $session = $this->currentSession();
+            if (! $session) {
+                $this->resetToIdle();
+                return;
+            }
+
+            if ($this->running) {
+                $this->pauseActiveSession($session);
+            } else {
+                $this->resumeActiveSession($session);
+            }
+
+            return;
         }
+
+        $this->startPhase($this->phase);
     }
 
-    public function resetTimer(): void
+    public function confirmStop(): void
     {
-        $this->running = false;
-        $this->remainingSeconds = $this->totalSeconds;
-        $this->lastTick = now()->timestamp;
-        $this->currentSessionStartedAt = null;
-        $this->persistState();
+        $session = $this->currentSession();
+
+        if (! $session) {
+            $this->showStopConfirmation = true;
+            $this->allowSaveOnStop = false;
+            return;
+        }
+
+        $elapsed = $this->elapsedSeconds($session);
+        $this->allowSaveOnStop = $elapsed >= self::STOP_SAVE_THRESHOLD;
+        $this->showStopConfirmation = true;
+    }
+
+    public function cancelStop(): void
+    {
+        $this->showStopConfirmation = false;
+    }
+
+    public function stopWithoutSaving(): void
+    {
+        $session = $this->currentSession();
+        if ($session) {
+            DB::transaction(function () use ($session) {
+                $session->pauses()->delete();
+                $session->delete();
+            });
+        }
+
+        $this->resetToIdle();
+        $this->refreshStatistics();
+        $this->refreshRecords();
+        $this->updateFocusStreak();
+        $this->showStopConfirmation = false;
+    }
+
+    public function stopAndSave(): void
+    {
+        $session = $this->currentSession();
+        if (! $session) {
+            $this->stopWithoutSaving();
+            return;
+        }
+
+        $this->finalizeSession($session, false);
+        $this->prepareNextPhaseAfter($session->fresh());
+        $this->refreshStatistics();
+        $this->refreshRecords();
+        $this->updateFocusStreak();
+        $this->showStopConfirmation = false;
     }
 
     public function tick(): void
     {
-        if (! $this->running) {
+        $session = $this->currentSession();
+
+        if (! $session) {
+            $this->allowSaveOnStop = false;
+            if (! $this->running) {
+                $this->remainingSeconds = $this->phaseDuration($this->phase);
+            }
             return;
         }
 
-        $this->applyElapsed();
-        $this->persistState();
+        $this->remainingSeconds = $this->computeRemainingSeconds($session);
+        $elapsed = $this->elapsedSeconds($session);
+        $this->allowSaveOnStop = $elapsed >= self::STOP_SAVE_THRESHOLD;
+
+        if ($this->running && $this->remainingSeconds <= 0) {
+            $this->finalizeSession($session, true);
+            $this->prepareNextPhaseAfter($session->fresh(), true);
+            $this->refreshStatistics();
+            $this->refreshRecords();
+            $this->updateFocusStreak();
+        }
     }
 
     public function getClockLabelProperty(): string
@@ -76,297 +168,480 @@ class Timer extends Component
 
     public function getProgressDegreesProperty(): float
     {
-        if ($this->totalSeconds <= 0) {
-            return 0.0;
+        $duration = $this->currentTargetDuration();
+        if ($duration <= 0) {
+            return 0.0f;
         }
 
-        $ratio = max(0, min(1, 1 - ($this->remainingSeconds / $this->totalSeconds)));
+        $ratio = max(0, min(1, 1 - ($this->remainingSeconds / $duration)));
 
         return $ratio * 360;
     }
 
     public function getTodayFocusHoursProperty(): int
     {
-        return intdiv($this->todaysFocusMinutes, 60);
+        return intdiv($this->todaysFocusSeconds, 3600);
     }
 
     public function getTodayFocusMinutesRemainderProperty(): int
     {
-        return $this->todaysFocusMinutes % 60;
+        return intdiv($this->todaysFocusSeconds % 3600, 60);
     }
 
     public function getTotalFocusHoursProperty(): int
     {
-        return intdiv($this->totalFocusMinutes, 60);
+        return intdiv($this->totalFocusSeconds, 3600);
     }
 
     public function getTotalFocusMinutesRemainderProperty(): int
     {
-        return $this->totalFocusMinutes % 60;
+        return intdiv($this->totalFocusSeconds % 3600, 60);
     }
 
     public function getDateLabelProperty(): string
     {
-        try {
-            return Carbon::createFromFormat('Y-m-d', $this->todaysKey)->translatedFormat('M d');
-        } catch (\Throwable $exception) {
-            return Carbon::now()->translatedFormat('M d');
-        }
+        return Carbon::now($this->timezone)->translatedFormat('M d');
     }
 
     public function getRecordItemsProperty(): array
     {
         return collect($this->records)
-            ->take(self::MAX_RECORDS)
-            ->map(function ($record) {
-                $startedAt = $this->parseIsoDate($record['started_at'] ?? null);
-                $endedAt = $this->parseIsoDate($record['ended_at'] ?? null);
-                $durationMinutes = (int) ($record['duration_minutes'] ?? 0);
-
+            ->map(function (array $record) {
                 return [
-                    'time_label' => sprintf('%s – %s',
-                        $startedAt ? $startedAt->format('H:i') : '--:--',
-                        $endedAt ? $endedAt->format('H:i') : '--:--'
-                    ),
-                    'duration_label' => sprintf('%dm', max(0, $durationMinutes)),
+                    'time_label' => sprintf('%s – %s', $record['start_label'], $record['end_label']),
+                    'duration_label' => sprintf('%dm', max(0, (int) ($record['duration_minutes'] ?? 0))),
                 ];
             })
-            ->toArray();
+            ->all();
     }
 
-    protected function loadState(): void
+    public function getPhaseLabelProperty(): string
     {
-        $stored = session()->get(self::STATE_KEY);
-        $state = is_array($stored) ? array_merge($this->defaultState(), $stored) : $this->defaultState();
+        return match ($this->phase) {
+            'short_break' => __('Short Break'),
+            'long_break' => __('Long Break'),
+            default => __('Focus'),
+        };
+    }
 
-        $this->remainingSeconds = $this->sanitizeSeconds($state['remaining_seconds'] ?? $this->totalSeconds);
-        $this->running = (bool) ($state['running'] ?? false);
-        $this->lastTick = $this->sanitizeTimestamp($state['last_tick'] ?? null);
-        $this->todaysKey = (string) ($state['todays_key'] ?? now()->toDateString());
-        $this->todaysPomo = $this->sanitizeCounter($state['todays_pomo'] ?? 0);
-        $this->todaysFocusMinutes = $this->sanitizeCounter($state['todays_focus_minutes'] ?? 0);
-        $this->totalPomo = $this->sanitizeCounter($state['total_pomo'] ?? 0);
-        $this->totalFocusMinutes = $this->sanitizeCounter($state['total_focus_minutes'] ?? 0);
-        $this->records = $this->sanitizeRecords($state['records'] ?? []);
-        $this->currentSessionStartedAt = $state['current_session_started_at'] ?? null;
+    protected function loadActiveSession(): void
+    {
+        $userId = Auth::id();
+        if (! $userId) {
+            $this->resetToIdle();
+            return;
+        }
 
-        if ($this->remainingSeconds <= 0) {
-            $this->remainingSeconds = $this->totalSeconds;
+        $session = PomodoroSession::with(['pauses' => function ($query) {
+            $query->orderByDesc('paused_at_server');
+        }])
+            ->where('user_id', $userId)
+            ->whereNull('ended_at_server')
+            ->latest('started_at_server')
+            ->first();
+
+        if (! $session) {
+            $this->resetToIdle();
+            return;
+        }
+
+        $this->sessionCache = $session;
+        $this->sessionId = $session->id;
+        $this->phase = $this->determinePhase($session);
+        $this->remainingSeconds = $this->computeRemainingSeconds($session);
+
+        if ($this->remainingSeconds <= 0 && ! $session->ended_at_server) {
+            $this->finalizeSession($session, true);
+            $this->prepareNextPhaseAfter($session->fresh(), true);
+            $this->refreshStatistics();
+            $this->refreshRecords();
+            $this->updateFocusStreak();
+            $this->loadActiveSession();
+
+            return;
+        }
+
+        $activePause = $session->pauses->firstWhere('resumed_at_server', null);
+        if ($activePause) {
+            $this->activePauseId = $activePause->id;
+            $this->pauseCache = $activePause;
             $this->running = false;
+        } else {
+            $this->running = true;
         }
+
+        $this->allowSaveOnStop = $this->elapsedSeconds($session) >= self::STOP_SAVE_THRESHOLD;
     }
 
-    protected function persistState(): void
+    protected function startPhase(string $phase): void
     {
-        session()->put(self::STATE_KEY, [
-            'remaining_seconds' => $this->remainingSeconds,
-            'running' => $this->running,
-            'last_tick' => $this->lastTick,
-            'todays_key' => $this->todaysKey,
-            'todays_pomo' => $this->todaysPomo,
-            'todays_focus_minutes' => $this->todaysFocusMinutes,
-            'total_pomo' => $this->totalPomo,
-            'total_focus_minutes' => $this->totalFocusMinutes,
-            'records' => array_slice($this->records, 0, self::MAX_RECORDS),
-            'current_session_started_at' => $this->currentSessionStartedAt,
-        ]);
-    }
-
-    protected function startTimer(): void
-    {
-        if ($this->running) {
+        $user = Auth::user();
+        if (! $user) {
             return;
         }
 
-        $now = Carbon::now();
+        $duration = $this->phaseDuration($phase);
+        $clientNow = Carbon::now($this->timezone);
+        $serverNow = Carbon::now(config('app.timezone'));
+
+        $session = PomodoroSession::create([
+            'user_id' => $user->id,
+            'type' => $phase === 'focus' ? 'work' : 'break',
+            'started_at_client' => $clientNow->format('Y-m-d H:i:s'),
+            'client_timezone' => $this->timezone,
+            'client_utc_offset_minutes' => $clientNow->utcOffset(),
+            'started_at_server' => $serverNow,
+            'duration_seconds' => $duration,
+            'pause_count' => 0,
+            'pause_total_seconds' => 0,
+            'notes' => $phase === 'focus' ? null : $phase,
+            'created_at' => $serverNow,
+        ]);
+
+        $this->sessionCache = $session;
+        $this->sessionId = $session->id;
+        $this->activePauseId = null;
+        $this->pauseCache = null;
+        $this->phase = $phase;
+        $this->remainingSeconds = $duration;
         $this->running = true;
-        $this->lastTick = $now->timestamp;
-
-        if (! $this->currentSessionStartedAt) {
-            $elapsed = $this->totalSeconds - $this->remainingSeconds;
-            $start = $elapsed > 0 ? $now->copy()->subSeconds($elapsed) : $now;
-            $this->currentSessionStartedAt = $start->toIso8601String();
-        }
-
-        $this->persistState();
+        $this->allowSaveOnStop = false;
     }
 
-    protected function pauseTimer(): void
+    protected function finalizeSession(PomodoroSession $session, bool $completedByTimer): void
     {
-        if (! $this->running) {
-            return;
-        }
+        $session->refresh();
+        $elapsed = $this->elapsedSeconds($session);
+        $duration = $completedByTimer ? $session->duration_seconds : min($session->duration_seconds, $elapsed);
 
-        $this->applyElapsed();
-        $this->running = false;
-        $this->persistState();
+        $serverEnd = Carbon::now(config('app.timezone'));
+        $clientStart = $this->clientDate($session, 'started_at_client');
+        $clientEnd = $clientStart->copy()->addSeconds($duration);
+
+        DB::transaction(function () use ($session, $duration, $serverEnd, $clientEnd) {
+            $session->update([
+                'ended_at_client' => $clientEnd->format('Y-m-d H:i:s'),
+                'ended_at_server' => $serverEnd,
+                'duration_seconds' => $duration,
+                'pause_total_seconds' => $session->pause_total_seconds,
+            ]);
+
+            $this->recordDailyStats($session->fresh(), $duration);
+        });
+
+        $this->sessionCache = $session->fresh();
+
+        if ($completedByTimer) {
+            $this->dispatch('pomodoro-completed', ['type' => $session->type]);
+        }
     }
 
-    protected function applyElapsed(): void
+    protected function prepareNextPhaseAfter(PomodoroSession $session, bool $autoStartBreak = false): void
     {
-        if (! $this->lastTick) {
-            $this->lastTick = now()->timestamp;
+        $phase = $this->determinePhase($session);
+
+        if ($phase === 'focus') {
+            $this->focusSessionsSinceLongBreak++;
+            if ($autoStartBreak) {
+                $nextPhase = $this->focusSessionsSinceLongBreak % 4 === 0 ? 'long_break' : 'short_break';
+                $this->startPhase($nextPhase);
+                return;
+            }
+
+            $this->resetToIdle();
+
             return;
         }
 
-        $now = Carbon::now();
-        $elapsed = max(0, $now->timestamp - $this->lastTick);
-        $this->lastTick = $now->timestamp;
-
-        if (! $this->running || $elapsed === 0) {
-            return;
+        if ($session->notes === 'long_break') {
+            $this->focusSessionsSinceLongBreak = 0;
         }
 
-        if ($elapsed >= $this->remainingSeconds) {
-            $this->finalizeSession($now);
-            return;
-        }
-
-        $this->remainingSeconds -= $elapsed;
+        $this->resetToIdle();
     }
 
-    protected function finalizeSession(Carbon $endMoment): void
+    protected function pauseActiveSession(PomodoroSession $session): void
     {
-        $this->updateDailyKey($endMoment);
+        if ($this->activePauseId) {
+            return;
+        }
 
-        $this->running = false;
-        $this->remainingSeconds = $this->totalSeconds;
-        $this->lastTick = $endMoment->timestamp;
+        $serverNow = Carbon::now(config('app.timezone'));
+        $clientNow = Carbon::now($session->client_timezone);
 
-        $startMoment = $this->currentSessionStartedAt
-            ? $this->parseIsoDate($this->currentSessionStartedAt) ?? $endMoment->copy()->subSeconds($this->totalSeconds)
-            : $endMoment->copy()->subSeconds($this->totalSeconds);
-
-        $this->currentSessionStartedAt = null;
-
-        $this->todaysPomo += 1;
-        $this->totalPomo += 1;
-        $incrementMinutes = intdiv($this->totalSeconds, 60);
-        $this->todaysFocusMinutes += $incrementMinutes;
-        $this->totalFocusMinutes += $incrementMinutes;
-
-        array_unshift($this->records, [
-            'started_at' => $startMoment->toIso8601String(),
-            'ended_at' => $endMoment->toIso8601String(),
-            'duration_minutes' => $incrementMinutes,
+        $pause = PomodoroPause::create([
+            'session_id' => $session->id,
+            'paused_at_client' => $clientNow->format('Y-m-d H:i:s'),
+            'resumed_at_client' => null,
+            'duration_seconds' => 0,
+            'paused_at_server' => $serverNow,
+            'resumed_at_server' => null,
         ]);
-        $this->records = array_slice($this->records, 0, self::MAX_RECORDS);
 
-        $this->dispatch('pomodoro-completed');
-        $this->persistState();
+        $this->activePauseId = $pause->id;
+        $this->pauseCache = $pause;
+        $this->running = false;
     }
 
-    protected function updateDailyKey(Carbon $moment): void
+    protected function resumeActiveSession(PomodoroSession $session): void
     {
-        $currentKey = $moment->toDateString();
-        if ($this->todaysKey !== $currentKey) {
-            $this->todaysKey = $currentKey;
+        if (! $this->activePauseId) {
+            $this->running = true;
+            return;
+        }
+
+        $pause = PomodoroPause::find($this->activePauseId);
+        if (! $pause) {
+            $this->activePauseId = null;
+            $this->pauseCache = null;
+            $this->running = true;
+            return;
+        }
+
+        $serverNow = Carbon::now(config('app.timezone'));
+        $clientNow = Carbon::now($session->client_timezone);
+
+        $pausedAtServer = $pause->paused_at_server ?? $serverNow;
+        $duration = max(0, $pausedAtServer->diffInSeconds($serverNow));
+
+        DB::transaction(function () use ($pause, $clientNow, $serverNow, $duration, $session) {
+            $pause->update([
+                'resumed_at_client' => $clientNow->format('Y-m-d H:i:s'),
+                'duration_seconds' => $duration,
+                'resumed_at_server' => $serverNow,
+            ]);
+
+            $session->update([
+                'pause_count' => ($session->pause_count ?? 0) + 1,
+                'pause_total_seconds' => ($session->pause_total_seconds ?? 0) + $duration,
+            ]);
+        });
+
+        $this->activePauseId = null;
+        $this->pauseCache = null;
+        $this->sessionCache = $session->fresh('pauses');
+        $this->running = true;
+    }
+
+    protected function computeRemainingSeconds(PomodoroSession $session): int
+    {
+        $duration = $session->duration_seconds;
+        $elapsed = $this->elapsedSeconds($session);
+
+        return max(0, $duration - $elapsed);
+    }
+
+    protected function elapsedSeconds(PomodoroSession $session): int
+    {
+        $session->refresh();
+        $nowServer = Carbon::now(config('app.timezone'));
+        $startServer = $session->started_at_server ?? $nowServer;
+        $pauseSeconds = $session->pause_total_seconds ?? 0;
+
+        $activePause = $this->activePause();
+        if ($activePause) {
+            $pausedAtServer = $activePause->paused_at_server ?? $nowServer;
+            $pauseSeconds += max(0, $pausedAtServer->diffInSeconds($nowServer));
+        }
+
+        return max(0, $startServer->diffInSeconds($nowServer) - $pauseSeconds);
+    }
+
+    protected function determinePhase(PomodoroSession $session): string
+    {
+        if ($session->type === 'work') {
+            return 'focus';
+        }
+
+        return $session->notes === 'long_break' ? 'long_break' : 'short_break';
+    }
+
+    protected function phaseDuration(string $phase): int
+    {
+        return match ($phase) {
+            'short_break' => $this->shortBreakDuration,
+            'long_break' => $this->longBreakDuration,
+            default => $this->focusDuration,
+        };
+    }
+
+    protected function currentTargetDuration(): int
+    {
+        if (! $this->sessionId) {
+            return $this->phaseDuration($this->phase);
+        }
+
+        $session = $this->currentSession();
+        if (! $session) {
+            return $this->phaseDuration($this->phase);
+        }
+
+        return $session->duration_seconds;
+    }
+
+    protected function recordDailyStats(PomodoroSession $session, int $duration): void
+    {
+        $dateLocal = $this->clientDate($session, 'started_at_client')->toImmutable()->toDateString();
+
+        $stat = PomodoroDailyStat::firstOrNew([
+            'user_id' => $session->user_id,
+            'date_local' => $dateLocal,
+        ]);
+
+        $stat->sessions_count = ($stat->sessions_count ?? 0) + 1;
+        if ($session->type === 'work') {
+            $stat->work_seconds = ($stat->work_seconds ?? 0) + $duration;
+        } else {
+            $stat->break_seconds = ($stat->break_seconds ?? 0) + $duration;
+        }
+
+        $stat->save();
+    }
+
+    protected function refreshStatistics(): void
+    {
+        $user = Auth::user();
+        if (! $user) {
             $this->todaysPomo = 0;
-            $this->todaysFocusMinutes = 0;
-        }
-    }
-
-    protected function syncWithCurrentDay(): void
-    {
-        $today = Carbon::today()->toDateString();
-        if ($this->todaysKey !== $today) {
-            $this->todaysKey = $today;
-            $this->todaysPomo = 0;
-            $this->todaysFocusMinutes = 0;
-            $this->persistState();
-        }
-    }
-
-    protected function sanitizeSeconds($value): int
-    {
-        $seconds = (int) ($value ?? $this->totalSeconds);
-
-        return max(0, min($this->totalSeconds, $seconds));
-    }
-
-    protected function sanitizeTimestamp($value): int
-    {
-        $timestamp = is_numeric($value) ? (int) $value : now()->timestamp;
-
-        return $timestamp > 0 ? $timestamp : now()->timestamp;
-    }
-
-    protected function sanitizeCounter($value): int
-    {
-        return max(0, (int) ($value ?? 0));
-    }
-
-    protected function sanitizeRecords($records): array
-    {
-        if (! is_array($records)) {
-            return $this->defaultRecords();
+            $this->todaysFocusSeconds = 0;
+            $this->totalPomo = 0;
+            $this->totalFocusSeconds = 0;
+            return;
         }
 
-        return collect($records)
-            ->filter(fn ($record) => is_array($record))
-            ->map(function ($record) {
-                return [
-                    'started_at' => $record['started_at'] ?? null,
-                    'ended_at' => $record['ended_at'] ?? null,
-                    'duration_minutes' => (int) ($record['duration_minutes'] ?? 0),
-                ];
-            })
-            ->values()
-            ->all();
+        $todayLocal = Carbon::now($this->timezone)->toDateString();
+
+        $todaySessions = PomodoroSession::where('user_id', $user->id)
+            ->whereNotNull('ended_at_server')
+            ->whereDate('started_at_client', $todayLocal)
+            ->get(['type', 'duration_seconds']);
+
+        $this->todaysPomo = $todaySessions->where('type', 'work')->count();
+        $this->todaysFocusSeconds = (int) $todaySessions
+            ->where('type', 'work')
+            ->sum('duration_seconds');
+
+        $allSessions = PomodoroSession::where('user_id', $user->id)
+            ->whereNotNull('ended_at_server')
+            ->get(['type', 'duration_seconds']);
+
+        $this->totalPomo = $allSessions->where('type', 'work')->count();
+        $this->totalFocusSeconds = (int) $allSessions
+            ->where('type', 'work')
+            ->sum('duration_seconds');
     }
 
-    protected function parseIsoDate(?string $value): ?Carbon
+    protected function refreshRecords(): void
     {
-        if (! $value) {
+        $user = Auth::user();
+        if (! $user) {
+            $this->records = [];
+            return;
+        }
+
+        $sessions = PomodoroSession::where('user_id', $user->id)
+            ->whereNotNull('ended_at_server')
+            ->orderByDesc('started_at_server')
+            ->limit(5)
+            ->get();
+
+        $this->records = $sessions->map(function (PomodoroSession $session) {
+            $start = $this->clientDate($session, 'started_at_client');
+            $endRaw = $session->getRawOriginal('ended_at_client');
+            $end = $endRaw
+                ? Carbon::createFromFormat('Y-m-d H:i:s', $endRaw, $session->client_timezone)
+                : $start->copy()->addSeconds($session->duration_seconds);
+
+            return [
+                'start_label' => $start->format('H:i'),
+                'end_label' => $end->format('H:i'),
+                'duration_minutes' => intdiv($session->duration_seconds, 60),
+            ];
+        })->all();
+    }
+
+    protected function resetToIdle(): void
+    {
+        $this->sessionId = null;
+        $this->sessionCache = null;
+        $this->activePauseId = null;
+        $this->pauseCache = null;
+        $this->running = false;
+        $this->phase = 'focus';
+        $this->remainingSeconds = $this->focusDuration;
+        $this->allowSaveOnStop = false;
+    }
+
+    protected function currentSession(): ?PomodoroSession
+    {
+        if (! $this->sessionId) {
             return null;
         }
 
-        try {
-            return Carbon::parse($value);
-        } catch (\Throwable $exception) {
+        if ($this->sessionCache && $this->sessionCache->id === $this->sessionId) {
+            return $this->sessionCache->refresh();
+        }
+
+        $this->sessionCache = PomodoroSession::with('pauses')->find($this->sessionId);
+
+        return $this->sessionCache;
+    }
+
+    protected function activePause(): ?PomodoroPause
+    {
+        if ($this->pauseCache && $this->pauseCache->id === $this->activePauseId) {
+            return $this->pauseCache->refresh();
+        }
+
+        if (! $this->sessionId || ! $this->activePauseId) {
             return null;
         }
+
+        $this->pauseCache = PomodoroPause::find($this->activePauseId);
+
+        return $this->pauseCache;
     }
 
-    protected function defaultState(): array
+    protected function updateFocusStreak(): void
     {
-        return [
-            'remaining_seconds' => $this->totalSeconds,
-            'running' => false,
-            'last_tick' => now()->timestamp,
-            'todays_key' => Carbon::today()->toDateString(),
-            'todays_pomo' => 36,
-            'todays_focus_minutes' => 11 * 60 + 34,
-            'total_pomo' => 1606,
-            'total_focus_minutes' => 528 * 60 + 29,
-            'records' => $this->defaultRecords(),
-            'current_session_started_at' => null,
-        ];
+        $user = Auth::user();
+        if (! $user) {
+            $this->focusSessionsSinceLongBreak = 0;
+            return;
+        }
+
+        $lastLongBreak = PomodoroSession::where('user_id', $user->id)
+            ->where('type', 'break')
+            ->where('notes', 'long_break')
+            ->whereNotNull('ended_at_server')
+            ->latest('started_at_server')
+            ->first();
+
+        $query = PomodoroSession::where('user_id', $user->id)
+            ->where('type', 'work')
+            ->whereNotNull('ended_at_server');
+
+        if ($lastLongBreak) {
+            $query->where('started_at_server', '>', $lastLongBreak->started_at_server);
+        }
+
+        $this->focusSessionsSinceLongBreak = $query->count();
     }
 
-    protected function defaultRecords(): array
+    protected function userTimezone(): string
     {
-        $today = Carbon::today();
+        $user = Auth::user();
 
-        $baseTimes = [
-            ['start' => ['h' => 22, 'm' => 23], 'end' => ['h' => 22, 'm' => 39], 'duration' => 15],
-            ['start' => ['h' => 22, 'm' => 3], 'end' => ['h' => 22, 'm' => 23], 'duration' => 20],
-            ['start' => ['h' => 21, 'm' => 15], 'end' => ['h' => 21, 'm' => 35], 'duration' => 20],
-            ['start' => ['h' => 20, 'm' => 54], 'end' => ['h' => 21, 'm' => 14], 'duration' => 20],
-            ['start' => ['h' => 20, 'm' => 33], 'end' => ['h' => 20, 'm' => 53], 'duration' => 20],
-        ];
+        return $user?->timezone ?? config('app.timezone');
+    }
 
-        return collect($baseTimes)
-            ->map(function ($slot) use ($today) {
-                $start = $today->copy()->setTime($slot['start']['h'], $slot['start']['m']);
-                $end = $today->copy()->setTime($slot['end']['h'], $slot['end']['m']);
+    protected function clientDate(PomodoroSession $session, string $column): Carbon
+    {
+        $raw = $session->getRawOriginal($column);
+        if (! $raw) {
+            return Carbon::now($session->client_timezone ?? $this->timezone);
+        }
 
-                return [
-                    'started_at' => $start->toIso8601String(),
-                    'ended_at' => $end->toIso8601String(),
-                    'duration_minutes' => $slot['duration'],
-                ];
-            })
-            ->all();
+        return Carbon::createFromFormat('Y-m-d H:i:s', $raw, $session->client_timezone ?? $this->timezone);
     }
 }

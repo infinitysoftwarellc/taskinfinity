@@ -17,11 +17,15 @@ class PomodoroPause extends Model
         'paused_at_client',
         'resumed_at_client',
         'duration_seconds',
+        'paused_at_server',
+        'resumed_at_server',
     ];
 
     protected $casts = [
         'paused_at_client' => 'datetime',
         'resumed_at_client' => 'datetime',
+        'paused_at_server' => 'datetime',
+        'resumed_at_server' => 'datetime',
     ];
 
     public function session()

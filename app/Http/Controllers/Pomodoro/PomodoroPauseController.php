@@ -32,6 +32,8 @@ class PomodoroPauseController extends Controller
             'session_id' => ['required', 'integer', Rule::exists('pomodoro_sessions', 'id')->where(fn ($query) => $query->where('user_id', $request->user()->id))],
             'paused_at_client' => 'required|date',
             'resumed_at_client' => 'nullable|date',
+            'paused_at_server' => 'nullable|date',
+            'resumed_at_server' => 'nullable|date',
             'duration_seconds' => 'nullable|integer',
         ]);
 
@@ -54,6 +56,8 @@ class PomodoroPauseController extends Controller
         $data = $request->validate([
             'paused_at_client' => 'sometimes|date',
             'resumed_at_client' => 'nullable|date',
+            'paused_at_server' => 'nullable|date',
+            'resumed_at_server' => 'nullable|date',
             'duration_seconds' => 'nullable|integer',
         ]);
 

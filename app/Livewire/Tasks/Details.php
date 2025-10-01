@@ -1005,15 +1005,16 @@ class Details extends Component
         $session = PomodoroSession::create([
             'user_id' => $user->id,
             'mission_id' => $mission->id,
-            'type' => 'focus',
-            'started_at_client' => $nowClient,
+            'type' => 'work',
+            'started_at_client' => $nowClient->format('Y-m-d H:i:s'),
             'client_timezone' => $timezone,
             'client_utc_offset_minutes' => $nowClient->utcOffset(),
             'started_at_server' => $nowServer,
             'created_at' => $nowServer,
-            'duration_seconds' => 0,
+            'duration_seconds' => 25 * 60,
             'pause_count' => 0,
             'pause_total_seconds' => 0,
+            'notes' => null,
         ]);
 
         $this->dispatch('pomodoro-started', [
