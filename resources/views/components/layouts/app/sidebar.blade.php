@@ -41,14 +41,6 @@
                         {{ __('Pomodoro') }}
                     </flux:navlist.item>
 
-                    <flux:navlist.item
-                        icon="leaf"
-                        :href="route('app.habits')"
-                        :current="request()->routeIs('app.habits')"
-                        wire:navigate
-                    >
-                        {{ __('Habits') }}
-                    </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 
