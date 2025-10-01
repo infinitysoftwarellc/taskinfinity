@@ -2,7 +2,7 @@
 <section class="pomodoro-shell"
     wire:poll.1000ms="tick"
     wire:keydown.window.space.prevent="toggleTimer"
-    wire:keydown.window.r.prevent="resetTimer">
+    wire:keydown.window.r.prevent="confirmStop">
     <div class="pomodoro-container" data-module="pomodoro">
         <div class="pomodoro-left-panel" aria-labelledby="pomodoro-title">
             <div class="pomodoro-header">
@@ -14,7 +14,7 @@
                 <button type="button" class="pomodoro-action-btn" title="Mais opções" aria-label="Mais opções">⋯</button>
             </div>
 
-            <div class="pomodoro-focus-label">Focus</div>
+            <div class="pomodoro-focus-label">{{ $this->phaseLabel }}</div>
 
             <div class="pomodoro-timer" role="timer" aria-live="polite" aria-atomic="true"
                 aria-label="Timer de foco" style="--progress: {{ $this->progressDegrees }}deg">
@@ -26,12 +26,12 @@
             <div class="pomodoro-controls">
                 <button type="button"
                     class="pomodoro-btn {{ $running ? 'pomodoro-btn--secondary' : 'pomodoro-btn--primary' }}"
-                    wire:click="toggleTimer" wire:loading.attr="disabled" wire:target="toggleTimer,resetTimer"
+                    wire:click="toggleTimer" wire:loading.attr="disabled" wire:target="toggleTimer"
                     aria-pressed="{{ $running ? 'true' : 'false' }}">
                     {{ $running ? 'Pause' : 'Start' }}
                 </button>
-                <button type="button" class="pomodoro-btn pomodoro-btn--stop" wire:click="resetTimer"
-                    wire:loading.attr="disabled" wire:target="resetTimer">
+                <button type="button" class="pomodoro-btn pomodoro-btn--stop" wire:click="confirmStop"
+                    wire:loading.attr="disabled" wire:target="confirmStop">
                     Stop
                 </button>
             </div>
@@ -95,4 +95,36 @@
             </section>
         </aside>
     </div>
+
+    @if ($showStopConfirmation)
+        <div class="pomodoro-modal" role="dialog" aria-modal="true" aria-labelledby="stop-modal-title">
+            <div class="pomodoro-modal__backdrop" wire:click="cancelStop"></div>
+            <div class="pomodoro-modal__panel">
+                <h2 id="stop-modal-title">{{ __('Encerrar ciclo?') }}</h2>
+                <p>{{ __('Deseja realmente encerrar este ciclo de Pomodoro?') }}</p>
+                @if ($allowSaveOnStop)
+                    <p class="pomodoro-modal__hint">{{ __('Você pode sair salvando o progresso dos últimos minutos.') }}</p>
+                @else
+                    <p class="pomodoro-modal__hint">{{ __('Menos de 5 minutos decorreram — nada será salvo se você confirmar.') }}</p>
+                @endif
+
+                <div class="pomodoro-modal__actions">
+                    <button type="button" class="pomodoro-btn pomodoro-btn--secondary" wire:click="cancelStop"
+                        wire:loading.attr="disabled" wire:target="stopWithoutSaving,stopAndSave">
+                        {{ __('Continuar') }}
+                    </button>
+                    <button type="button" class="pomodoro-btn pomodoro-btn--stop" wire:click="stopWithoutSaving"
+                        wire:loading.attr="disabled" wire:target="stopWithoutSaving">
+                        {{ $allowSaveOnStop ? __('Sair sem salvar') : __('Encerrar') }}
+                    </button>
+                    @if ($allowSaveOnStop)
+                        <button type="button" class="pomodoro-btn pomodoro-btn--primary" wire:click="stopAndSave"
+                            wire:loading.attr="disabled" wire:target="stopAndSave">
+                            {{ __('Sair e salvar') }}
+                        </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
 </section>
