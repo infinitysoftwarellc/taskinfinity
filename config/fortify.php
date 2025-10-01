@@ -109,13 +109,13 @@ return [
     |--------------------------------------------------------------------------
     |
     | By default, Fortify will throttle logins to five requests per minute for
-    | every email and IP address combination. Manual login não é utilizado
-    | nesta aplicação single-user, então o limitador foi desativado.
+    | every email and IP address combination. However, if you would like to
+    | specify a custom rate limiter to call then you may specify it here.
     |
     */
 
     'limiters' => [
-        'login' => null,
+        'login' => 'login',
         'two-factor' => 'two-factor',
     ],
 
@@ -130,7 +130,7 @@ return [
     |
     */
 
-    'views' => false,
+    'views' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -144,9 +144,9 @@ return [
     */
 
     'features' => [
-        // Features::registration(),
-        // Features::resetPasswords(),
-        // Features::emailVerification(),
+        Features::registration(),
+        Features::resetPasswords(),
+        Features::emailVerification(),
         Features::updateProfileInformation(),
         Features::updatePasswords(),
         Features::twoFactorAuthentication([
