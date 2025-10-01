@@ -26,20 +26,24 @@
 /* ---------------------------------------------------------------
    Base layout rules scoped to the Pomodoro dedicated page only
    --------------------------------------------------------------- */
-body {
+.pomodoro-shell {
     background: var(--pomodoro-bg);
     color: var(--pomodoro-text);
     font-family: var(--pomodoro-font);
     min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 0 48px;
 }
 
-main.pomodoro-app {
+.pomodoro-app {
     display: grid;
     grid-template-columns: 1fr 400px;
     gap: 24px;
     padding: 24px;
     max-width: 1200px;
     margin: 0 auto;
+    width: 100%;
 }
 
 /* ------------------------------
@@ -104,7 +108,7 @@ main.pomodoro-app {
     margin: 8px 0 4px;
 }
 
-/* Timer shell with conic-gradient progress controlled via JS */
+/* Timer shell with conic-gradient progress controlled via Livewire */
 .pomodoro-ring {
     --progress: 0deg; /* Updated dynamically */
     width: clamp(280px, 35vw, 480px);
@@ -313,6 +317,13 @@ main.pomodoro-app {
     font-size: 13px;
 }
 
+.pomodoro-empty {
+    text-align: center;
+    color: var(--pomodoro-muted);
+    padding: 16px;
+    margin: 0;
+}
+
 /* Scrollbar styling */
 .pomodoro-timeline::-webkit-scrollbar {
     width: 10px;
@@ -327,7 +338,7 @@ main.pomodoro-app {
    Responsive tweaks for narrow view
    --------------------------------- */
 @media (max-width: 1100px) {
-    main.pomodoro-app {
+    .pomodoro-app {
         grid-template-columns: 1fr;
         justify-items: center;
     }
@@ -338,7 +349,11 @@ main.pomodoro-app {
 }
 
 @media (max-width: 768px) {
-    main.pomodoro-app {
+    .pomodoro-shell {
+        padding: 16px 0 32px;
+    }
+
+    .pomodoro-app {
         padding: 20px 16px 32px;
     }
 

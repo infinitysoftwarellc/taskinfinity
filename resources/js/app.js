@@ -1,5 +1,7 @@
 import Sortable from 'sortablejs';
 
+import './pomodoro';
+
 // ---- IMPORTS PADRÃO DO SEU PROJETO (mantenha os que precisar)
 
 /* ────────────────────────────────────────────────────────────────── */
