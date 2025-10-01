@@ -10,11 +10,6 @@ use App\Http\Controllers\Gamification\UserAchievementController;
 use App\Http\Controllers\Gamification\XpEventController;
 use App\Http\Controllers\Goals\BigGoalController;
 use App\Http\Controllers\Goals\GoalStepController;
-use App\Http\Controllers\Habits\HabitCheckinController;
-use App\Http\Controllers\Habits\HabitTrackerPageController;
-use App\Http\Controllers\Habits\HabitController;
-use App\Http\Controllers\Habits\HabitMonthlyStatController;
-use App\Http\Controllers\Habits\HabitStreakController;
 use App\Http\Controllers\Notifications\NotificationController;
 use App\Http\Controllers\Plans\PlanLimitController;
 use App\Http\Controllers\Player\PlayerStateController;
@@ -57,8 +52,6 @@ require __DIR__.'/auth.php';
 Route::middleware('auth')->group(function () {
     Route::get('pomodoro', PomodoroController::class)->name('app.pomodoro');
     Route::get('pomodoro/estatisticas', PomodoroStatisticsController::class)->name('app.pomodoro.stats');
-    Route::get('habits', HabitTrackerPageController::class)->name('app.habits.tracker');
-    Route::view('habitos', 'app.habits.index')->name('app.habits');
     Route::view('configuracoes', 'app.settings.index')->name('app.settings');
     Route::view('completed', 'app.tasks.completed')->name('tasks.completed');
 
@@ -106,11 +99,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('pomodoro-sessions', PomodoroSessionController::class)->except(['create', 'edit']);
     Route::resource('pomodoro-pauses', PomodoroPauseController::class)->except(['create', 'edit']);
     Route::resource('pomodoro-daily-stats', PomodoroDailyStatController::class)->except(['create', 'edit']);
-
-    Route::resource('habits', HabitController::class);
-    Route::resource('habit-checkins', HabitCheckinController::class)->except(['create', 'edit']);
-    Route::resource('habit-monthly-stats', HabitMonthlyStatController::class)->except(['create', 'edit']);
-    Route::resource('habit-streaks', HabitStreakController::class)->only(['index', 'show', 'update']);
 
     Route::resource('big-goals', BigGoalController::class);
     Route::resource('goal-steps', GoalStepController::class)->except(['create', 'edit']);

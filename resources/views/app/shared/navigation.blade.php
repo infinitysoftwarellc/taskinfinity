@@ -14,12 +14,6 @@
             'active' => request()->routeIs('app.pomodoro'),
         ],
         [
-            'label' => __('Hábitos'),
-            'href' => route('app.habits'),
-            'icon' => 'fa-solid fa-leaf',
-            'active' => request()->routeIs('app.habits'),
-        ],
-        [
             'label' => __('Profile'),
             'href' => route('profile'),
             'icon' => 'fa-solid fa-user',
