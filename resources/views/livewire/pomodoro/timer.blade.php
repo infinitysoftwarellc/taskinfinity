@@ -1,33 +1,32 @@
-{{-- Livewire Pomodoro timer surface. --}}
+{{-- Livewire Pomodoro timer surface adapted to the requested layout. --}}
 <section class="pomodoro-shell"
     wire:poll.1000ms="tick"
     wire:keydown.window.space.prevent="toggleTimer"
     wire:keydown.window.r.prevent="resetTimer">
-    <div class="pomodoro-app" data-module="pomodoro">
-        <!-- LEFT COLUMN — Timer area -->
-        <section class="pomodoro-left" aria-labelledby="pomodoro-title">
-            <header class="pomodoro-left__header">
-                <h1 id="pomodoro-title" class="pomodoro-title">Pomodoro</h1>
-                <div class="pomodoro-page-actions" aria-hidden="true">
-                    <button type="button" class="pomodoro-icon-btn" title="Adicionar" aria-label="Adicionar">＋</button>
-                    <button type="button" class="pomodoro-icon-btn" title="Mais opções" aria-label="Mais opções">⋯</button>
-                </div>
-            </header>
+    <div class="pomodoro-container" data-module="pomodoro">
+        <div class="pomodoro-left-panel" aria-labelledby="pomodoro-title">
+            <div class="pomodoro-header">
+                <h1 id="pomodoro-title" class="pomodoro-header__title">Pomodoro</h1>
+            </div>
 
-            <div class="pomodoro-crumb" aria-hidden="true">Focus ▸</div>
+            <div class="pomodoro-action-buttons" aria-hidden="true">
+                <button type="button" class="pomodoro-action-btn" title="Adicionar" aria-label="Adicionar">＋</button>
+                <button type="button" class="pomodoro-action-btn" title="Mais opções" aria-label="Mais opções">⋯</button>
+            </div>
 
-            <!-- Timer circle with conic-gradient progress -->
-            <div class="pomodoro-ring" role="timer" aria-live="polite" aria-atomic="true" aria-label="Timer de foco"
-                style="--progress: {{ $this->progressDegrees }}deg">
-                <div class="pomodoro-ring__inner">
-                    <div class="pomodoro-time">{{ $this->clockLabel }}</div>
+            <div class="pomodoro-focus-label">Focus</div>
+
+            <div class="pomodoro-timer" role="timer" aria-live="polite" aria-atomic="true"
+                aria-label="Timer de foco" style="--progress: {{ $this->progressDegrees }}deg">
+                <div class="pomodoro-timer__inner">
+                    <div class="pomodoro-timer__display">{{ $this->clockLabel }}</div>
                 </div>
             </div>
 
-            <!-- Timer controls (below the circle) -->
             <div class="pomodoro-controls">
-                <button type="button" class="pomodoro-btn pomodoro-btn--primary" wire:click="toggleTimer"
-                    wire:loading.attr="disabled" wire:target="toggleTimer,resetTimer"
+                <button type="button"
+                    class="pomodoro-btn {{ $running ? 'pomodoro-btn--secondary' : 'pomodoro-btn--primary' }}"
+                    wire:click="toggleTimer" wire:loading.attr="disabled" wire:target="toggleTimer,resetTimer"
                     aria-pressed="{{ $running ? 'true' : 'false' }}">
                     {{ $running ? 'Pause' : 'Start' }}
                 </button>
@@ -36,59 +35,58 @@
                     Stop
                 </button>
             </div>
-        </section>
+        </div>
 
-        <!-- RIGHT COLUMN — Overview & Focus record -->
-        <aside class="pomodoro-right" aria-label="Estatísticas de foco">
-            <header class="pomodoro-right__header">
-                <h2 class="pomodoro-right__title">Overview</h2>
-            </header>
+        <aside class="pomodoro-right-panel" aria-label="Estatísticas de foco">
+            <section class="pomodoro-overview">
+                <div class="pomodoro-section-header">
+                    <h2 class="pomodoro-section-title">Overview</h2>
+                </div>
 
-            <section class="pomodoro-cards" aria-label="Métricas do dia e totais">
-                <article class="pomodoro-card">
-                    <p class="pomodoro-card__label">Today's Pomo</p>
-                    <p class="pomodoro-card__value">{{ $todaysPomo }}</p>
-                </article>
-                <article class="pomodoro-card">
-                    <p class="pomodoro-card__label">Today's Focus</p>
-                    <p class="pomodoro-card__value">
-                        <span>{{ $this->todayFocusHours }}</span><span class="pomodoro-card__unit">h</span>
-                        <span>{{ $this->todayFocusMinutesRemainder }}</span><span class="pomodoro-card__unit">m</span>
-                    </p>
-                </article>
-                <article class="pomodoro-card">
-                    <p class="pomodoro-card__label">Total Pomo</p>
-                    <p class="pomodoro-card__value">{{ $totalPomo }}</p>
-                </article>
-                <article class="pomodoro-card">
-                    <p class="pomodoro-card__label">Total Focus Duration</p>
-                    <p class="pomodoro-card__value">
-                        <span>{{ $this->totalFocusHours }}</span><span class="pomodoro-card__unit">h</span>
-                        <span>{{ $this->totalFocusMinutesRemainder }}</span><span class="pomodoro-card__unit">m</span>
-                    </p>
-                </article>
+                <div class="pomodoro-stats-grid" aria-label="Métricas do Pomodoro">
+                    <article class="pomodoro-stat-card">
+                        <span class="pomodoro-stat-label">Today's Pomo</span>
+                        <span class="pomodoro-stat-value">{{ $todaysPomo }}</span>
+                    </article>
+                    <article class="pomodoro-stat-card">
+                        <span class="pomodoro-stat-label">Today's Focus</span>
+                        <span class="pomodoro-stat-value">
+                            {{ $this->todayFocusHours }}<small>h</small>{{ $this->todayFocusMinutesRemainder }}<small>m</small>
+                        </span>
+                    </article>
+                    <article class="pomodoro-stat-card">
+                        <span class="pomodoro-stat-label">Total Pomo</span>
+                        <span class="pomodoro-stat-value">{{ $totalPomo }}</span>
+                    </article>
+                    <article class="pomodoro-stat-card">
+                        <span class="pomodoro-stat-label">Total Focus Duration</span>
+                        <span class="pomodoro-stat-value">
+                            {{ $this->totalFocusHours }}<small>h</small>{{ $this->totalFocusMinutesRemainder }}<small>m</small>
+                        </span>
+                    </article>
+                </div>
             </section>
 
             <section class="pomodoro-record" aria-label="Registros de foco">
-                <header class="pomodoro-record__header">
+                <div class="pomodoro-section-header">
                     <h3 class="pomodoro-section-title">Focus Record</h3>
                     <div class="pomodoro-record__actions" aria-hidden="true">
-                        <button type="button" class="pomodoro-icon-btn" title="Adicionar registro" aria-label="Adicionar registro">＋</button>
-                        <button type="button" class="pomodoro-icon-btn" title="Mais opções" aria-label="Mais opções">⋯</button>
+                        <button type="button" class="pomodoro-action-btn" title="Adicionar registro"
+                            aria-label="Adicionar registro">＋</button>
+                        <button type="button" class="pomodoro-more-btn" title="Mais opções" aria-label="Mais opções">⋯</button>
                     </div>
-                </header>
+                </div>
 
-                <p class="pomodoro-record__date">{{ $this->dateLabel }}</p>
+                <div class="pomodoro-date-label">{{ $this->dateLabel }}</div>
 
-                <div class="pomodoro-timeline" role="list">
+                <div class="pomodoro-record-list" role="list">
                     @forelse ($this->recordItems as $record)
-                        <div class="pomodoro-timeline__item" role="listitem">
-                            <div class="pomodoro-timeline__dotbox">
-                                <div class="pomodoro-timeline__line" aria-hidden="true"></div>
-                                <div class="pomodoro-timeline__dot" aria-hidden="true"></div>
+                        <div class="pomodoro-record-item" role="listitem">
+                            <div class="pomodoro-record-left">
+                                <span class="pomodoro-record-icon" aria-hidden="true"></span>
+                                <span class="pomodoro-record-time">{{ $record['time_label'] }}</span>
                             </div>
-                            <div class="pomodoro-timeline__time">{{ $record['time_label'] }}</div>
-                            <div class="pomodoro-timeline__duration">{{ $record['duration_label'] }}</div>
+                            <span class="pomodoro-record-duration">{{ $record['duration_label'] }}</span>
                         </div>
                     @empty
                         <p class="pomodoro-empty">Nenhum ciclo registrado ainda.</p>
