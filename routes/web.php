@@ -11,6 +11,7 @@ use App\Http\Controllers\Gamification\XpEventController;
 use App\Http\Controllers\Goals\BigGoalController;
 use App\Http\Controllers\Goals\GoalStepController;
 use App\Http\Controllers\Habits\HabitCheckinController;
+use App\Http\Controllers\Habits\HabitTrackerPageController;
 use App\Http\Controllers\Habits\HabitController;
 use App\Http\Controllers\Habits\HabitMonthlyStatController;
 use App\Http\Controllers\Habits\HabitStreakController;
@@ -54,6 +55,7 @@ require __DIR__.'/auth.php';
 
 Route::middleware('auth')->group(function () {
     Route::get('pomodoro', PomodoroController::class)->name('app.pomodoro');
+    Route::get('habits', HabitTrackerPageController::class)->name('app.habits.tracker');
     Route::view('habitos', 'app.habits.index')->name('app.habits');
     Route::view('configuracoes', 'app.settings.index')->name('app.settings');
     Route::view('completed', 'app.tasks.completed')->name('tasks.completed');
