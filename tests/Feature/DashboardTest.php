@@ -2,9 +2,9 @@
 
 use App\Models\User;
 
-test('guests are redirected to the login page', function () {
+test('dashboard is accessible automaticamente para visitantes', function () {
     $response = $this->get(route('dashboard'));
-    $response->assertRedirect(route('login'));
+    $response->assertOk();
 });
 
 test('authenticated users can visit the dashboard', function () {

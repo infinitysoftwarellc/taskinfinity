@@ -116,7 +116,7 @@ class MainPanel extends Component
 
         if (! $user) {
             throw ValidationException::withMessages([
-                'newTaskTitle' => 'Sua sessão expirou. Faça login novamente.',
+                'newTaskTitle' => 'Não foi possível carregar o usuário padrão. Atualize a página e tente novamente.',
             ]);
         }
 
