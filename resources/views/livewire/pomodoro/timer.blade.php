@@ -9,9 +9,26 @@
                 <h1 id="pomodoro-title" class="pomodoro-header__title">Pomodoro</h1>
             </div>
 
-            <div class="pomodoro-action-buttons" aria-hidden="true">
-                <button type="button" class="pomodoro-action-btn" title="Adicionar" aria-label="Adicionar">＋</button>
-                <button type="button" class="pomodoro-action-btn" title="Mais opções" aria-label="Mais opções">⋯</button>
+            <div class="pomodoro-header__actions" x-data="{ open: false }"
+                @click.outside="open = false" @keydown.escape.window="open = false">
+                <button type="button" class="pomodoro-header__button" @click="open = !open"
+                    x-bind:aria-expanded="open"
+                    aria-haspopup="true"
+                    aria-controls="pomodoro-settings-menu">
+                    {{ __('Configurações') }}
+                    <span class="pomodoro-header__chevron" aria-hidden="true">▾</span>
+                </button>
+
+                <div class="pomodoro-dropdown" id="pomodoro-settings-menu" role="menu" x-cloak
+                    x-show="open" x-transition>
+                    <a class="pomodoro-dropdown__item" href="{{ route('app.pomodoro.stats') }}" role="menuitem">
+                        {{ __('Estatísticas') }}
+                    </a>
+                    <button type="button" class="pomodoro-dropdown__item" role="menuitem"
+                        wire:click="openFocusConfig" @click="open = false">
+                        {{ __('Configuração do foco') }}
+                    </button>
+                </div>
             </div>
 
             <div class="pomodoro-phase-wrapper">
@@ -192,6 +209,62 @@
                     </button>
                     <button type="button" class="pomodoro-btn pomodoro-btn--secondary"
                         wire:click="closeRecordModal">{{ __('Fechar') }}</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if ($showFocusConfig)
+        <div class="pomodoro-modal" role="dialog" aria-modal="true" aria-labelledby="focus-config-title">
+            <div class="pomodoro-modal__backdrop" wire:click="closeFocusConfig"></div>
+            <div class="pomodoro-modal__panel pomodoro-focus-modal">
+                <button type="button" class="pomodoro-modal__close" wire:click="closeFocusConfig"
+                    aria-label="{{ __('Fechar') }}">×</button>
+                <h2 id="focus-config-title">{{ __('Configuração do foco') }}</h2>
+                <p class="pomodoro-focus-hint">{{ __('Os ajustes são salvos automaticamente.') }}</p>
+
+                <div class="pomodoro-focus-form">
+                    <div class="pomodoro-focus-field">
+                        <label class="pomodoro-focus-label" for="focus-minutes">{{ __('Pomodoro (min)') }}</label>
+                        <input id="focus-minutes" type="number" min="1" max="180" step="1" inputmode="numeric"
+                            class="pomodoro-focus-input" wire:model.live.debounce.500ms="focusMinutes">
+                        @error('focusMinutes')
+                            <p class="pomodoro-focus-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="pomodoro-focus-field">
+                        <label class="pomodoro-focus-label" for="short-break-minutes">{{ __('Pausa curta (min)') }}</label>
+                        <input id="short-break-minutes" type="number" min="1" max="60" step="1" inputmode="numeric"
+                            class="pomodoro-focus-input" wire:model.live.debounce.500ms="shortBreakMinutes">
+                        @error('shortBreakMinutes')
+                            <p class="pomodoro-focus-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="pomodoro-focus-field">
+                        <label class="pomodoro-focus-label" for="long-break-minutes">{{ __('Pausa longa (min)') }}</label>
+                        <input id="long-break-minutes" type="number" min="1" max="180" step="1" inputmode="numeric"
+                            class="pomodoro-focus-input" wire:model.live.debounce.500ms="longBreakMinutes">
+                        @error('longBreakMinutes')
+                            <p class="pomodoro-focus-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="pomodoro-focus-field">
+                        <label class="pomodoro-focus-label" for="cycles-before-long-break">{{ __('Pomodoros por intervalo') }}</label>
+                        <input id="cycles-before-long-break" type="number" min="1" max="12" step="1"
+                            inputmode="numeric" class="pomodoro-focus-input"
+                            wire:model.live.debounce.500ms="cyclesBeforeLongBreak">
+                        @error('cyclesBeforeLongBreak')
+                            <p class="pomodoro-focus-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="pomodoro-modal__actions">
+                    <button type="button" class="pomodoro-btn pomodoro-btn--secondary"
+                        wire:click="closeFocusConfig">{{ __('Fechar') }}</button>
                 </div>
             </div>
         </div>

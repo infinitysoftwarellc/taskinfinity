@@ -17,6 +17,7 @@ use App\Http\Controllers\Pomodoro\PomodoroController;
 use App\Http\Controllers\Pomodoro\PomodoroDailyStatController;
 use App\Http\Controllers\Pomodoro\PomodoroPauseController;
 use App\Http\Controllers\Pomodoro\PomodoroSessionController;
+use App\Http\Controllers\Pomodoro\PomodoroStatisticsController;
 use App\Http\Controllers\Preferences\SoundPackController;
 use App\Http\Controllers\Preferences\ThemeController;
 use App\Http\Controllers\Preferences\UserThemePreferenceController;
@@ -50,6 +51,7 @@ require __DIR__.'/auth.php';
 
 Route::middleware('auth')->group(function () {
     Route::get('pomodoro', PomodoroController::class)->name('app.pomodoro');
+    Route::get('pomodoro/estatisticas', PomodoroStatisticsController::class)->name('app.pomodoro.stats');
     Route::view('configuracoes', 'app.settings.index')->name('app.settings');
     Route::view('completed', 'app.tasks.completed')->name('tasks.completed');
 
