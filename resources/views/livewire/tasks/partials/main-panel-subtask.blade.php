@@ -5,9 +5,7 @@
     'missionId',
     'selectedSubtaskId' => null,
     'editingSubtaskId' => null,
-    'siblingsCount' => 0,
     'maxSubtasks' => 7,
-    'userTimezone' => null,
 ])
 
 @php
@@ -19,53 +17,6 @@
     $childrenCount = $children->count();
     $hasChildren = $childrenCount > 0;
     $canAddChild = $childrenCount < $maxSubtasks;
-    $canAddSibling = $siblingsCount < $maxSubtasks;
-    $timezone = $userTimezone ?? (auth()->user()?->timezone ?? config('app.timezone'));
-    $dueDate = null;
-    $dueLabel = null;
-    $dueClass = 'subtask-due';
-    $rawDueAt = $item['due_at'] ?? null;
-    $priority = (int) ($item['priority'] ?? 0);
-
-    if ($rawDueAt instanceof \Carbon\CarbonInterface) {
-        $dueAt = $rawDueAt->copy()->setTimezone($timezone);
-        $dueDate = $dueAt->format('Y-m-d');
-
-        $dueDay = $dueAt->copy()->startOfDay();
-        $today = \Illuminate\Support\Carbon::now($timezone)->startOfDay();
-        $tomorrow = $today->copy()->addDay();
-        $monthAbbr = [
-            1 => 'Jan',
-            2 => 'Fev',
-            3 => 'Mar',
-            4 => 'Abr',
-            5 => 'Mai',
-            6 => 'Jun',
-            7 => 'Jul',
-            8 => 'Ago',
-            9 => 'Set',
-            10 => 'Out',
-            11 => 'Nov',
-            12 => 'Dez',
-        ];
-
-        if ($dueDay->equalTo($today)) {
-            $dueLabel = 'Hoje';
-            $dueClass .= ' is-today';
-        } elseif ($dueDay->equalTo($tomorrow)) {
-            $dueLabel = 'Amanhã';
-            $dueClass .= ' is-tomorrow';
-        } elseif ($dueDay->lessThan($today)) {
-            $monthKey = (int) $dueDay->format('n');
-            $monthLabel = $monthAbbr[$monthKey] ?? $dueDay->format('M');
-            $dueLabel = $dueDay->format('d') . ' ' . $monthLabel;
-            $dueClass .= ' is-overdue';
-        } else {
-            $monthKey = (int) $dueDay->format('n');
-            $monthLabel = $monthAbbr[$monthKey] ?? $dueDay->format('M');
-            $dueLabel = $dueDay->format('d') . ' ' . $monthLabel;
-        }
-    }
 @endphp
 
 <div
@@ -85,11 +36,7 @@
             'done' => $isDone,
             'is-active' => $isActive,
             'has-children' => $hasChildren,
-            'priority-high' => $priority === 3,
-            'priority-medium' => $priority === 2,
-            'priority-low' => $priority === 1,
         ])
-        data-priority="{{ $priority }}"
         @if($hasChildren)
             aria-expanded="true"
         @endif
@@ -131,43 +78,22 @@
                 @endif
             </div>
         </div>
-
-        <div class="subtask-date">
-            <label class="subtask-date-button" title="Alterar data da subtarefa">
-                <span class="{{ $rawDueAt ? $dueClass : 'subtask-due is-empty' }}">
-                    @if ($dueLabel)
-                        {{ $dueLabel }}
-                    @else
-                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-                        <span class="sr-only">Definir data</span>
-                    @endif
-                </span>
-                <input
-                    type="date"
-                    value="{{ $dueDate }}"
-                    wire:change="runInlineAction({{ $missionId }}, 'set-date', $event.target.value, {{ $item['id'] }})"
-                >
-            </label>
-        </div>
-
         <div class="subtask-menu" wire:click.stop>
             @include('livewire.tasks.partials.inline-menu', [
-                'context' => 'main',
+                'context' => 'subtask',
                 'missionId' => $missionId,
                 'subtaskId' => $item['id'] ?? null,
-                'dueDate' => $dueDate,
-                'priority' => $item['priority'] ?? null,
             ])
         </div>
     </div>
 
-    @if ($children->isNotEmpty())
-        <div
-            class="subtask-group"
-            data-subtask-container
-            data-mission-id="{{ $missionId }}"
-            data-parent-id="{{ $item['id'] }}"
-        >
+    <div
+        @class(['subtask-group', 'is-empty' => $children->isEmpty()])
+        data-subtask-container
+        data-mission-id="{{ $missionId }}"
+        data-parent-id="{{ $item['id'] }}"
+    >
+        @if ($children->isNotEmpty())
             @foreach ($children as $child)
                 @include('livewire.tasks.partials.main-panel-subtask', [
                     'item' => $child,
@@ -175,14 +101,16 @@
                     'missionId' => $missionId,
                     'selectedSubtaskId' => $selectedSubtaskId,
                     'editingSubtaskId' => $editingSubtaskId,
-                    'siblingsCount' => $childrenCount,
                     'maxSubtasks' => $maxSubtasks,
-                    'userTimezone' => $userTimezone,
                 ])
             @endforeach
             @if (! $canAddChild)
                 <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
             @endif
-        </div>
-    @endif
+        @else
+            <div class="subtask-drop-placeholder" aria-hidden="true">
+                Solte aqui para transformar em subtarefa
+            </div>
+        @endif
+    </div>
 </div>

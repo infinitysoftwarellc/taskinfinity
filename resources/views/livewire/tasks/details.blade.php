@@ -21,7 +21,7 @@
             $activeSubtask = $missionData['active_subtask'] ?? null;
             $isSubtask = !empty($activeSubtask);
         @endphp
-        @if (($showDatePicker ?? false) || ($showSubtaskDatePicker ?? false))
+        @if ($showDatePicker ?? false)
             <div class="ti-date-overlay" wire:click="closeAllDatePickers"></div>
         @endif
 
@@ -30,18 +30,8 @@
             <!-- Top bar -->
             <div class="ti-details-top">
         @if ($isSubtask)
-            @php
-                $subtaskDue = $activeSubtask['due_at'] ?? null;
-                $missionDue = $mission['due_at'] ?? null;
-                $dueDateObject = $subtaskDue instanceof \Carbon\CarbonInterface
-                    ? $subtaskDue
-                    : ($missionDue instanceof \Carbon\CarbonInterface ? $missionDue : null);
-                $dueLabel = $dueDateObject ? $dueDateObject->format('d/m/Y') : null;
-                $dueTitle = $dueLabel ?? 'Sem prazo';
-            @endphp
             <div class="ti-topbar">
                 <div class="ti-topbar-left">
-                    <!-- Botão de concluir subtarefa -->
                     <button class="ti-check {{ $activeSubtask['is_done'] ?? false ? 'is-active' : '' }}"
                         type="button" title="Concluir subtarefa"
                         aria-pressed="{{ $activeSubtask['is_done'] ?? false ? 'true' : 'false' }}"
@@ -49,110 +39,19 @@
                         <span class="ti-check-mark"></span>
                     </button>
 
-                    <!-- Data da subtarefa -->
-                    <div class="ti-date-picker-container ti-subtask-date"
-                        wire:keydown.escape.window="closeAllDatePickers">
-                        <button class="pill icon-only {{ $showSubtaskDatePicker ?? false ? 'is-active' : '' }}" type="button"
-                            title="{{ $dueTitle }}"
-                            aria-label="{{ $dueLabel ? 'Data: ' . $dueLabel : 'Adicionar data' }}"
-                            wire:click="toggleSubtaskDatePicker">
-                            <i class="fa-solid fa-calendar" aria-hidden="true"></i>
-                            @if ($dueLabel)
-                                <span class="ti-date-label">{{ $dueLabel }}</span>
-                            @endif
-                        </button>
-
-                        @if (($showSubtaskDatePicker ?? false) && $subtaskCalendar)
-                            <div class="ti-date-popover" wire:click.stop>
-                                <div class="ti-date-header">
-                                    <button class="nav" type="button" title="Mês anterior"
-                                        wire:click="moveSubtaskPicker(-1)">
-                                        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-                                    </button>
-                                    <span class="label">{{ $subtaskCalendar['label'] ?? '' }}</span>
-                                    <button class="nav" type="button" title="Próximo mês"
-                                        wire:click="moveSubtaskPicker(1)">
-                                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-                                    </button>
-                                </div>
-
-                                <div class="ti-date-grid">
-                                    @foreach ($subtaskCalendar['weekDays'] ?? [] as $weekDay)
-                                        <span class="weekday">{{ $weekDay }}</span>
-                                    @endforeach
-
-                                    @foreach ($subtaskCalendar['weeks'] ?? [] as $weekIndex => $week)
-                                        @foreach ($week as $dayIndex => $day)
-                                            @php
-                                                $classes = [];
-                                                if (!($day['isCurrentMonth'] ?? false)) {
-                                                    $classes[] = 'is-muted';
-                                                }
-                                                if ($day['isToday'] ?? false) {
-                                                    $classes[] = 'is-today';
-                                                }
-                                                if ($day['isSelected'] ?? false) {
-                                                    $classes[] = 'is-selected';
-                                                }
-                                                $classAttr = implode(' ', $classes);
-                                            @endphp
-                                            <button class="day {{ $classAttr }}" type="button"
-                                                wire:key="subtask-calendar-day-{{ $weekIndex }}-{{ $dayIndex }}-{{ $day['date'] }}"
-                                                wire:click="selectSubtaskDueDate({{ $activeSubtask['id'] }}, '{{ $day['date'] }}')">
-                                                {{ $day['label'] ?? '' }}
-                                            </button>
-                                        @endforeach
-                                    @endforeach
-                                </div>
-
-                                <div class="ti-date-footer">
-                                    @if ($subtaskCalendar['hasSelected'] ?? false)
-                                        <button class="link" type="button"
-                                            wire:click="clearSubtaskDueDate({{ $activeSubtask['id'] }})">Remover
-                                            data</button>
-                                    @else
-                                        <button class="link disabled" type="button" disabled>Sem data
-                                            definida</button>
-                                    @endif
-                                </div>
+                    <div class="ti-subtask-status-block">
+                        <span class="ti-subtask-status">Subtarefa selecionada</span>
+                        <div class="ti-subtask-meta-group">
+                            <div class="ti-subtask-meta">
+                                <span class="ti-subtask-meta-label">Tarefa mãe</span>
+                                <span class="ti-subtask-meta-value">{{ $mission['title'] ?? 'Sem título' }}</span>
                             </div>
-                        @endif
-                    </div>
-
-                    <!-- Prioridade -->
-                    <div class="ti-priority-selector">
-                        <button class="icon ghost" type="button" title="Prioridade">
-                            <i class="fa-solid fa-flag" aria-hidden="true"></i>
-                        </button>
-                        <span class="ti-priority-current">{{ $priorityLabel }}</span>
-
-                        <div class="ti-priority-menu" role="menu">
-                            <button @class(['ti-priority-option', 'is-high', 'is-active' => $priorityValue === 3]) type="button" role="menuitem"
-                                wire:click="setPriority(3)">
-                                <span class="dot"></span> Alta
-                            </button>
-                            <button @class(['ti-priority-option', 'is-medium', 'is-active' => $priorityValue === 2]) type="button" role="menuitem"
-                                wire:click="setPriority(2)">
-                                <span class="dot"></span> Média
-                            </button>
-                            <button @class(['ti-priority-option', 'is-low', 'is-active' => $priorityValue === 1]) type="button" role="menuitem"
-                                wire:click="setPriority(1)">
-                                <span class="dot"></span> Baixa
-                            </button>
-                            <button @class(['ti-priority-option', 'is-none', 'is-active' => $priorityValue === 0]) type="button" role="menuitem"
-                                wire:click="setPriority(0)">
-                                <span class="dot"></span> Nenhuma
-                            </button>
+                            <div class="ti-subtask-meta">
+                                <span class="ti-subtask-meta-label">Organização</span>
+                                <span class="ti-subtask-meta-value">Arraste para reordenar</span>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- Flag -->
-                    <button class="ti-flag {{ $activeSubtask['is_flagged'] ?? false ? 'is-active' : '' }}"
-                        type="button" title="Marcar subtarefa"
-                        aria-pressed="{{ $activeSubtask['is_flagged'] ?? false ? 'true' : 'false' }}"
-                        wire:click="toggleFlag({{ $activeSubtask['id'] }})">
-                        <i data-lucide="flag"></i>
-                    </button>
                 </div>
             </div>
         @else

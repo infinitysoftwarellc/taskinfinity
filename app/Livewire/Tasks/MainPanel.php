@@ -226,12 +226,12 @@ class MainPanel extends Component
         }
 
         if ($checkpointId !== null) {
-            $checkpoint = Checkpoint::query()
+            $checkpointExists = Checkpoint::query()
                 ->where('id', $checkpointId)
                 ->where('mission_id', $mission->id)
-                ->first();
+                ->exists();
 
-            if (! $checkpoint) {
+            if (! $checkpointExists) {
                 return;
             }
 
@@ -239,21 +239,7 @@ class MainPanel extends Component
             $this->selectedSubtaskId = $checkpointId;
             $this->dispatch('task-selected', $mission->id, $checkpointId);
 
-            $timezone = $user->timezone ?? config('app.timezone');
-            $changed = false;
-
-            if ($action === 'set-date') {
-                $changed = $this->handleCheckpointDateSelection($checkpoint, $value, $timezone);
-            } elseif ($action === 'due-shortcut') {
-                $changed = $this->handleCheckpointShortcut($checkpoint, $value, $timezone);
-            }
-
-            if ($changed) {
-                $this->dispatch('tasks-updated');
-            }
-
-            $this->dispatch('tasks-inline-action', $mission->id, $action, $value, $checkpointId);
-
+            // Subtarefas não herdam ações inline além da seleção.
             return;
         }
 
@@ -692,8 +678,6 @@ class MainPanel extends Component
                 $this->syncCheckpointOrder($missionId, $fromParentId, $fromOrder);
             }
         });
-
-        $this->dispatch('tasks-updated');
     }
 
     /**
@@ -1032,80 +1016,6 @@ class MainPanel extends Component
 
         $mission->due_at = $serverDate;
         $mission->save();
-
-        return true;
-    }
-
-    /**
-     * Processa datas escolhidas manualmente para uma subtarefa.
-     */
-    private function handleCheckpointDateSelection(Checkpoint $checkpoint, ?string $value, string $timezone): bool
-    {
-        if ($value === null || $value === '') {
-            return $this->updateCheckpointDueDate($checkpoint, null);
-        }
-
-        $localDate = $this->parseLocalDate($value, $timezone);
-
-        if (! $localDate) {
-            return false;
-        }
-
-        return $this->updateCheckpointDueDate($checkpoint, $localDate);
-    }
-
-    /**
-     * Aplica atalhos de vencimento para subtarefas específicas.
-     */
-    private function handleCheckpointShortcut(Checkpoint $checkpoint, ?string $shortcut, string $timezone): bool
-    {
-        if (! $shortcut) {
-            return false;
-        }
-
-        if ($shortcut === 'clear') {
-            return $this->updateCheckpointDueDate($checkpoint, null);
-        }
-
-        $today = CarbonImmutable::now($timezone)->startOfDay();
-
-        $target = match ($shortcut) {
-            'today' => $today,
-            'tomorrow' => $today->addDay(),
-            'next7' => $today->addDays(7),
-            default => null,
-        };
-
-        if (! $target) {
-            return false;
-        }
-
-        return $this->updateCheckpointDueDate($checkpoint, $target);
-    }
-
-    private function updateCheckpointDueDate(Checkpoint $checkpoint, ?CarbonImmutable $localDate): bool
-    {
-        $current = $checkpoint->due_at;
-
-        if ($localDate === null) {
-            if ($current === null) {
-                return false;
-            }
-
-            $checkpoint->due_at = null;
-            $checkpoint->save();
-
-            return true;
-        }
-
-        $serverDate = $localDate->setTimezone(config('app.timezone'));
-
-        if ($current && $current->equalTo($serverDate)) {
-            return false;
-        }
-
-        $checkpoint->due_at = $serverDate;
-        $checkpoint->save();
 
         return true;
     }

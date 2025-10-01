@@ -236,9 +236,7 @@
                                         'missionId' => $mission->id,
                                         'selectedSubtaskId' => $selectedSubtaskId,
                                         'editingSubtaskId' => $editingSubtaskId,
-                                        'siblingsCount' => $rootSubtaskCount,
                                         'maxSubtasks' => $maxSubtasks,
-                                        'userTimezone' => $userTimezone,
                                     ])
                                 @endforeach
                                 @if (! $canAddMissionSubtask)
