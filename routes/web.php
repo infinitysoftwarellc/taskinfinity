@@ -17,6 +17,7 @@ use App\Http\Controllers\Habits\HabitStreakController;
 use App\Http\Controllers\Notifications\NotificationController;
 use App\Http\Controllers\Plans\PlanLimitController;
 use App\Http\Controllers\Player\PlayerStateController;
+use App\Http\Controllers\Pomodoro\PomodoroController;
 use App\Http\Controllers\Pomodoro\PomodoroDailyStatController;
 use App\Http\Controllers\Pomodoro\PomodoroPauseController;
 use App\Http\Controllers\Pomodoro\PomodoroSessionController;
@@ -52,7 +53,7 @@ Route::view('profile', 'profile')
 require __DIR__.'/auth.php';
 
 Route::middleware('auth')->group(function () {
-    Route::view('pomodoro', 'app.pomodoro.index')->name('app.pomodoro');
+    Route::get('pomodoro', PomodoroController::class)->name('app.pomodoro');
     Route::view('habitos', 'app.habits.index')->name('app.habits');
     Route::view('configuracoes', 'app.settings.index')->name('app.settings');
     Route::view('completed', 'app.tasks.completed')->name('tasks.completed');
