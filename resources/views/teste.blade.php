@@ -1,289 +1,540 @@
-{{-- This Blade view renders the teste interface. --}}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Clone – Layout de Tarefas</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <script src="https://kit.fontawesome.com/c9cfb44e99.js" crossorigin="anonymous"></script>
-  @vite(['resources/scss/app.scss', 'resources/js/app.js'])
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Left Panel */
+        .left-panel {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .header {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .tabs {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 30px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #4a69ff;
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            color: #999;
+        }
+
+        .focus-label {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .focus-label::after {
+            content: '›';
+            margin-left: 3px;
+        }
+
+        .timer-container {
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            border: 8px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-top: 50px;
+        }
+
+        .timer-display {
+            font-size: 72px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .start-button {
+            position: absolute;
+            bottom: 120px;
+            padding: 12px 50px;
+            background: #4a69ff;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .start-button:hover {
+            background: #5c77ff;
+            transform: scale(1.05);
+        }
+
+        .start-button:active {
+            transform: scale(0.98);
+        }
+
+        .action-buttons {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-btn {
+            width: 35px;
+            height: 35px;
+            background: transparent;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            border-color: #555;
+            color: #999;
+        }
+
+        /* Right Panel */
+        .right-panel {
+            width: 400px;
+            background: #242424;
+            padding: 30px;
+            border-left: 1px solid #333;
+        }
+
+        .overview-section {
+            margin-bottom: 50px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 500;
+        }
+
+        .stat-value small {
+            font-size: 18px;
+            font-weight: 400;
+            color: #999;
+        }
+
+        .focus-record {
+            margin-top: 40px;
+        }
+
+        .date-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .record-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .record-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .record-item:last-child {
+            border-bottom: none;
+        }
+
+        .record-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .record-icon {
+            width: 8px;
+            height: 8px;
+            background: #4a69ff;
+            border-radius: 50%;
+        }
+
+        .record-time {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .record-duration {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .more-btn {
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+        }
+
+        .more-btn:hover {
+            color: #999;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .right-panel {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid #333;
+            }
+
+            .timer-container {
+                width: 280px;
+                height: 280px;
+            }
+
+            .timer-display {
+                font-size: 56px;
+            }
+        }
+    </style>
 </head>
-<body class="page-teste">
-  <div class="app">
-    <!-- RAIL (menu lateral fino) -->
-    <aside class="rail">
-      <div class="avatar" title="Você"></div>
-      <button class="btn" title="All"><i class="fa-solid fa-list-check" aria-hidden="true"></i></button>
-      <button class="btn" title="Today"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
-      <button class="btn" title="7 Days"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
-      <button class="btn" title="Inbox"><i class="fa-solid fa-inbox" aria-hidden="true"></i></button>
-      <button class="btn" title="Summary"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></button>
-      <div class="spacer"></div>
-      <button class="btn" title="Settings"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
-    </aside>
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar panel">
-      <h6>Atalhos</h6>
-      <nav>
-        <ul class="nav-list">
-          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-infinity" aria-hidden="true"></i><span class="label">All</span><span class="count">38</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-sun" aria-hidden="true"></i><span class="label">Today</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-calendar-days" aria-hidden="true"></i><span class="label">Next 7 Days</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-inbox" aria-hidden="true"></i><span class="label">Inbox</span><span class="count">2</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-chart-pie" aria-hidden="true"></i><span class="label">Summary</span></a></li>
-        </ul>
-      </nav>
-
-      <div class="sep"></div>
-
-      <button class="workspace" aria-expanded="true" data-toggle="workspace">
-        <i class="chev fa-solid fa-chevron-down" aria-hidden="true"></i>
-        <span class="title">SOFTWAREINFINITY</span>
-        <span class="badge">36</span>
-      </button>
-      <div class="workspace-content">
-        <ul class="nav-list">
-          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-list-check" aria-hidden="true"></i><span class="label">Tasks</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-fire" aria-hidden="true"></i><span class="label">Habits</span></a></li>
-          <li><a class="nav-item" href="#"><i class="icon fa-solid fa-clock" aria-hidden="true"></i><span class="label">Pomodoro</span></a></li>
-        </ul>
-      </div>
-
-      <h6>Filters</h6>
-      <div class="filters-tip">Display tasks filtered by list, date, priority, tag, and more</div>
-
-      <h6>Tags</h6>
-      <div class="tags">
-        <a class="tag" href="#"><span class="dot dot--bug"></span> <span>Bugs</span> <span class="count"> </span></a>
-        <a class="tag" href="#"><span class="dot dot--improvement"></span> <span>Melhorias</span></a>
-      </div>
-
-      <h6 class="sidebar-heading--spaced"> </h6>
-      <div class="completed"><i class="icon fa-solid fa-square-check" aria-hidden="true"></i> Completed</div>
-    </aside>
-
-    <!-- MAIN -->
-    <main class="main panel">
-      <div class="toolbar">
-        <div class="title">All <span class="bubble">38</span></div>
-        <div class="spacer"></div>
-        <button class="icon-btn" title="Ordenar"><i class="fa-solid fa-arrow-down-wide-short" aria-hidden="true"></i></button>
-        <button class="icon-btn" title="Opções"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
-      </div>
-
-      <div class="add-row">
-        <input class="add-input" placeholder="Add task to 'Inbox'" />
-      </div>
-
-      <section class="group" aria-expanded="true">
-        <header class="group-header" data-toggle="group">
-          <i class="chev fa-solid fa-chevron-down" aria-hidden="true"></i>
-          <span class="group-title">No Date</span>
-          <span class="group-count">38</span>
-        </header>
-        <div class="group-body">
-
-          <div class="subgroup" aria-expanded="true">
-            <div class="subgroup-toggle" data-toggle="subgroup">
-              <i class="chev fa-solid fa-chevron-down" aria-hidden="true"></i>
-              <span class="name">aa</span>
-              <span class="meta">Inbox</span>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="header">
+                <h1>Pomodoro</h1>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active">Pomo</button>
+                <button class="tab">Stopwatch</button>
             </div>
 
-            <div class="task-list">
-              <!-- Linha fantasma "No Title" -->
-              <div class="task ghost">
-                <div class="checkbox" aria-hidden="true"></div>
-                <div class="title-line"><span class="title title--ghost">No Title</span></div>
-                <div class="meta">Inbox</div>
-              </div>
-
-              <!-- Tarefa com SUBTAREFAS -->
-              <div class="task has-subtasks" aria-expanded="true">
-                <button class="checkbox" aria-label="marcar"></button>
-                <div class="expander" title="Expandir/ocultar subtarefas"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></div>
-                <div class="title-line"><span class="title">COLOCAR METAS</span></div>
-                <div class="meta">Task Infinity</div>
-              </div>
-              <div class="subtasks">
-                <div class="subtask">
-                  <button class="checkbox"></button>
-                  <div class="title">Definir metas trimestrais</div>
-                  <div class="meta">Inbox</div>
-                </div>
-                <div class="subtask">
-                  <button class="checkbox"></button>
-                  <div class="title">Mapear KPIs por lista</div>
-                  <div class="meta">Inbox</div>
-                </div>
-                <div class="add-subtask">
-                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                  <input type="text" placeholder="Add subtask" class="add-subtask-input"/>
-                </div>
-              </div>
-
-              <!-- Outras tarefas -->
-              <div class="task">
-                <button class="checkbox" aria-label="marcar"></button>
-                <div class="title-line"><span class="title">COLOCAR IA</span></div>
-                <div class="meta">Task Infinity</div>
-              </div>
-
-              <div class="task">
-                <button class="checkbox" aria-label="marcar"></button>
-                <div class="title-line"><span class="title">THEMA FLORESTAL</span></div>
-                <div class="meta">Task Infinity</div>
-              </div>
-
-              <div class="task">
-                <button class="checkbox" aria-label="marcar"></button>
-                <div class="title-line"><span class="title">THEMA GAMER</span></div>
-                <div class="meta">Task Infinity</div>
-              </div>
-
-              <div class="task">
-                <button class="checkbox" aria-label="marcar"></button>
-                <div class="title-line"><span class="title">ADICIONAR</span></div>
-                <div class="meta">Task Infinity</div>
-              </div>
-
-              <div class="task">
-                <button class="checkbox" aria-label="marcar"></button>
-                <div class="title-line"><span class="title">HABITOS</span></div>
-                <div class="meta">Task Infinity</div>
-              </div>
-
-              <div class="task">
-                <button class="checkbox" aria-label="marcar"></button>
-                <div class="title-line"><span class="title">POMODORO</span></div>
-                <div class="meta">Task Infinity</div>
-              </div>
-
-              <div class="task">
-                <button class="checkbox" aria-label="marcar"></button>
-                <div class="title-line"><span class="title">TUDO QUE FALTA</span></div>
-                <div class="meta">Task Infinity</div>
-              </div>
-
+            <div class="action-buttons">
+                <button class="action-btn">+</button>
+                <button class="action-btn">⋯</button>
             </div>
-          </div>
+
+            <div class="focus-label">Focus</div>
+
+            <div class="timer-container">
+                <div class="timer-display" id="timerDisplay">20:00</div>
+            </div>
+
+            <button class="start-button" id="startBtn">Start</button>
         </div>
-      </section>
-    </main>
 
-    <!-- DETAILS -->
-    <aside class="details panel">
-      <div class="header">
-        <div class="details-breadcrumb">aa ›</div>
-        <div class="right">
-          <button class="icon-btn" title="Classificar por data"><i class="fa-solid fa-flag" aria-hidden="true"></i></button>
-          <button class="icon-btn" title="Opções"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
+        <div class="right-panel">
+            <div class="overview-section">
+                <div class="section-header">
+                    <h2 class="section-title">Overview</h2>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Today's Pomo</span>
+                        <div class="stat-value">36</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Today's Focus</span>
+                        <div class="stat-value">11<small>h</small>34<small>m</small></div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Pomo</span>
+                        <div class="stat-value">1606</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Focus Duration</span>
+                        <div class="stat-value">528<small>h</small>29<small>m</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="focus-record">
+                <div class="section-header">
+                    <h2 class="section-title">Focus Record</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-btn">+</button>
+                        <button class="more-btn">⋯</button>
+                    </div>
+                </div>
+
+                <div class="date-label">Sep 30</div>
+
+                <div class="record-list">
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-icon"></div>
+                            <span class="record-time">22:23 - 22:39</span>
+                        </div>
+                        <span class="record-duration">15m</span>
+                    </div>
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-icon"></div>
+                            <span class="record-time">22:03 - 22:23</span>
+                        </div>
+                        <span class="record-duration">20m</span>
+                    </div>
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-icon"></div>
+                            <span class="record-time">21:15 - 21:35</span>
+                        </div>
+                        <span class="record-duration">20m</span>
+                    </div>
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-icon"></div>
+                            <span class="record-time">20:54 - 21:14</span>
+                        </div>
+                        <span class="record-duration">20m</span>
+                    </div>
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-icon"></div>
+                            <span class="record-time">20:33 - 20:53</span>
+                        </div>
+                        <span class="record-duration">20m</span>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="empty">
-        <h3 class="empty-title">What would you like to do?</h3>
-        <p>Selecione uma tarefa para ver os detalhes, adicionar notas, e muito mais.</p>
-      </div>
-    </aside>
-  </div>
+    </div>
 
-  <script>
-    // Toggle helpers
-    function toggleSection(btn, content){
-      const expanded = btn.getAttribute('aria-expanded') !== 'false';
-      btn.setAttribute('aria-expanded', String(!expanded));
-      content.style.display = expanded ? 'none' : '';
-    }
+    <script>
+        // Timer functionality
+        let timeLeft = 20 * 60; // 20 minutes in seconds
+        let isRunning = false;
+        let timerInterval;
+        let pomodoroCount = 36;
+        let todayFocusMinutes = 694; // 11h 34m in minutes
 
-    // Workspace collapse
-    const wsBtn = document.querySelector('[data-toggle="workspace"]');
-    const wsContent = document.querySelector('.workspace-content');
-    wsBtn?.addEventListener('click', () => toggleSection(wsBtn, wsContent));
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startBtn = document.getElementById('startBtn');
 
-    // Group collapse
-    document.querySelectorAll('[data-toggle="group"]').forEach(h => {
-      h.addEventListener('click', () => {
-        const section = h.closest('.group');
-        const body = section.querySelector('.group-body');
-        const expanded = section.getAttribute('aria-expanded') !== 'false';
-        section.setAttribute('aria-expanded', String(!expanded));
-        body.style.display = expanded ? 'none' : '';
-      });
-    });
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
 
-    // Subgroup collapse
-    document.querySelectorAll('[data-toggle="subgroup"]').forEach(h => {
-      h.addEventListener('click', () => {
-        const sg = h.closest('.subgroup');
-        const list = sg.querySelector('.task-list');
-        const expanded = sg.getAttribute('aria-expanded') !== 'false';
-        sg.setAttribute('aria-expanded', String(!expanded));
-        list.style.display = expanded ? 'none' : '';
-      });
-    });
+        function startTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                isRunning = true;
+                startBtn.textContent = 'Pause';
+                startBtn.style.background = '#ff4444';
+                
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        completePomodoro();
+                    }
+                }, 1000);
+            }
+        }
 
-    // Checkbox interactions (tarefas e subtarefas)
-    function wireCheckbox(scope){
-      scope.querySelectorAll('.checkbox').forEach(cb => {
-        cb.addEventListener('click', (e) => {
-          e.stopPropagation();
-          cb.classList.toggle('checked');
-          const row = cb.closest('.task, .subtask');
-          row?.classList.toggle('done');
+        function pauseTimer() {
+            isRunning = false;
+            startBtn.textContent = 'Start';
+            startBtn.style.background = '#4a69ff';
+            clearInterval(timerInterval);
+        }
+
+        function completePomodoro() {
+            pauseTimer();
+            pomodoroCount++;
+            todayFocusMinutes += 20;
+            updateStats();
+            addFocusRecord();
+            timeLeft = 20 * 60; // Reset timer
+            updateDisplay();
+            
+            // Play notification sound (optional)
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLYijYIG2m98OScTgwOUaltIphCUo7N67NgGwU7k9nuyHMkBl+z0+BILANAsOv7nEELCVep0qMNF0+z6/E0bB3+8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8ODw');
+            audio.play().catch(() => {}); // Ignore errors if audio can't play
+        }
+
+        function updateStats() {
+            // Update today's pomo count
+            document.querySelector('.stat-value').textContent = pomodoroCount;
+            
+            // Update today's focus time
+            const hours = Math.floor(todayFocusMinutes / 60);
+            const minutes = todayFocusMinutes % 60;
+            document.querySelectorAll('.stat-value')[1].innerHTML = `${hours}<small>h</small>${minutes}<small>m</small>`;
+        }
+
+        function addFocusRecord() {
+            const now = new Date();
+            const startTime = new Date(now.getTime() - 20 * 60 * 1000);
+            const startStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
+            const endStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            const recordList = document.querySelector('.record-list');
+            const newRecord = document.createElement('div');
+            newRecord.className = 'record-item';
+            newRecord.innerHTML = `
+                <div class="record-left">
+                    <div class="record-icon"></div>
+                    <span class="record-time">${startStr} - ${endStr}</span>
+                </div>
+                <span class="record-duration">20m</span>
+            `;
+            recordList.insertBefore(newRecord, recordList.firstChild);
+            
+            // Remove last item if more than 5 records
+            if (recordList.children.length > 5) {
+                recordList.removeChild(recordList.lastChild);
+            }
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTimer);
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                if (this.textContent === 'Stopwatch') {
+                    // Switch to stopwatch mode
+                    timeLeft = 0;
+                    updateDisplay();
+                    document.querySelector('.focus-label').style.display = 'none';
+                } else {
+                    // Switch to Pomodoro mode
+                    timeLeft = 20 * 60;
+                    updateDisplay();
+                    document.querySelector('.focus-label').style.display = 'flex';
+                }
+                
+                if (isRunning) {
+                    pauseTimer();
+                }
+            });
         });
-      });
-    }
-    wireCheckbox(document);
 
-    // Expander de subtarefas
-    document.querySelectorAll('.task.has-subtasks .expander').forEach(exp => {
-      exp.addEventListener('click', (e) => {
-        const task = exp.closest('.task.has-subtasks');
-        const next = task.nextElementSibling; // .subtasks logo abaixo
-        const open = task.getAttribute('aria-expanded') !== 'false';
-        task.setAttribute('aria-expanded', String(!open));
-        if(next?.classList.contains('subtasks')){
-          next.style.display = open ? 'none' : '';
-        }
-      });
-    });
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                startTimer();
+            }
+        });
 
-    // Adicionar subtask
-    document.querySelectorAll('.add-subtask-input').forEach(input => {
-      input.addEventListener('keydown', (e) => {
-        if(e.key === 'Enter' && input.value.trim()){
-          const container = input.closest('.subtasks');
-          const node = document.createElement('div');
-          node.className = 'subtask';
-          node.innerHTML = `<button class="checkbox"></button><div class="title"></div><div class="meta">Inbox</div>`;
-          node.querySelector('.title').textContent = input.value.trim();
-          container.insertBefore(node, input.closest('.add-subtask'));
-          input.value = '';
-          wireCheckbox(node);
-        }
-      });
-    });
-
-    // Demo: adicionar tarefa com Enter
-    const input = document.querySelector('.add-input');
-    const taskList = document.querySelector('.task-list');
-    input?.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter' && input.value.trim()){ 
-        const row = document.createElement('div');
-        row.className = 'task';
-        row.innerHTML = `
-          <button class="checkbox" aria-label="marcar"></button>
-          <div class="title-line"><span class="title"></span></div>
-          <div class="meta">Inbox</div>`;
-        row.querySelector('.title').textContent = input.value.trim();
-        wireCheckbox(row);
-        taskList.prepend(row);
-        input.value='';
-      }
-    });
-  </script>
+        // Initialize display
+        updateDisplay();
+    </script>
 </body>
 </html>
