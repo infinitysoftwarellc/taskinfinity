@@ -242,14 +242,6 @@
                                 @if (! $canAddMissionSubtask)
                                     <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
                                 @endif
-                            @else
-                                <div class="subtasks-empty">
-                                    @if ($canAddMissionSubtask)
-                                        <span class="subtask-hint">Shift + Enter para criar subtarefa</span>
-                                    @else
-                                        <span class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</span>
-                                    @endif
-                                </div>
                             @endif
                         </div>
                     </div>

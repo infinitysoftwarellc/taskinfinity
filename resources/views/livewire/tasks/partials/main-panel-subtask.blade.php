@@ -86,13 +86,6 @@
             ])
         </div>
     </div>
-
-    <div
-        @class(['subtask-group', 'is-empty' => $children->isEmpty()])
-        data-subtask-container
-        data-mission-id="{{ $missionId }}"
-        data-parent-id="{{ $item['id'] }}"
-    >
         @if ($children->isNotEmpty())
             @foreach ($children as $child)
                 @include('livewire.tasks.partials.main-panel-subtask', [
@@ -107,10 +100,5 @@
             @if (! $canAddChild)
                 <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
             @endif
-        @else
-            <div class="subtask-drop-placeholder" aria-hidden="true">
-                Solte aqui para transformar em subtarefa
-            </div>
         @endif
-    </div>
 </div>
