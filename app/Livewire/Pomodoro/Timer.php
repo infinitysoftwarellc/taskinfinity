@@ -34,6 +34,8 @@ class Timer extends Component
 
     public bool $showStopConfirmation = false;
     public bool $allowSaveOnStop = false;
+    public bool $showRecordModal = false;
+    public array $recordModal = [];
 
     protected ?PomodoroSession $sessionCache = null;
     protected ?PomodoroPause $pauseCache = null;
@@ -53,6 +55,21 @@ class Timer extends Component
     public function hydrate(): void
     {
         $this->timezone = $this->userTimezone();
+    }
+
+    public function selectPhase(string $phase): void
+    {
+        if ($this->sessionId) {
+            return;
+        }
+
+        if (! in_array($phase, ['focus', 'short_break', 'long_break'], true)) {
+            return;
+        }
+
+        $this->phase = $phase;
+        $this->remainingSeconds = $this->phaseDuration($phase);
+        $this->running = false;
     }
 
     public function render(): View
@@ -205,23 +222,65 @@ class Timer extends Component
 
     public function getRecordItemsProperty(): array
     {
-        return collect($this->records)
-            ->map(function (array $record) {
-                return [
-                    'time_label' => sprintf('%s – %s', $record['start_label'], $record['end_label']),
-                    'duration_label' => sprintf('%dm', max(0, (int) ($record['duration_minutes'] ?? 0))),
-                ];
-            })
-            ->all();
+        return $this->records;
     }
 
     public function getPhaseLabelProperty(): string
     {
         return match ($this->phase) {
-            'short_break' => __('Short Break'),
-            'long_break' => __('Long Break'),
-            default => __('Focus'),
+            'short_break' => __('Pausa'),
+            'long_break' => __('Pausa longa'),
+            default => __('Pomodoro'),
         };
+    }
+
+    public function openRecord(int $recordId): void
+    {
+        $record = collect($this->records)->firstWhere('id', $recordId);
+
+        if (! $record) {
+            $record = $this->loadRecordFromDatabase($recordId);
+        }
+
+        if (! $record) {
+            return;
+        }
+
+        $this->recordModal = $record;
+        $this->showRecordModal = true;
+    }
+
+    public function closeRecordModal(): void
+    {
+        $this->showRecordModal = false;
+        $this->recordModal = [];
+    }
+
+    public function deleteRecord(int $recordId): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $session = PomodoroSession::where('user_id', $user->id)
+            ->where('id', $recordId)
+            ->first();
+
+        if (! $session) {
+            return;
+        }
+
+        DB::transaction(function () use ($session) {
+            $session->pauses()->delete();
+            $session->delete();
+        });
+
+        $this->closeRecordModal();
+        $this->refreshStatistics();
+        $this->refreshRecords();
+        $this->updateFocusStreak();
     }
 
     protected function loadActiveSession(): void
@@ -546,17 +605,7 @@ class Timer extends Component
             ->get();
 
         $this->records = $sessions->map(function (PomodoroSession $session) {
-            $start = $this->clientDate($session, 'started_at_client');
-            $endRaw = $session->getRawOriginal('ended_at_client');
-            $end = $endRaw
-                ? Carbon::createFromFormat('Y-m-d H:i:s', $endRaw, $session->client_timezone)
-                : $start->copy()->addSeconds($session->duration_seconds);
-
-            return [
-                'start_label' => $start->format('H:i'),
-                'end_label' => $end->format('H:i'),
-                'duration_minutes' => intdiv($session->duration_seconds, 60),
-            ];
+            return $this->formatRecord($session);
         })->all();
     }
 
@@ -643,5 +692,76 @@ class Timer extends Component
         }
 
         return Carbon::createFromFormat('Y-m-d H:i:s', $raw, $session->client_timezone ?? $this->timezone);
+    }
+
+    protected function formatRecord(PomodoroSession $session): array
+    {
+        $start = $this->clientDate($session, 'started_at_client');
+        $endRaw = $session->getRawOriginal('ended_at_client');
+        $end = $endRaw
+            ? Carbon::createFromFormat('Y-m-d H:i:s', $endRaw, $session->client_timezone ?? $this->timezone)
+            : $start->copy()->addSeconds($session->duration_seconds);
+
+        $phase = $this->determinePhase($session);
+
+        return [
+            'id' => $session->id,
+            'phase' => $phase,
+            'type_label' => $this->phaseDisplayName($phase),
+            'time_label' => sprintf('%s – %s', $start->format('H:i'), $end->format('H:i')),
+            'start_label' => $start->format('H:i'),
+            'end_label' => $end->format('H:i'),
+            'date_label' => $start->translatedFormat('d MMM'),
+            'date_full_label' => $start->translatedFormat('d MMMM Y'),
+            'duration_minutes' => intdiv($session->duration_seconds, 60),
+            'duration_label' => $this->formatDurationLabel($session->duration_seconds),
+            'duration_full_label' => $this->formatDurationLabel($session->duration_seconds),
+            'notes' => $session->notes,
+        ];
+    }
+
+    protected function loadRecordFromDatabase(int $recordId): ?array
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return null;
+        }
+
+        $session = PomodoroSession::where('user_id', $user->id)
+            ->whereNotNull('ended_at_server')
+            ->find($recordId);
+
+        if (! $session) {
+            return null;
+        }
+
+        return $this->formatRecord($session);
+    }
+
+    protected function phaseDisplayName(string $phase): string
+    {
+        return match ($phase) {
+            'short_break' => __('Pausa'),
+            'long_break' => __('Pausa longa'),
+            default => __('Pomodoro'),
+        };
+    }
+
+    protected function formatDurationLabel(int $seconds): string
+    {
+        $seconds = max(0, $seconds);
+        $minutes = intdiv($seconds, 60);
+        $remainingSeconds = $seconds % 60;
+
+        if ($minutes > 0 && $remainingSeconds > 0) {
+            return sprintf('%dm %ds', $minutes, $remainingSeconds);
+        }
+
+        if ($minutes > 0) {
+            return sprintf('%dm', $minutes);
+        }
+
+        return sprintf('%ds', $remainingSeconds);
     }
 }
