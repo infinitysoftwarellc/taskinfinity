@@ -226,12 +226,12 @@ class MainPanel extends Component
         }
 
         if ($checkpointId !== null) {
-            $checkpointExists = Checkpoint::query()
+            $checkpoint = Checkpoint::query()
                 ->where('id', $checkpointId)
                 ->where('mission_id', $mission->id)
-                ->exists();
+                ->first();
 
-            if (! $checkpointExists) {
+            if (! $checkpoint) {
                 return;
             }
 
@@ -239,7 +239,34 @@ class MainPanel extends Component
             $this->selectedSubtaskId = $checkpointId;
             $this->dispatch('task-selected', $mission->id, $checkpointId);
 
-            // Subtarefas não herdam ações inline além da seleção.
+            $timezone = $user->timezone ?? config('app.timezone');
+
+            if ($action === 'set-date') {
+                $changed = $this->handleCheckpointDateSelection($checkpoint, $value, $timezone);
+
+                if ($changed) {
+                    $this->dispatch('tasks-updated');
+                }
+
+                $this->dispatch('tasks-inline-action', $mission->id, $action, $value, $checkpointId);
+
+                return;
+            }
+
+            if ($action === 'due-shortcut') {
+                $changed = $this->handleCheckpointShortcut($checkpoint, $value, $timezone);
+
+                if ($changed) {
+                    $this->dispatch('tasks-updated');
+                }
+
+                $this->dispatch('tasks-inline-action', $mission->id, $action, $value, $checkpointId);
+
+                return;
+            }
+
+            $this->dispatch('tasks-inline-action', $mission->id, $action, $value, $checkpointId);
+
             return;
         }
 
@@ -274,6 +301,16 @@ class MainPanel extends Component
                 $this->dispatch('tasks-updated');
             }
 
+            $this->dispatch('tasks-inline-action', $mission->id, $action, $value, null);
+
+            return;
+        }
+
+        if ($action === 'toggle-star') {
+            $mission->is_starred = ! $mission->is_starred;
+            $mission->save();
+
+            $this->dispatch('tasks-updated');
             $this->dispatch('tasks-inline-action', $mission->id, $action, $value, null);
 
             return;
@@ -1021,6 +1058,83 @@ class MainPanel extends Component
     }
 
     /**
+     * Processa a seleção manual de datas para checkpoints.
+     */
+    private function handleCheckpointDateSelection(Checkpoint $checkpoint, ?string $value, string $timezone): bool
+    {
+        if ($value === null || $value === '') {
+            return $this->updateCheckpointDueDate($checkpoint, null);
+        }
+
+        $localDate = $this->parseLocalDate($value, $timezone);
+
+        if (! $localDate) {
+            return false;
+        }
+
+        return $this->updateCheckpointDueDate($checkpoint, $localDate);
+    }
+
+    /**
+     * Aplica atalhos de data às subtarefas.
+     */
+    private function handleCheckpointShortcut(Checkpoint $checkpoint, ?string $shortcut, string $timezone): bool
+    {
+        if (! $shortcut) {
+            return false;
+        }
+
+        if ($shortcut === 'clear') {
+            return $this->updateCheckpointDueDate($checkpoint, null);
+        }
+
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+
+        $target = match ($shortcut) {
+            'today' => $today,
+            'tomorrow' => $today->addDay(),
+            'next7' => $today->addDays(7),
+            default => null,
+        };
+
+        if (! $target) {
+            return false;
+        }
+
+        return $this->updateCheckpointDueDate($checkpoint, $target);
+    }
+
+    /**
+     * Atualiza a data de uma subtarefa evitando gravações desnecessárias.
+     */
+    private function updateCheckpointDueDate(Checkpoint $checkpoint, ?CarbonImmutable $localDate): bool
+    {
+        $current = $checkpoint->due_at;
+
+        if ($localDate === null) {
+            if ($current === null) {
+                return false;
+            }
+
+            $checkpoint->due_at = null;
+            $checkpoint->save();
+
+            return true;
+        }
+
+        $serverDate = $localDate->setTimezone(config('app.timezone'));
+
+        if ($current && $current->equalTo($serverDate)) {
+            return false;
+        }
+
+        $checkpoint->due_at = $serverDate;
+        $checkpoint->save();
+
+        return true;
+    }
+
+    /**
      * Renderiza a lista principal de missões com o estado atual.
      */
     public function render()
@@ -1045,7 +1159,9 @@ class MainPanel extends Component
         $lists = TaskList::query()
             ->with([
                 'missions' => function ($query) use ($timezone) {
-                    $query->orderBy('position')->orderBy('created_at');
+                    $query->orderByDesc('is_starred')
+                        ->orderBy('position')
+                        ->orderBy('created_at');
 
                     if ($this->shortcut) {
                         MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
@@ -1063,17 +1179,18 @@ class MainPanel extends Component
         $unlistedMissions = Mission::query()
             ->where('user_id', $user->id)
             ->whereNull('list_id')
+            ->orderByDesc('is_starred')
             ->orderBy('position')
             ->orderBy('created_at')
             ->with(['checkpoints' => fn ($query) => $query->orderBy('position')->orderBy('created_at')])
             ->when($this->shortcut, fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $timezone))
             ->get();
 
-        $lists->each(function ($list) {
-            $this->attachCheckpointTree($list->missions);
+        $lists->each(function ($list) use ($timezone) {
+            $this->attachCheckpointTree($list->missions, $timezone);
         });
 
-        $this->attachCheckpointTree($unlistedMissions);
+        $this->attachCheckpointTree($unlistedMissions, $timezone);
 
         $totalCount = $lists->sum(fn ($list) => $list->missions->count()) + $unlistedMissions->count();
 
@@ -1109,7 +1226,9 @@ class MainPanel extends Component
             $activeList = TaskList::query()
                 ->with([
                     'missions' => function ($query) use ($timezone) {
-                        $query->orderBy('position')->orderBy('created_at');
+                        $query->orderByDesc('is_starred')
+                            ->orderBy('position')
+                            ->orderBy('created_at');
 
                         if ($this->shortcut) {
                             MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
@@ -1122,7 +1241,7 @@ class MainPanel extends Component
                 ->find($this->currentListId);
 
             if ($activeList) {
-                $this->attachCheckpointTree($activeList->missions);
+                $this->attachCheckpointTree($activeList->missions, $timezone);
 
                 $lists = collect([$activeList]);
                 $unlistedMissions = collect();
@@ -1282,10 +1401,10 @@ class MainPanel extends Component
     /**
      * Anexa a árvore de subtarefas a cada missão retornada para a view.
      */
-    private function attachCheckpointTree(Collection $missions): void
+    private function attachCheckpointTree(Collection $missions, string $timezone): void
     {
-        $missions->each(function ($mission) {
-            $tree = $this->buildCheckpointTree(collect($mission->checkpoints ?? []));
+        $missions->each(function ($mission) use ($timezone) {
+            $tree = $this->buildCheckpointTree(collect($mission->checkpoints ?? []), $timezone);
             $mission->setRelation('checkpointTree', collect($tree));
         });
     }
@@ -1293,7 +1412,7 @@ class MainPanel extends Component
     /**
      * Gera a estrutura hierárquica usada pela lista principal.
      */
-    private function buildCheckpointTree(Collection $checkpoints): array
+    private function buildCheckpointTree(Collection $checkpoints, string $timezone): array
     {
         if ($checkpoints->isEmpty()) {
             return [];
@@ -1307,17 +1426,17 @@ class MainPanel extends Component
             return $parentId === null ? '__root__' : (string) $parentId;
         });
 
-        return $this->buildCheckpointBranch($grouped, null, 0);
+        return $this->buildCheckpointBranch($grouped, null, 0, $timezone);
     }
 
     /**
      * Percorre recursivamente os checkpoints agrupados para montar nós filhos.
      */
-    private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth): array
+    private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth, string $timezone): array
     {
         $key = $parentId === null ? '__root__' : (string) $parentId;
 
-        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth, $parentId) {
+        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth, $parentId, $timezone) {
             return [
                 'id' => $checkpoint->id,
                 'mission_id' => $checkpoint->mission_id,
@@ -1325,9 +1444,10 @@ class MainPanel extends Component
                 'title' => $checkpoint->title,
                 'is_done' => (bool) $checkpoint->is_done,
                 'position' => $checkpoint->position,
+                'due_at' => $checkpoint->due_at?->copy()->setTimezone($timezone)?->format('c'),
                 'children' => $depth >= 6
                     ? []
-                    : $this->buildCheckpointBranch($grouped, $checkpoint->id, $depth + 1),
+                    : $this->buildCheckpointBranch($grouped, $checkpoint->id, $depth + 1, $timezone),
             ];
         })->values()->toArray();
     }
