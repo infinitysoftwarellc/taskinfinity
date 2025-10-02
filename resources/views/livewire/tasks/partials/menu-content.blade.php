@@ -23,6 +23,7 @@
                 class="ti-menu-icon"
                 type="button"
                 data-menu-item
+                role="menuitem"
                 title="Hoje"
                 @if ($isDetails && $isSubtask)
                     wire:click="applySubtaskShortcut({{ $subtaskId }}, 'today')"
@@ -41,6 +42,7 @@
                 class="ti-menu-icon"
                 type="button"
                 data-menu-item
+                role="menuitem"
                 title="Amanhã"
                 @if ($isDetails && $isSubtask)
                     wire:click="applySubtaskShortcut({{ $subtaskId }}, 'tomorrow')"
@@ -59,6 +61,7 @@
                 class="ti-menu-icon"
                 type="button"
                 data-menu-item
+                role="menuitem"
                 title="Próximos 7 dias"
                 @if ($isDetails && $isSubtask)
                     wire:click="applySubtaskShortcut({{ $subtaskId }}, 'next7')"
@@ -79,6 +82,11 @@
                 <input
                     class="ti-menu-date-input"
                     type="date"
+                    data-flatpickr
+                    data-flatpickr-date-format="Y-m-d"
+                    data-flatpickr-alt-format="d/m/Y"
+                    x-data="{}"
+                    x-init="$flatpickr()"
                     aria-label="Escolher data personalizada"
                     value="{{ $customDateValue }}"
                     @if ($isDetails && $isSubtask)
@@ -97,6 +105,7 @@
                 class="ti-menu-icon"
                 type="button"
                 data-menu-item
+                role="menuitem"
                 title="Remover data"
                 @if ($isDetails && $isSubtask)
                     wire:click="applySubtaskShortcut({{ $subtaskId }}, 'clear')"
@@ -122,6 +131,7 @@
                     @class(['ti-menu-flag', 'is-high', 'is-active' => $currentPriority === 3])
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     title="Prioridade alta"
                     aria-pressed="{{ $currentPriority === 3 ? 'true' : 'false' }}"
                     @if ($isDetails)
@@ -137,6 +147,7 @@
                     @class(['ti-menu-flag', 'is-medium', 'is-active' => $currentPriority === 2])
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     title="Prioridade média"
                     aria-pressed="{{ $currentPriority === 2 ? 'true' : 'false' }}"
                     @if ($isDetails)
@@ -152,6 +163,7 @@
                     @class(['ti-menu-flag', 'is-low', 'is-active' => $currentPriority === 1])
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     title="Prioridade baixa"
                     aria-pressed="{{ $currentPriority === 1 ? 'true' : 'false' }}"
                     @if ($isDetails)
@@ -167,6 +179,7 @@
                     @class(['ti-menu-flag', 'is-none', 'is-active' => $currentPriority === 0])
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     title="Sem prioridade"
                     aria-pressed="{{ $currentPriority === 0 ? 'true' : 'false' }}"
                     @if ($isDetails)
@@ -189,6 +202,7 @@
                     class="ti-menu-action"
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     @if ($isDetails)
                         wire:click="openSubtaskForm({{ $subtaskId }})"
                     @elseif ($missionId)
@@ -202,6 +216,7 @@
                     class="ti-menu-action danger"
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     @if ($isDetails)
                         wire:click="deleteSubtask({{ $subtaskId }})"
                     @elseif ($missionId)
@@ -220,6 +235,7 @@
                     class="ti-menu-action"
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     @if ($isDetails)
                         wire:click="openSubtaskForm"
                     @elseif ($missionId)
@@ -233,6 +249,7 @@
                     class="ti-menu-action"
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     @if ($isDetails)
                         wire:click="toggleStar"
                     @elseif ($missionId)
@@ -246,6 +263,7 @@
                     class="ti-menu-action"
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     @if ($isDetails)
                         wire:click="toggleMoveListMenu"
                     @elseif ($missionId)
@@ -259,6 +277,7 @@
                     class="ti-menu-action"
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     @if ($isDetails)
                         wire:click="startPomodoro"
                     @elseif ($missionId)
@@ -285,6 +304,7 @@
                     class="ti-menu-action danger"
                     type="button"
                     data-menu-item
+                    role="menuitem"
                     @if ($isDetails)
                         wire:click="deleteMission"
                     @elseif ($missionId)

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use WireUi\Traits\WireUiActions;
 
 /**
  * Componente que controla o painel de detalhes da página de tarefas.
@@ -22,6 +23,8 @@ use Livewire\Component;
  */
 class Details extends Component
 {
+    use WireUiActions;
+
     public const MAX_SUBTASKS = MainPanel::MAX_SUBTASKS;
 
     /**
@@ -43,6 +46,11 @@ class Details extends Component
      * Conjunto de missões selecionadas simultaneamente.
      */
     public array $multiSelection = [];
+
+    /**
+     * Missão inicial selecionada ao carregar o painel.
+     */
+    public ?int $initialMissionId = null;
 
     /**
      * Data customizada aplicada em lote às missões selecionadas.
@@ -92,29 +100,18 @@ class Details extends Component
     public array $availableLists = [];
 
     /**
-     * Controla a abertura do formulário de nova subtarefa.
-     */
-    public bool $showSubtaskForm = false;
-
-    /**
-     * Título digitado ao criar uma nova subtarefa.
-     */
-    public string $newSubtaskTitle = '';
-
-    /**
-     * Identificador do possível pai da subtarefa em criação.
-     */
-    public ?int $newSubtaskParentId = null;
-
-    /**
-     * Rótulo exibido para o pai da subtarefa em criação.
-     */
-    public ?string $newSubtaskParentLabel = null;
-
-    /**
      * Subtarefa atualmente selecionada na árvore.
      */
     public ?int $selectedSubtaskId = null;
+
+    public function mount(?int $initialMissionId = null): void
+    {
+        $this->initialMissionId = $initialMissionId;
+
+        if ($this->initialMissionId) {
+            $this->loadMission($this->initialMissionId);
+        }
+    }
 
     /**
      * Carrega missão e subtarefas quando o usuário seleciona um item na lista.
@@ -197,10 +194,6 @@ class Details extends Component
         $this->showDatePicker = false;
         $this->menuDate = $this->pickerSelectedDate;
         $this->showMoveListMenu = false;
-        $this->showSubtaskForm = false;
-        $this->newSubtaskTitle = '';
-        $this->newSubtaskParentId = null;
-        $this->newSubtaskParentLabel = null;
         $this->applyActiveSubtaskContext($checkpointId);
 
         $this->availableLists = TaskList::query()
@@ -226,10 +219,6 @@ class Details extends Component
         $this->missionTags = [];
         $this->availableLists = [];
         $this->showMoveListMenu = false;
-        $this->showSubtaskForm = false;
-        $this->newSubtaskTitle = '';
-        $this->newSubtaskParentId = null;
-        $this->newSubtaskParentLabel = null;
         $this->menuDate = null;
         $this->showDatePicker = false;
         $this->pickerCursorDate = null;
@@ -377,6 +366,8 @@ class Details extends Component
         if ($this->missionId) {
             $activeSubtask = $this->selectedSubtaskId;
             $this->loadMission($this->missionId, $activeSubtask);
+        } elseif (count($this->multiSelection) > 1) {
+            $this->loadMultiSelection($this->multiSelection);
         }
     }
 
@@ -1255,78 +1246,15 @@ class Details extends Component
         }
 
         if ($this->reachedSubtaskLimit($this->missionId, $parentId)) {
-            return;
-        }
-
-        $this->newSubtaskParentId = $parentId;
-        $this->newSubtaskParentLabel = $parentId ? $this->resolveSubtaskTitle($parentId) : null;
-        $this->newSubtaskTitle = '';
-        $this->showSubtaskForm = true;
-    }
-
-    /**
-     * Cancela a criação de subtarefa e limpa o formulário.
-     */
-    public function cancelSubtaskForm(): void
-    {
-        $this->showSubtaskForm = false;
-        $this->newSubtaskTitle = '';
-        $this->newSubtaskParentId = null;
-        $this->newSubtaskParentLabel = null;
-    }
-
-    /**
-     * Persiste a nova subtarefa criada no painel de detalhes.
-     */
-    public function saveSubtask(): void
-    {
-        if (! $this->missionId) {
-            return;
-        }
-
-        $title = trim($this->newSubtaskTitle);
-
-        if ($title === '') {
-            return;
-        }
-
-        $mission = Mission::query()
-            ->where('user_id', Auth::id())
-            ->find($this->missionId);
-
-        if (! $mission) {
-            return;
-        }
-
-        if ($this->reachedSubtaskLimit($mission->id, $this->newSubtaskParentId)) {
-            $this->showSubtaskForm = false;
-            $this->newSubtaskTitle = '';
-            $this->newSubtaskParentId = null;
-            $this->newSubtaskParentLabel = null;
+            $this->notification()->warning('Limite atingido', 'Esse nível já possui o número máximo de subtarefas.');
 
             return;
         }
 
-        $payload = [
-            'mission_id' => $mission->id,
-            'title' => $title,
-            'position' => $this->nextCheckpointPosition($mission->id, $this->newSubtaskParentId),
-            'is_done' => false,
-        ];
-
-        if ($column = $this->checkpointParentColumn()) {
-            $payload[$column] = $this->newSubtaskParentId;
-        }
-
-        Checkpoint::create($payload);
-
-        $this->newSubtaskTitle = '';
-        $this->showSubtaskForm = false;
-        $this->newSubtaskParentId = null;
-        $this->newSubtaskParentLabel = null;
-
-        $this->loadMission($mission->id, $this->selectedSubtaskId);
-        $this->dispatch('tasks-updated');
+        $this->dispatch('openModal', component: 'tasks.modals.subtask-editor', arguments: [
+            'missionId' => $this->missionId,
+            'parentId' => $parentId,
+        ]);
     }
 
     /**
@@ -1338,7 +1266,6 @@ class Details extends Component
             return;
         }
 
-        $this->cancelSubtaskForm();
         $this->applyActiveSubtaskContext(null);
         $this->dispatch('task-selected', $this->missionId, null);
     }
@@ -1410,8 +1337,6 @@ class Details extends Component
         $this->availableLists = [];
         $this->showMoveListMenu = false;
         $this->showDatePicker = false;
-        $this->showSubtaskForm = false;
-        $this->newSubtaskTitle = '';
         $this->pickerSelectedDate = null;
         $this->pickerCursorDate = null;
         $this->menuDate = null;

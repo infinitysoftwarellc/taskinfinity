@@ -102,8 +102,17 @@
                             <label class="ti-multi-chip picker">
                                 <i class="fa-regular fa-calendar" aria-hidden="true"></i>
                                 <span>Personalizar</span>
-                                <input type="date" wire:model.defer="multiSelectionDate"
-                                    wire:change="applyMultiSelectionDate" aria-label="Definir data personalizada" />
+                                <input
+                                    type="date"
+                                    data-flatpickr
+                                    data-flatpickr-date-format="Y-m-d"
+                                    data-flatpickr-alt-format="d/m/Y"
+                                    x-data="{}"
+                                    x-init="$flatpickr()"
+                                    wire:model.defer="multiSelectionDate"
+                                    wire:change="applyMultiSelectionDate"
+                                    aria-label="Definir data personalizada"
+                                />
                             </label>
                         </div>
                     </div>
@@ -267,10 +276,16 @@
 
                     <div class="ti-date-picker-container" wire:keydown.escape.window="closeAllDatePickers">
                         @php
+                            $detailsTimezone = auth()->user()?->timezone ?? config('app.timezone');
                             $missionDueLabel =
                                 $mission['due_at'] instanceof \Carbon\CarbonInterface
-                                    ? $mission['due_at']->format('d/m/Y')
+                                    ? $mission['due_at']->copy()->setTimezone($detailsTimezone)->format('d/m/Y')
                                     : null;
+                            $missionDueIso =
+                                $mission['due_at'] instanceof \Carbon\CarbonInterface
+                                    ? $mission['due_at']->copy()->setTimezone($detailsTimezone)->toIso8601String()
+                                    : null;
+                            $missionTimezone = $detailsTimezone;
                         @endphp
                         <button class="pill icon-only {{ $showDatePicker ?? false ? 'is-active' : '' }}" type="button"
                             title="{{ $missionDueLabel ?? 'Sem data definida' }}"
@@ -278,7 +293,14 @@
                             wire:click="toggleDatePicker">
                             <i class="fa-solid fa-calendar" aria-hidden="true"></i>
                             @if ($missionDueLabel)
-                                <span class="ti-date-label">{{ $missionDueLabel }}</span>
+                                <span
+                                    class="ti-date-label"
+                                    data-relative-datetime="{{ $missionDueIso }}"
+                                    data-relative-tz="{{ $missionTimezone }}"
+                                    data-relative-fallback="{{ $missionDueLabel }}"
+                                >
+                                    {{ $missionDueLabel }}
+                                </span>
                             @endif
                         </button>
 
@@ -409,9 +431,12 @@
                         <ul
                             class="ti-subtask-list"
                             role="list"
+                            wire:sortable="reorderSubtasks"
                             data-subtask-container
                             data-mission-id="{{ $missionData['id'] ?? '' }}"
                             data-parent-id=""
+                            x-data
+                            x-auto-animate
                         >
                             @foreach ($subtasks as $st)
                                 @include('livewire.tasks.partials.subtask-item', [
@@ -427,21 +452,7 @@
                         <p class="muted" style="margin:8px 0 0;">Sem subtarefas</p>
                     @endif
 
-                    @if ($showSubtaskForm && $canAddRootSubtask)
-                        <form class="ti-subtask-form" wire:submit.prevent="saveSubtask">
-                            @if ($newSubtaskParentLabel)
-                                <div class="ti-subtask-context">Dentro de <span>{{ $newSubtaskParentLabel }}</span>
-                                </div>
-                            @endif
-                            <input type="text" class="ti-subtask-input" placeholder="Título da subtarefa"
-                                wire:model.defer="newSubtaskTitle" />
-                            <div class="ti-subtask-form-actions">
-                                <button type="button" class="ghost"
-                                    wire:click="cancelSubtaskForm">Cancelar</button>
-                                <button type="submit" class="primary">Adicionar</button>
-                            </div>
-                        </form>
-                    @elseif ($canAddRootSubtask)
+                    @if ($canAddRootSubtask)
                         <button class="add-subtask" type="button" wire:click="openSubtaskForm">
                             <i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar subtarefa
                         </button>
@@ -487,11 +498,38 @@
                 </div>
 
                 <div class="ti-footer-actions">
-                    <div class="ti-menu" data-menu>
-                        <button class="icon ghost" title="Mais opções" type="button" data-menu-trigger aria-haspopup="true" aria-expanded="false">
+                    <div
+                        class="ti-menu"
+                        x-data="tiInlineMenu({ placement: 'top-end' })"
+                        x-id="['details-menu','details-trigger']"
+                    >
+                        <button
+                            class="icon ghost"
+                            title="Mais opções"
+                            type="button"
+                            x-ref="trigger"
+                            :id="$id('details-trigger')"
+                            :aria-controls="$id('details-menu')"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="true"
+                            @click.prevent="toggle()"
+                        >
                             <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                            <span class="sr-only">Abrir menu contextual</span>
                         </button>
-                        <div class="ti-menu-dropdown" role="menu" aria-hidden="true">
+                        <div
+                            class="ti-menu-dropdown"
+                            x-ref="dropdown"
+                            x-show="open"
+                            x-transition.origin.bottom.right
+                            role="menu"
+                            :id="$id('details-menu')"
+                            :aria-labelledby="$id('details-trigger')"
+                            :aria-hidden="(!open).toString()"
+                            @keydown.escape.stop.prevent="close(true)"
+                            @click.outside="close()"
+                            @click="if ($event.target.closest('[data-menu-item]')) close(true)"
+                        >
                             @include('livewire.tasks.partials.menu-content', [
                                 'context' => 'details',
                                 'subtaskId' => $activeSubtask['id'] ?? null,

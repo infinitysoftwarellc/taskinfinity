@@ -32,12 +32,18 @@ class Board extends Component
     public ?string $shortcut = null;
 
     /**
+     * Missão que deve ser destacada ao carregar a board (quando vindo do Spotlight).
+     */
+    public ?int $initialMissionId = null;
+
+    /**
      * Inicializa o componente com possíveis filtros de lista e atalho.
      */
-    public function mount(?int $listId = null, ?string $shortcut = null): void
+    public function mount(?int $listId = null, ?string $shortcut = null, ?int $initialMissionId = null): void
     {
         $this->listId = $listId;
         $this->isListView = $listId !== null;
+        $this->initialMissionId = $initialMissionId;
 
         if ($shortcut && in_array($shortcut, MissionShortcutFilter::supported(), true)) {
             $this->shortcut = $shortcut;

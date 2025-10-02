@@ -30,12 +30,14 @@
     $subtaskDueDate = null;
     $subtaskDueLabel = null;
     $subtaskDueClass = 'subtask-due';
+    $subtaskDueIso = null;
     $isCollapsed = in_array($item['id'] ?? null, $collapsedSubtaskIds, true);
 
     if ($rawDueAt) {
         try {
             $dueDate = \Illuminate\Support\Carbon::parse($rawDueAt)->setTimezone($timezone);
             $subtaskDueDate = $dueDate->format('Y-m-d');
+            $subtaskDueIso = $dueDate->toIso8601String();
             $dueDay = $dueDate->copy()->startOfDay();
 
             if ($dueDay->equalTo($today)) {
@@ -63,7 +65,9 @@
 
 <div
     class="subtask-node"
+    role="listitem"
     wire:key="mp-subtask-{{ $item['id'] }}"
+    wire:sortable.item="{{ $item['id'] }}"
     data-subtask-node
     data-subtask-id="{{ $item['id'] }}"
     data-mission-id="{{ $missionId }}"
@@ -134,7 +138,14 @@
                 ])>
                     <i class="fa-regular fa-calendar" aria-hidden="true"></i>
                     @if ($subtaskDueLabel)
-                        <span class="subtask-date-label">{{ $subtaskDueLabel }}</span>
+                        <span
+                            class="subtask-date-label"
+                            data-relative-datetime="{{ $subtaskDueIso }}"
+                            data-relative-tz="{{ $timezone }}"
+                            data-relative-fallback="{{ $subtaskDueLabel }}"
+                        >
+                            {{ $subtaskDueLabel }}
+                        </span>
                     @else
                         <span class="sr-only">Definir data</span>
                     @endif
@@ -142,6 +153,11 @@
                 <input
                     type="date"
                     value="{{ $subtaskDueDate }}"
+                    data-flatpickr
+                    data-flatpickr-date-format="Y-m-d"
+                    data-flatpickr-alt-format="d/m/Y"
+                    x-data="{}"
+                    x-init="$flatpickr()"
                     wire:change="runInlineAction({{ $missionId }}, 'set-date', $event.target.value, {{ $item['id'] }})"
                 >
             </label>
@@ -155,12 +171,16 @@
             ])
         </div>
     </div>
-        @if ($children->isNotEmpty())
+    @if ($children->isNotEmpty())
             <div
                 class="subtask-group"
+                role="list"
+                wire:sortable="reorderSubtasks"
                 data-subtask-container
                 data-mission-id="{{ $missionId }}"
                 data-parent-id="{{ $item['id'] ?? '' }}"
+                x-data
+                x-auto-animate
                 @if ($isCollapsed)
                     style="display:none;"
                 @endif

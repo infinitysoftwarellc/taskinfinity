@@ -24,6 +24,7 @@
         "meilisearch/meilisearch-php": "^1.16",
         "typesense/typesense-php": "^5.1",
         "wire-elements/modal": "^3.0",
+        "wire-elements/spotlight": "^2.0",
         "wireui/wireui": "^2.4"
     },
     "require-dev": {

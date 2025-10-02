@@ -1,5 +1,7 @@
 <?php
 
+$searchDriver = env('SEARCH_DRIVER', 'local');
+
 return [
 
     /*
@@ -16,7 +18,9 @@ return [
     |
     */
 
-    'driver' => env('SCOUT_DRIVER', 'meilisearch'),
+    'driver' => $searchDriver === 'meilisearch'
+        ? 'meilisearch'
+        : 'collection',
 
     /*
     |--------------------------------------------------------------------------

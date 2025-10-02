@@ -477,6 +477,7 @@ class Sidebar extends Component
 
         $this->resetTagForm();
         $this->showTagModal = false;
+        $this->dispatch('tasks-updated');
     }
 
     /**

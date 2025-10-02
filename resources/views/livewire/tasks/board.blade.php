@@ -8,7 +8,11 @@
 
     <livewire:tasks.sidebar :current-list-id="$listId" :current-shortcut="$shortcut" />
 
-    <livewire:tasks.main-panel :current-list-id="$listId" :shortcut="$shortcut" />
+    <livewire:tasks.main-panel
+        :current-list-id="$listId"
+        :shortcut="$shortcut"
+        :initial-mission-id="$initialMissionId"
+    />
 
-    <livewire:tasks.details />
+    <livewire:tasks.details :initial-mission-id="$initialMissionId" />
 </div>

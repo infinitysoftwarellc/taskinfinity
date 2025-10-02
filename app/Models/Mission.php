@@ -3,6 +3,9 @@
 // This model class represents mission data within the application.
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,9 +30,23 @@ class Mission extends Model
     protected $casts = [
         'labels_json' => 'array',
         'is_starred' => 'boolean',
-        'due_at' => 'datetime',
-        'completed_at' => 'datetime',
+        'due_at' => 'immutable_datetime:UTC',
+        'completed_at' => 'immutable_datetime:UTC',
     ];
+
+    protected function dueAt(): Attribute
+    {
+        return Attribute::make(
+            get: static fn ($value) => $value ? CarbonImmutable::parse($value, 'UTC') : null,
+            set: static function ($value) {
+                if ($value instanceof CarbonInterface) {
+                    return $value->copy()->setTimezone('UTC');
+                }
+
+                return $value ? CarbonImmutable::parse($value, 'UTC') : null;
+            }
+        );
+    }
 
     protected static function booted(): void
     {

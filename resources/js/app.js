@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/pt-br';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 
@@ -20,6 +21,7 @@ import './pomodoro';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(relativeTime);
+dayjs.locale('pt-br');
 
 window.dayjs = dayjs;
 window.flatpickr = flatpickr;
@@ -96,6 +98,152 @@ window.tiFloating = {
   },
 };
 
+let inlineMenuOpenCount = 0;
+
+function registerInlineMenuOpen() {
+  inlineMenuOpenCount += 1;
+  if (inlineMenuOpenCount === 1) {
+    document.body.classList.add('ti-inline-menu-open');
+  }
+}
+
+function registerInlineMenuClose() {
+  if (inlineMenuOpenCount > 0) {
+    inlineMenuOpenCount -= 1;
+  }
+  if (inlineMenuOpenCount === 0) {
+    document.body.classList.remove('ti-inline-menu-open');
+  }
+}
+
+function resolveMiddlewareChain(options = {}) {
+  const chain = [];
+  const { middleware = [], offset: offsetValue = 8 } = options;
+
+  if (Array.isArray(middleware) && middleware.length) {
+    return middleware;
+  }
+
+  if (typeof offset === 'function') {
+    chain.push(offset(offsetValue));
+  }
+
+  if (typeof flip === 'function') {
+    chain.push(flip());
+  }
+
+  if (typeof shift === 'function') {
+    chain.push(shift({ padding: 8 }));
+  }
+
+  return chain;
+}
+
+function inlineMenuController(options = {}) {
+  const { placement = 'bottom-end', offset: offsetValue = 8 } = options;
+
+  return {
+    open: false,
+    placement,
+    offset: offsetValue,
+    middleware: options.middleware,
+    triggerEl: null,
+    dropdownEl: null,
+    cleanup: null,
+    init() {
+      this.triggerEl = this.$refs.trigger;
+      this.dropdownEl = this.$refs.dropdown;
+
+      this.$watch('open', (value, oldValue) => {
+        if (value === oldValue) {
+          return;
+        }
+
+        if (value) {
+          registerInlineMenuOpen();
+
+          this.$nextTick(() => {
+            this.updatePosition();
+
+            if (autoUpdate && this.triggerEl && this.dropdownEl) {
+              this.cleanup = autoUpdate(this.triggerEl, this.dropdownEl, () => this.updatePosition());
+            }
+          });
+        } else {
+          if (typeof this.cleanup === 'function') {
+            this.cleanup();
+            this.cleanup = null;
+          }
+
+          registerInlineMenuClose();
+        }
+      });
+    },
+    toggle() {
+      if (this.open) {
+        this.close(true);
+      } else {
+        this.show();
+      }
+    },
+    show() {
+      if (this.open) {
+        return;
+      }
+
+      this.open = true;
+    },
+    close(focusTrigger = false) {
+      if (!this.open) {
+        return;
+      }
+
+      this.open = false;
+
+      if (focusTrigger && this.triggerEl?.focus) {
+        requestAnimationFrame(() => {
+          this.triggerEl.focus({ preventScroll: false });
+        });
+      }
+    },
+    updatePosition() {
+      if (!this.triggerEl || !this.dropdownEl || !window.tiFloating) {
+        return;
+      }
+
+      window.tiFloating
+        .computePosition(this.triggerEl, this.dropdownEl, {
+          placement: this.placement,
+          strategy: 'fixed',
+          middleware: resolveMiddlewareChain({ middleware: this.middleware, offset: this.offset }),
+        })
+        .then(({ x, y, placement: resolvedPlacement }) => {
+          Object.assign(this.dropdownEl.style, {
+            inset: 'auto',
+            position: 'fixed',
+            left: `${x}px`,
+            top: `${y}px`,
+          });
+
+          this.dropdownEl.dataset.placement = resolvedPlacement;
+        })
+        .catch(() => {});
+    },
+    destroy() {
+      if (this.open) {
+        this.open = false;
+      }
+
+      if (typeof this.cleanup === 'function') {
+        this.cleanup();
+        this.cleanup = null;
+      }
+    },
+  };
+}
+
+window.tiInlineMenu = inlineMenuController;
+
 function parseFlatpickrOptions(element) {
   const options = {};
 
@@ -164,6 +312,74 @@ function initFlatpickrs(root = document) {
 
 window.tiInitFlatpickr = initFlatpickrs;
 window.tiInitAutoAnimate = initAutoAnimateElements;
+
+function formatRelativeTimestamp(element) {
+  const iso = element.dataset.relativeDatetime;
+  const fallback = element.dataset.relativeFallback ?? '';
+  const timezoneName = element.dataset.relativeTz || null;
+  const format = element.dataset.relativeFormat || 'fromNow';
+
+  if (!iso) {
+    if (fallback) {
+      element.textContent = fallback;
+    }
+    return;
+  }
+
+  let instance;
+
+  try {
+    instance = timezoneName && dayjs.tz ? dayjs.tz(iso, timezoneName) : dayjs(iso);
+  } catch (error) {
+    instance = dayjs(iso);
+  }
+
+  if (!instance?.isValid()) {
+    element.textContent = fallback || iso;
+    return;
+  }
+
+  let label;
+
+  switch (format) {
+    case 'format': {
+      const pattern = element.dataset.relativePattern || 'DD/MM/YYYY HH:mm';
+      label = instance.format(pattern);
+      break;
+    }
+    default:
+      label = instance.fromNow();
+  }
+
+  const prefix = element.dataset.relativePrefix || '';
+  const suffix = element.dataset.relativeSuffix || '';
+
+  if (prefix) {
+    label = `${prefix}${prefix.endsWith(' ') ? '' : ' '}${label}`;
+  }
+
+  if (suffix) {
+    label = `${label}${suffix.startsWith(' ') ? '' : ' '}${suffix}`;
+  }
+
+  element.textContent = label;
+}
+
+function initRelativeDatetimes(root = document) {
+  const elements = [];
+
+  if (root.matches?.('[data-relative-datetime]')) {
+    elements.push(root);
+  }
+
+  if (root.querySelectorAll) {
+    elements.push(...root.querySelectorAll('[data-relative-datetime]'));
+  }
+
+  elements.forEach((element) => {
+    formatRelativeTimestamp(element);
+  });
+}
 
 function initAutoAnimateElements(root = document) {
   const elements = [];
@@ -585,6 +801,8 @@ function setupSortableTasks(root = document) {
       return;
     }
 
+    const expression = container.getAttribute('wire:sortable');
+
     const sortable = new Sortable(container, {
       animation: 150,
       draggable: '[data-mission-id]',
@@ -607,11 +825,16 @@ function setupSortableTasks(root = document) {
           return;
         }
 
-        component.call('reorderMissions', ordered);
+        if (expression) {
+          component.call(expression, ordered);
+        } else {
+          component.call('reorderMissions', ordered);
+        }
       },
     });
 
     container.dataset.sortableReady = '1';
+    container.dataset.wireSortableReady = '1';
     container.__sortable = sortable;
   });
 }
@@ -633,6 +856,7 @@ function setupSortableSubtasks(root = document) {
       return;
     }
 
+    const expression = container.getAttribute('wire:sortable');
     const isDetailsContainer =
       container.classList.contains('ti-subtask-list') ||
       container.classList.contains('ti-subtask-children');
@@ -682,11 +906,13 @@ function setupSortableSubtasks(root = document) {
           payload.from_order = fromOrder;
         }
 
-        component.call('reorderSubtasks', missionId, payload);
+        const targetExpression = expression || 'reorderSubtasks';
+        component.call(targetExpression, missionId, payload);
       },
     });
 
     container.dataset.sortableReady = '1';
+    container.dataset.wireSortableReady = '1';
     container.__sortable = sortable;
   });
 }
@@ -837,6 +1063,7 @@ function setupDetailsKeyboard() {
 /* ────────────────────────────────────────────────────────────────── */
 function boot(root = document) {
   initFlatpickrs(root);
+  initRelativeDatetimes(root);
   initAutoAnimateElements(root);
   initWireSortable(root);
   setupDelegatedClick(); // 2) um único listener que sobrevive a trocas

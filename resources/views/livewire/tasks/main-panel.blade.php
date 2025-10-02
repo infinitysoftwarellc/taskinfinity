@@ -80,7 +80,15 @@
                 ];
             @endphp
 
-            <div class="task-list" data-sortable-tasks>
+            <div
+                class="task-list"
+                role="list"
+                data-sortable-tasks
+                data-sortable-handle=".task"
+                wire:sortable="reorderMissions"
+                x-data
+                x-auto-animate
+            >
                 @forelse ($allMissions as $mission)
                     @php
                         $isSelected = in_array($mission->id, $selectedMissionIds, true);
@@ -117,6 +125,7 @@
                         $rootSubtaskCount = $subtasks->count();
                         $canAddMissionSubtask = $rootSubtaskCount < $maxSubtasks;
                         $missionDueDate = optional(optional($mission->due_at)->setTimezone($userTimezone))->format('Y-m-d');
+                        $missionDueIso = optional($mission->due_at?->copy()->setTimezone($userTimezone))->toIso8601String();
                         $dueLabel = null;
                         $dueClass = 'task-due';
                         $priority = (int) ($mission->priority ?? 0);
@@ -147,12 +156,14 @@
 
                     <div
                         class="task-block"
+                        role="listitem"
                         wire:key="mission-flat-{{ $mission->id }}"
+                        wire:sortable.item="{{ $mission->id }}"
                         data-mission-id="{{ $mission->id }}"
                         data-list-id="{{ $mission->list_id ?? '' }}"
                     >
                         <div
-                            wire:click="selectMission({{ $mission->id }}, $event.shiftKey ? 1 : 0)"
+                        wire:click="selectMission({{ $mission->id }}, $event.shiftKey ? 1 : 0, ($event.metaKey || $event.ctrlKey) ? 1 : 0)"
                             @class([
                                 'task',
                                 'done' => $mission->status === 'done',
@@ -184,7 +195,7 @@
                                 <div
                                     class="title-line"
                                     @if ($editingMissionId !== $mission->id)
-                                        wire:click.stop="selectMission({{ $mission->id }}, $event.shiftKey ? 1 : 0)"
+                                        wire:click.stop="selectMission({{ $mission->id }}, $event.shiftKey ? 1 : 0, ($event.metaKey || $event.ctrlKey) ? 1 : 0)"
                                     @endif
                                 >
                                     @if ($editingMissionId === $mission->id)
@@ -219,7 +230,14 @@
                                     ])>
                                         <i class="fa-regular fa-calendar" aria-hidden="true"></i>
                                         @if ($dueLabel)
-                                            <span class="task-date-label">{{ $dueLabel }}</span>
+                                            <span
+                                                class="task-date-label"
+                                                data-relative-datetime="{{ $missionDueIso }}"
+                                                data-relative-tz="{{ $userTimezone }}"
+                                                data-relative-fallback="{{ $dueLabel }}"
+                                            >
+                                                {{ $dueLabel }}
+                                            </span>
                                         @else
                                             <span class="sr-only">Definir data</span>
                                         @endif
@@ -227,6 +245,11 @@
                                     <input
                                         type="date"
                                         value="{{ $missionDueDate }}"
+                                        data-flatpickr
+                                        data-flatpickr-date-format="Y-m-d"
+                                        data-flatpickr-alt-format="d/m/Y"
+                                        x-data="{}"
+                                        x-init="$flatpickr()"
                                         wire:change="runInlineAction({{ $mission->id }}, 'set-date', $event.target.value)"
                                     >
                                 </label>
@@ -245,9 +268,13 @@
 
                         <div
                             @class(['subtasks'])
+                            role="list"
+                            wire:sortable="reorderSubtasks"
                             data-subtask-container
                             data-mission-id="{{ $mission->id }}"
                             data-parent-id=""
+                            x-data
+                            x-auto-animate
                             @if ($missionCollapsed)
                                 style="display:none;"
                             @endif

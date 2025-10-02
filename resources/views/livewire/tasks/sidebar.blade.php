@@ -7,6 +7,8 @@
         'calendar-days' => 'fa-solid fa-calendar-days',
         'inbox' => 'fa-solid fa-inbox',
         'pie-chart' => 'fa-solid fa-chart-pie',
+        'infinity' => 'fa-solid fa-infinity',
+        'sunrise' => 'fa-solid fa-cloud-sun',
         'chevron-down' => 'fa-solid fa-chevron-down',
         'plus' => 'fa-solid fa-plus',
         'check-square' => 'fa-solid fa-square-check',
@@ -75,7 +77,6 @@
                     @include('livewire.tasks.partials.folder-item', [
                         'folder' => $folder,
                         'currentListId' => $currentListId,
-                        'openMenuId' => $openMenuId,
                     ])
                 @endforeach
 
@@ -83,7 +84,6 @@
                     @include('livewire.tasks.partials.list-item', [
                         'list' => $list,
                         'currentListId' => $currentListId,
-                        'openMenuId' => $openMenuId,
                     ])
                 @endforeach
 

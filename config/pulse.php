@@ -216,6 +216,9 @@ return [
                 '#^/'.env('PULSE_PATH', 'pulse').'$#', // Pulse dashboard...
                 '#^/telescope#', // Telescope dashboard...
             ],
+            'groups' => [
+                '#^/livewire/message/(.*)$#' => 'livewire:$1',
+            ],
         ],
 
         Recorders\UserJobs::class => [
@@ -232,6 +235,9 @@ return [
             'ignore' => [
                 '#^/'.env('PULSE_PATH', 'pulse').'$#', // Pulse dashboard...
                 '#^/telescope#', // Telescope dashboard...
+            ],
+            'groups' => [
+                '#^/livewire/message/(.*)$#' => 'livewire:$1',
             ],
         ],
     ],

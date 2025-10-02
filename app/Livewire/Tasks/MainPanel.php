@@ -8,6 +8,7 @@ use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
@@ -99,6 +100,11 @@ class MainPanel extends Component
     public array $collapsedSubtaskIds = [];
 
     /**
+     * Missão que deve ser destacada ao iniciar o painel.
+     */
+    public ?int $initialMissionId = null;
+
+    /**
      * Sincroniza a seleção de missão/subtarefa ao receber eventos externos.
      */
     public function syncSelectedMission(?int $missionId = null, ?int $checkpointId = null): void
@@ -118,9 +124,10 @@ class MainPanel extends Component
     /**
      * Inicializa o painel principal com filtros ativos.
      */
-    public function mount(?int $currentListId = null, ?string $shortcut = null): void
+    public function mount(?int $currentListId = null, ?string $shortcut = null, ?int $initialMissionId = null): void
     {
         $this->currentListId = $currentListId;
+        $this->initialMissionId = $initialMissionId;
 
         if ($this->currentListId) {
             $this->newTaskListId = $this->currentListId;
@@ -133,6 +140,39 @@ class MainPanel extends Component
         if ($this->currentListId) {
             $this->shortcut = null;
         }
+
+        if ($this->initialMissionId) {
+            $this->bootstrapInitialMission($this->initialMissionId);
+        }
+
+        $this->restoreCollapseState();
+    }
+
+    /**
+     * Seleciona a missão definida via Spotlight (se estiver acessível).
+     */
+    protected function bootstrapInitialMission(int $missionId): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $mission = Mission::query()
+            ->where('user_id', $user->id)
+            ->find($missionId);
+
+        if (! $mission) {
+            return;
+        }
+
+        $this->selectedMissionId = $mission->id;
+        $this->lastSelectedMissionId = $mission->id;
+        $this->selectedMissionIds = [$mission->id];
+        $this->selectedSubtaskId = null;
+
+        $this->dispatch('task-selected', $mission->id, null);
     }
 
     /**
@@ -180,13 +220,22 @@ class MainPanel extends Component
             }
         }
 
-        $mission = Mission::create([
+        $timezone = $user->timezone ?? config('app.timezone');
+        $dueDate = $this->defaultDueDateForContext($timezone);
+
+        $attributes = [
             'user_id' => $user->id,
             'list_id' => $listId,
             'title' => trim($validated['newTaskTitle']),
             'status' => 'active',
             'position' => $this->nextPosition($user->id, $listId),
-        ]);
+        ];
+
+        if ($dueDate) {
+            $attributes['due_at'] = $dueDate;
+        }
+
+        $mission = Mission::create($attributes);
 
         $this->reset(['newTaskTitle']);
 
@@ -202,7 +251,7 @@ class MainPanel extends Component
     /**
      * Define qual missão está ativa no painel e dispara eventos para detalhes.
      */
-    public function selectMission(int $missionId, int $withShift = 0): void
+    public function selectMission(int $missionId, int $withShift = 0, int $withMeta = 0): void
     {
         $user = Auth::user();
 
@@ -223,10 +272,59 @@ class MainPanel extends Component
             return;
         }
 
+        $ordered = $this->currentMissionOrderIds($user->id);
+        $useMeta = (bool) $withMeta;
         $extendSelection = (bool) $withShift && $this->lastSelectedMissionId;
 
+        if ($useMeta) {
+            $selection = $this->selectedMissionIds;
+
+            if (in_array($mission->id, $selection, true)) {
+                $selection = array_values(array_diff($selection, [$mission->id]));
+            } else {
+                $selection[] = $mission->id;
+            }
+
+            $selection = array_values(array_map('intval', array_intersect($ordered, $selection)));
+            $this->selectedMissionIds = $selection;
+
+            if (empty($selection)) {
+                $this->selectedMissionId = null;
+                $this->lastSelectedMissionId = null;
+                $this->selectedSubtaskId = null;
+                $this->cancelMissionEdit();
+                $this->dispatch('task-selected', null, null);
+
+                return;
+            }
+
+            if (count($selection) > 1) {
+                $anchorId = in_array($mission->id, $selection, true)
+                    ? $mission->id
+                    : ($selection[array_key_last($selection)] ?? $selection[0]);
+
+                $this->selectedMissionId = $anchorId;
+                $this->lastSelectedMissionId = $anchorId;
+                $this->selectedSubtaskId = null;
+                $this->cancelMissionEdit();
+                $this->dispatch('tasks-multi-selected', $selection);
+
+                return;
+            }
+
+            $primaryId = $selection[0];
+            $this->selectedMissionIds = [$primaryId];
+            $this->selectedMissionId = $primaryId;
+            $this->lastSelectedMissionId = $primaryId;
+            $this->selectedSubtaskId = null;
+
+            $this->dispatch('task-selected', $primaryId, null);
+            $this->startMissionEdit($primaryId, $primaryId === $mission->id ? $mission : null);
+
+            return;
+        }
+
         if ($extendSelection) {
-            $ordered = $this->currentMissionOrderIds($user->id);
             $from = array_search($this->lastSelectedMissionId, $ordered, true);
             $to = array_search($mission->id, $ordered, true);
 
@@ -437,11 +535,11 @@ class MainPanel extends Component
     {
         if (in_array($missionId, $this->collapsedMissionIds, true)) {
             $this->collapsedMissionIds = array_values(array_diff($this->collapsedMissionIds, [$missionId]));
-
-            return;
+        } else {
+            $this->collapsedMissionIds[] = $missionId;
         }
 
-        $this->collapsedMissionIds[] = $missionId;
+        $this->persistCollapseState();
     }
 
     /**
@@ -451,12 +549,12 @@ class MainPanel extends Component
     {
         if (in_array($checkpointId, $this->collapsedSubtaskIds, true)) {
             $this->collapsedSubtaskIds = array_values(array_diff($this->collapsedSubtaskIds, [$checkpointId]));
-
-            return;
+        } else {
+            $this->collapsedSubtaskIds[] = $checkpointId;
+            $this->collapsedMissionIds = array_values(array_diff($this->collapsedMissionIds, [$missionId]));
         }
 
-        $this->collapsedSubtaskIds[] = $checkpointId;
-        $this->collapsedMissionIds = array_values(array_diff($this->collapsedMissionIds, [$missionId]));
+        $this->persistCollapseState();
     }
 
     /**
@@ -653,7 +751,9 @@ class MainPanel extends Component
         $position = $reference->position ?? 0;
         $mission = null;
 
-        DB::transaction(function () use ($user, $reference, $position, &$mission) {
+        $timezone = $user->timezone ?? config('app.timezone');
+
+        DB::transaction(function () use ($user, $reference, $position, $timezone, &$mission) {
             Mission::query()
                 ->where('user_id', $user->id)
                 ->when(
@@ -670,6 +770,7 @@ class MainPanel extends Component
                 'title' => 'Nova tarefa',
                 'status' => 'active',
                 'position' => $position + 1,
+                'due_at' => $reference->due_at ?? $this->defaultDueDateForContext($timezone),
             ]);
         });
 
@@ -1123,6 +1224,84 @@ class MainPanel extends Component
         return $this->updateMissionDueDate($mission, $target);
     }
 
+    private function defaultDueDateForContext(string $timezone): ?CarbonImmutable
+    {
+        if (! $this->shortcut) {
+            return null;
+        }
+
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+
+        return match ($this->shortcut) {
+            MissionShortcutFilter::TODAY => $today,
+            MissionShortcutFilter::TOMORROW => $today->addDay(),
+            MissionShortcutFilter::NEXT_SEVEN_DAYS => $today,
+            default => null,
+        };
+    }
+
+    private function collapseContextKey(): string
+    {
+        if ($this->currentListId) {
+            return 'list-' . $this->currentListId;
+        }
+
+        if ($this->shortcut) {
+            return 'shortcut-' . $this->shortcut;
+        }
+
+        return 'all';
+    }
+
+    private function collapseCacheKey(string $type): ?string
+    {
+        $userId = Auth::id();
+
+        if (! $userId) {
+            return null;
+        }
+
+        $context = $this->collapseContextKey();
+
+        return "tasks:collapse:{$type}:{$userId}:{$context}";
+    }
+
+    private function restoreCollapseState(): void
+    {
+        $missionsKey = $this->collapseCacheKey('missions');
+        $subtasksKey = $this->collapseCacheKey('subtasks');
+
+        if ($missionsKey) {
+            $stored = Cache::get($missionsKey);
+
+            if (is_array($stored)) {
+                $this->collapsedMissionIds = array_values(array_map('intval', array_unique($stored)));
+            }
+        }
+
+        if ($subtasksKey) {
+            $stored = Cache::get($subtasksKey);
+
+            if (is_array($stored)) {
+                $this->collapsedSubtaskIds = array_values(array_map('intval', array_unique($stored)));
+            }
+        }
+    }
+
+    private function persistCollapseState(): void
+    {
+        $missionsKey = $this->collapseCacheKey('missions');
+        $subtasksKey = $this->collapseCacheKey('subtasks');
+
+        if ($missionsKey) {
+            Cache::forever($missionsKey, array_values(array_map('intval', array_unique($this->collapsedMissionIds))));
+        }
+
+        if ($subtasksKey) {
+            Cache::forever($subtasksKey, array_values(array_map('intval', array_unique($this->collapsedSubtaskIds))));
+        }
+    }
+
     /**
      * Retorna a ordem atual das missões conforme filtros e listas ativos.
      */
@@ -1503,6 +1682,8 @@ class MainPanel extends Component
             ->whereNull('archived_at')
             ->orderBy('name')
             ->get();
+
+        $this->persistCollapseState();
 
         return view('livewire.tasks.main-panel', [
             'totalCount' => $totalCount,

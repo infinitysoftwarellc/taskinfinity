@@ -19,8 +19,10 @@
 
 <li
     class="ti-subtask-item"
+    role="listitem"
     data-depth="{{ $depth }}"
     wire:key="detail-subtask-{{ $item['id'] ?? 'temp' }}"
+    wire:sortable.item="{{ $item['id'] ?? '' }}"
     data-subtask-node
     data-subtask-id="{{ $item['id'] ?? '' }}"
     data-parent-id="{{ $item['parent_id'] ?? '' }}"
@@ -65,9 +67,12 @@
         <ul
             class="ti-subtask-children"
             role="list"
+            wire:sortable="reorderSubtasks"
             data-subtask-container
             data-parent-id="{{ $item['id'] ?? '' }}"
             data-mission-id="{{ $missionId ?? '' }}"
+            x-data
+            x-auto-animate
         >
             @foreach ($children as $child)
                 @include('livewire.tasks.partials.subtask-item', [

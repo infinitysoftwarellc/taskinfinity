@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'meilisearch' => [
+        'host' => env('MEILISEARCH_HOST', 'http://127.0.0.1:7700'),
+        'key' => env('MEILISEARCH_KEY'),
+    ],
+
+    'features' => [
+        'spotlight' => (bool) env('FEATURE_SPOTLIGHT', false),
+        'pulse' => (bool) env('FEATURE_PULSE', false),
+        'wireui_notifications' => (bool) env('FEATURE_WIREUI_NOTIFICATIONS', false),
+    ],
+
+    'demo' => [
+        'enabled' => (bool) env('DEMO_MODE', false),
+    ],
+
 ];

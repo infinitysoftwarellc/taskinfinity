@@ -90,9 +90,12 @@ Route::middleware('auth')->group(function () {
             $shortcut = null;
         }
 
+        $focusMissionId = $request->integer('mission');
+
         return view('app.tasks.index', [
             'listId' => $taskList?->id,
             'shortcut' => $shortcut,
+            'focusMissionId' => $focusMissionId > 0 ? $focusMissionId : null,
         ]);
     })->name('tasks.index');
 
