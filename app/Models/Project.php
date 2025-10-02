@@ -9,23 +9,36 @@ use Laravel\Scout\Searchable;
 
 class Project extends TaskList
 {
-    use Searchable {
-        search as protected scoutSearch;
-        queueMakeSearchable as protected scoutQueueMakeSearchable;
-        syncMakeSearchable as protected scoutSyncMakeSearchable;
-        queueRemoveFromSearch as protected scoutQueueRemoveFromSearch;
-        syncRemoveFromSearch as protected scoutSyncRemoveFromSearch;
-        searchable as protected scoutSearchable;
-        searchableSync as protected scoutSearchableSync;
-        unsearchable as protected scoutUnsearchable;
-        unsearchableSync as protected scoutUnsearchableSync;
-        makeAllSearchable as protected scoutMakeAllSearchable;
-        removeAllFromSearch as protected scoutRemoveAllFromSearch;
-        shouldBeSearchable as protected scoutShouldBeSearchable;
-        wasSearchableBeforeUpdate as protected scoutWasSearchableBeforeUpdate;
-        wasSearchableBeforeDelete as protected scoutWasSearchableBeforeDelete;
+    use Searchable, HasLocalSearch {
+        Searchable::search as protected scoutSearch;
+        Searchable::queueMakeSearchable as protected scoutQueueMakeSearchable;
+        Searchable::syncMakeSearchable as protected scoutSyncMakeSearchable;
+        Searchable::queueRemoveFromSearch as protected scoutQueueRemoveFromSearch;
+        Searchable::syncRemoveFromSearch as protected scoutSyncRemoveFromSearch;
+        Searchable::searchable as protected scoutSearchable;
+        Searchable::searchableSync as protected scoutSearchableSync;
+        Searchable::unsearchable as protected scoutUnsearchable;
+        Searchable::unsearchableSync as protected scoutUnsearchableSync;
+        Searchable::makeAllSearchable as protected scoutMakeAllSearchable;
+        Searchable::removeAllFromSearch as protected scoutRemoveAllFromSearch;
+        Searchable::shouldBeSearchable as protected scoutShouldBeSearchable;
+        Searchable::wasSearchableBeforeUpdate as protected scoutWasSearchableBeforeUpdate;
+        Searchable::wasSearchableBeforeDelete as protected scoutWasSearchableBeforeDelete;
+        HasLocalSearch::search insteadof Searchable;
+        HasLocalSearch::queueMakeSearchable insteadof Searchable;
+        HasLocalSearch::syncMakeSearchable insteadof Searchable;
+        HasLocalSearch::queueRemoveFromSearch insteadof Searchable;
+        HasLocalSearch::syncRemoveFromSearch insteadof Searchable;
+        HasLocalSearch::searchable insteadof Searchable;
+        HasLocalSearch::searchableSync insteadof Searchable;
+        HasLocalSearch::unsearchable insteadof Searchable;
+        HasLocalSearch::unsearchableSync insteadof Searchable;
+        HasLocalSearch::makeAllSearchable insteadof Searchable;
+        HasLocalSearch::removeAllFromSearch insteadof Searchable;
+        HasLocalSearch::shouldBeSearchable insteadof Searchable;
+        HasLocalSearch::wasSearchableBeforeUpdate insteadof Searchable;
+        HasLocalSearch::wasSearchableBeforeDelete insteadof Searchable;
     }
-    use HasLocalSearch;
 
     protected $table = 'lists';
 

@@ -3,31 +3,14 @@
 namespace App\Http\Livewire\Spotlight;
 
 use App\Models\Project;
+use App\Support\Spotlight\SearchResult;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use LivewireUI\Spotlight\Spotlight;
-use LivewireUI\Spotlight\SpotlightCommand;
-use LivewireUI\Spotlight\SpotlightCommandDependencies;
-use LivewireUI\Spotlight\SpotlightCommandDependency;
-use LivewireUI\Spotlight\SpotlightSearchResult;
 
-class ProjectSearchCommand extends SpotlightCommand
+class ProjectSearchCommand
 {
-    protected string $name = 'Buscar projetos';
-
-    protected string $description = 'Abrir listas e projetos usando Scout.';
-
-    public function dependencies(): SpotlightCommandDependencies
-    {
-        return SpotlightCommandDependencies::collection()
-            ->add(
-                SpotlightCommandDependency::make('project')
-                    ->setPlaceholder('Qual projeto você procura?')
-            );
-    }
-
     public function searchProject(string $query): array
     {
         return $this->projectResults($query)
@@ -38,7 +21,7 @@ class ProjectSearchCommand extends SpotlightCommand
                     $name = 'Sem nome';
                 }
 
-                return new SpotlightSearchResult(
+                return new SearchResult(
                     (string) $project->getKey(),
                     (string) $name,
                     $this->describeProject($project)
@@ -47,10 +30,10 @@ class ProjectSearchCommand extends SpotlightCommand
             ->all();
     }
 
-    public function execute(Spotlight $spotlight, ?string $project = null): void
+    public function execute(?string $project = null): ?array
     {
         if (! $project || ! $userId = Auth::id()) {
-            return;
+            return null;
         }
 
         $model = Project::query()
@@ -58,12 +41,15 @@ class ProjectSearchCommand extends SpotlightCommand
             ->find($project);
 
         if (! $model) {
-            return;
+            return null;
         }
 
-        $spotlight->redirectRoute('tasks.index', [
-            'taskList' => $model->getKey(),
-        ]);
+        return [
+            'route' => 'tasks.index',
+            'parameters' => [
+                'taskList' => $model->getKey(),
+            ],
+        ];
     }
 
     protected function projectResults(string $query): Collection

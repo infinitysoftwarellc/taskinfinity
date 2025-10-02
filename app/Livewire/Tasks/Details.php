@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use App\Livewire\Support\InteractsWithNotifications;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use WireUi\Traits\WireUiActions;
 
 /**
  * Componente que controla o painel de detalhes da página de tarefas.
@@ -23,7 +23,7 @@ use WireUi\Traits\WireUiActions;
  */
 class Details extends Component
 {
-    use WireUiActions;
+    use InteractsWithNotifications;
 
     public const MAX_SUBTASKS = MainPanel::MAX_SUBTASKS;
 
@@ -522,8 +522,6 @@ class Details extends Component
      */
     public function render()
     {
-        $multiSelectionData = $this->multiSelectionPayload();
-
         return view('livewire.tasks.details', [
             'mission' => $this->mission,
             'missionTags' => $this->missionTags,
@@ -531,9 +529,19 @@ class Details extends Component
             'selectedSubtaskId' => $this->selectedSubtaskId,
             'maxSubtasks' => self::MAX_SUBTASKS,
             'multiSelection' => $this->multiSelection,
-            'multiSelectionItems' => $multiSelectionData['items'],
-            'multiSelectionSummary' => $multiSelectionData['summary'],
+            'multiSelectionItems' => $this->multiSelectionItems,
+            'multiSelectionSummary' => $this->multiSelectionSummary,
         ]);
+    }
+
+    public function getMultiSelectionItemsProperty(): Collection
+    {
+        return $this->multiSelectionPayload()['items'];
+    }
+
+    public function getMultiSelectionSummaryProperty(): array
+    {
+        return $this->multiSelectionPayload()['summary'];
     }
 
     /**
@@ -718,14 +726,14 @@ class Details extends Component
     {
         $missions = $this->fetchMultiSelectionMissions();
 
+        $timezone = $this->userTimezone();
+
         if ($missions->count() <= 1) {
             return [
                 'items' => collect(),
-                'summary' => null,
+                'summary' => $this->summarizeMultiSelection(collect(), $timezone),
             ];
         }
-
-        $timezone = $this->userTimezone();
         $order = array_values($this->multiSelection);
         $positionMap = array_flip($order);
 

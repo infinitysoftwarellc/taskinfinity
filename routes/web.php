@@ -32,10 +32,13 @@ use App\Http\Controllers\Tasks\MissionController;
 use App\Http\Controllers\Tasks\TaskListController;
 use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
+use App\Livewire\Settings\Appearance as SettingsAppearance;
+use App\Livewire\Settings\Password as SettingsPassword;
+use App\Livewire\Settings\Profile as SettingsProfile;
+use App\Livewire\Settings\TwoFactor as SettingsTwoFactor;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Livewire\Volt\Volt;
 use Laravel\Pulse\Facades\Pulse;
 
 Route::view('/', 'welcome');
@@ -59,17 +62,17 @@ Route::middleware('auth')->group(function () {
     Route::view('configuracoes', 'app.settings.index')->name('app.settings');
     Route::view('completed', 'app.tasks.completed')->name('tasks.completed');
 
-    Volt::route('configuracoes/perfil', 'settings.profile')
+    Route::get('configuracoes/perfil', SettingsProfile::class)
         ->name('profile.edit');
 
-    Volt::route('configuracoes/senha', 'settings.password')
+    Route::get('configuracoes/senha', SettingsPassword::class)
         ->name('password.edit')
         ->middleware('password.confirm');
 
-    Volt::route('configuracoes/aparencia', 'settings.appearance')
+    Route::get('configuracoes/aparencia', SettingsAppearance::class)
         ->name('appearance.edit');
 
-    Volt::route('two-factor', 'settings.two-factor')
+    Route::get('two-factor', SettingsTwoFactor::class)
         ->name('two-factor.show')
         ->middleware('password.confirm');
 

@@ -3,31 +3,14 @@
 namespace App\Http\Livewire\Spotlight;
 
 use App\Models\Task;
+use App\Support\Spotlight\SearchResult;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use LivewireUI\Spotlight\Spotlight;
-use LivewireUI\Spotlight\SpotlightCommand;
-use LivewireUI\Spotlight\SpotlightCommandDependencies;
-use LivewireUI\Spotlight\SpotlightCommandDependency;
-use LivewireUI\Spotlight\SpotlightSearchResult;
 
-class TaskSearchCommand extends SpotlightCommand
+class TaskSearchCommand
 {
-    protected string $name = 'Buscar tarefas';
-
-    protected string $description = 'Pesquisar e abrir tarefas rapidamente.';
-
-    public function dependencies(): SpotlightCommandDependencies
-    {
-        return SpotlightCommandDependencies::collection()
-            ->add(
-                SpotlightCommandDependency::make('task')
-                    ->setPlaceholder('Digite o nome da tarefa')
-            );
-    }
-
     public function searchTask(string $query): array
     {
         return $this->taskResults($query)
@@ -38,7 +21,7 @@ class TaskSearchCommand extends SpotlightCommand
                     $title = 'Sem título';
                 }
 
-                return new SpotlightSearchResult(
+                return new SearchResult(
                     (string) $task->getKey(),
                     (string) $title,
                     $this->describeTask($task)
@@ -47,10 +30,10 @@ class TaskSearchCommand extends SpotlightCommand
             ->all();
     }
 
-    public function execute(Spotlight $spotlight, ?string $task = null): void
+    public function execute(?string $task = null): ?array
     {
         if (! $task || ! $userId = Auth::id()) {
-            return;
+            return null;
         }
 
         $model = Task::query()
@@ -58,7 +41,7 @@ class TaskSearchCommand extends SpotlightCommand
             ->find($task);
 
         if (! $model) {
-            return;
+            return null;
         }
 
         $params = ['mission' => $model->getKey()];
@@ -67,7 +50,10 @@ class TaskSearchCommand extends SpotlightCommand
             $params['taskList'] = $model->list_id;
         }
 
-        $spotlight->redirectRoute('tasks.index', $params);
+        return [
+            'route' => 'tasks.index',
+            'parameters' => $params,
+        ];
     }
 
     protected function taskResults(string $query): Collection

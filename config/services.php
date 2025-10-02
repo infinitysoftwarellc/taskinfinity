@@ -43,7 +43,6 @@ return [
     'features' => [
         'spotlight' => (bool) env('FEATURE_SPOTLIGHT', false),
         'pulse' => (bool) env('FEATURE_PULSE', false),
-        'wireui_notifications' => (bool) env('FEATURE_WIREUI_NOTIFICATIONS', false),
     ],
 
     'demo' => [
