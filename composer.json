@@ -20,6 +20,7 @@
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.6.4",
         "meilisearch/meilisearch-php": "^1.16",
+        "phiki/phiki": "^2.0",
         "typesense/typesense-php": "^5.1"
     },
     "require-dev": {

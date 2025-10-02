@@ -8,6 +8,7 @@ use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -1524,10 +1525,10 @@ class MainPanel extends Component
                 ->where('user_id', $user->id)
                 ->whereNull('archived_at')
                 ->with([
-                    'missions' => function (Builder $query) use ($timezone) {
+                    'missions' => function (Builder|Relation $query) use ($timezone) {
                         $this->configureMissionRelation($query, $timezone);
                     },
-                    'missions.checkpoints' => function (Builder $query) {
+                    'missions.checkpoints' => function (Builder|Relation $query) {
                         $this->configureCheckpointRelation($query);
                     },
                 ]);
@@ -1553,10 +1554,10 @@ class MainPanel extends Component
                 ->orderBy('position')
                 ->orderBy('name')
                 ->with([
-                    'missions' => function (Builder $query) use ($timezone) {
+                    'missions' => function (Builder|Relation $query) use ($timezone) {
                         $this->configureMissionRelation($query, $timezone);
                     },
-                    'missions.checkpoints' => function (Builder $query) {
+                    'missions.checkpoints' => function (Builder|Relation $query) {
                         $this->configureCheckpointRelation($query);
                     },
                 ])
@@ -1566,7 +1567,7 @@ class MainPanel extends Component
                 ->where('user_id', $user->id)
                 ->whereNull('list_id')
                 ->with([
-                    'checkpoints' => function (Builder $query) {
+                    'checkpoints' => function (Builder|Relation $query) {
                         $this->configureCheckpointRelation($query);
                     },
                 ]);
@@ -1655,8 +1656,12 @@ class MainPanel extends Component
         ]);
     }
 
-    private function configureMissionRelation(Builder $query, string $timezone): void
+    private function configureMissionRelation(Builder|Relation $query, string $timezone): void
     {
+        if ($query instanceof Relation) {
+            $query = $query->getQuery();
+        }
+
         $query->orderByDesc('is_starred')
             ->orderBy('position')
             ->orderBy('created_at');
@@ -1666,8 +1671,12 @@ class MainPanel extends Component
         }
     }
 
-    private function configureCheckpointRelation(Builder $query): void
+    private function configureCheckpointRelation(Builder|Relation $query): void
     {
+        if ($query instanceof Relation) {
+            $query = $query->getQuery();
+        }
+
         $query->orderBy('position')->orderBy('created_at');
     }
 
