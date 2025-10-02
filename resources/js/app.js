@@ -1,6 +1,5 @@
 import Alpine from 'alpinejs';
 import autoAnimate from '@formkit/auto-animate';
-import Sortable from 'sortablejs';
 import axios from 'axios';
 import { nanoid } from 'nanoid';
 import Fuse from 'fuse.js';
@@ -43,10 +42,26 @@ dayjs.locale('pt-br');
 
 window.dayjs = dayjs;
 window.flatpickr = flatpickr;
-window.Sortable = Sortable;
 window.autoAnimate = autoAnimate;
 window.axios = axios;
 window.tippy = tippy;
+
+let sortableLoader;
+
+async function loadSortable() {
+  if (!sortableLoader) {
+    sortableLoader = import('sortablejs').then((module) => {
+      const Sortable = module?.default ?? module;
+      if (!window.Sortable) {
+        window.Sortable = Sortable;
+      }
+
+      return Sortable;
+    });
+  }
+
+  return sortableLoader;
+}
 
 window.tiLibs = {
   axios,
@@ -66,6 +81,7 @@ window.tiLibs = {
   Clusterize,
   ClipboardJS,
   EditorJS,
+  loadSortable,
   loadVirtualList: async () => {
     const module = await import('virtual-list/vlist.js');
     return module?.default ?? module;
@@ -844,46 +860,62 @@ function setupSortableTasks(root = document) {
   const containers = root.querySelectorAll('[data-sortable-tasks]:not([data-sortable-ready])');
 
   containers.forEach((container) => {
+    if (container.dataset.sortablePending === '1') return;
+
     const component = findLivewireComponent(container);
     if (!component) {
       return;
     }
 
     const expression = container.getAttribute('wire:sortable');
+    container.dataset.sortablePending = '1';
 
-    const sortable = new Sortable(container, {
-      animation: 150,
-      draggable: '[data-mission-id]',
-      handle: '.task',
-      group: { name: 'missions' },
-      onEnd: () => {
-        const ordered = Array.from(container.querySelectorAll('[data-mission-id]'))
-          .map((item) => {
-            const id = parseInt(item.dataset.missionId || '', 10);
-            if (Number.isNaN(id)) return null;
-
-            return {
-              id,
-              list_id: parseNullableInt(item.dataset.listId),
-            };
-          })
-          .filter(Boolean);
-
-        if (!ordered.length) {
+    loadSortable()
+      .then((Sortable) => {
+        if (!container.isConnected) {
           return;
         }
 
-        if (expression) {
-          component.call(expression, ordered);
-        } else {
-          component.call('reorderMissions', ordered);
-        }
-      },
-    });
+        const sortable = new Sortable(container, {
+          animation: 150,
+          draggable: '[data-mission-id]',
+          handle: '.task',
+          group: { name: 'missions' },
+          onEnd: () => {
+            const ordered = Array.from(container.querySelectorAll('[data-mission-id]'))
+              .map((item) => {
+                const id = parseInt(item.dataset.missionId || '', 10);
+                if (Number.isNaN(id)) return null;
 
-    container.dataset.sortableReady = '1';
-    container.dataset.wireSortableReady = '1';
-    container.__sortable = sortable;
+                return {
+                  id,
+                  list_id: parseNullableInt(item.dataset.listId),
+                };
+              })
+              .filter(Boolean);
+
+            if (!ordered.length) {
+              return;
+            }
+
+            if (expression) {
+              component.call(expression, ordered);
+            } else {
+              component.call('reorderMissions', ordered);
+            }
+          },
+        });
+
+        container.dataset.sortableReady = '1';
+        container.dataset.wireSortableReady = '1';
+        container.__sortable = sortable;
+      })
+      .catch((error) => {
+        console.error('Failed to initialize mission sorting', error);
+      })
+      .finally(() => {
+        delete container.dataset.sortablePending;
+      });
   });
 }
 
@@ -892,6 +924,8 @@ function setupSortableSubtasks(root = document) {
   const containers = root.querySelectorAll('[data-subtask-container]:not([data-sortable-ready])');
 
   containers.forEach((container) => {
+    if (container.dataset.sortablePending === '1') return;
+
     const missionId = parseNullableInt(container.dataset.missionId);
 
     if (!missionId) {
@@ -909,59 +943,74 @@ function setupSortableSubtasks(root = document) {
       container.classList.contains('ti-subtask-list') ||
       container.classList.contains('ti-subtask-children');
 
-    const sortable = new Sortable(container, {
-      animation: 160,
-      swapThreshold: 0.18,
-      fallbackOnBody: true,
-      dragClass: 'is-dragging',
-      ghostClass: 'is-ghost',
-      group: { name: `subtasks-${missionId}`, pull: true, put: true },
-      draggable: '[data-subtask-node]',
-      handle: isDetailsContainer ? '.ti-subtask-row' : '.subtask',
-      onEnd: (evt) => {
-        const movedEl = evt.item;
-        const movedId = parseInt(movedEl?.dataset?.subtaskId || '', 10);
+    container.dataset.sortablePending = '1';
 
-        if (!movedId) {
+    loadSortable()
+      .then((Sortable) => {
+        if (!container.isConnected) {
           return;
         }
 
-        const toContainer = evt.to.closest('[data-subtask-container]');
-        const fromContainer = evt.from.closest('[data-subtask-container]');
+        const sortable = new Sortable(container, {
+          animation: 160,
+          swapThreshold: 0.18,
+          fallbackOnBody: true,
+          dragClass: 'is-dragging',
+          ghostClass: 'is-ghost',
+          group: { name: `subtasks-${missionId}`, pull: true, put: true },
+          draggable: '[data-subtask-node]',
+          handle: isDetailsContainer ? '.ti-subtask-row' : '.subtask',
+          onEnd: (evt) => {
+            const movedEl = evt.item;
+            const movedId = parseInt(movedEl?.dataset?.subtaskId || '', 10);
 
-        if (!toContainer || !fromContainer) {
-          return;
-        }
+            if (!movedId) {
+              return;
+            }
 
-        const toParentId = parseNullableInt(toContainer.dataset.parentId);
-        const fromParentId = parseNullableInt(fromContainer.dataset.parentId);
+            const toContainer = evt.to.closest('[data-subtask-container]');
+            const fromContainer = evt.from.closest('[data-subtask-container]');
 
-        if (fromContainer === toContainer && evt.oldIndex === evt.newIndex && toParentId === fromParentId) {
-          return;
-        }
+            if (!toContainer || !fromContainer) {
+              return;
+            }
 
-        const toOrder = collectSubtaskOrder(toContainer);
-        const fromOrder = fromContainer === toContainer ? toOrder : collectSubtaskOrder(fromContainer);
+            const toParentId = parseNullableInt(toContainer.dataset.parentId);
+            const fromParentId = parseNullableInt(fromContainer.dataset.parentId);
 
-        const payload = {
-          moved_id: movedId,
-          to_parent_id: toParentId,
-          from_parent_id: fromParentId,
-          to_order: toOrder,
-        };
+            if (fromContainer === toContainer && evt.oldIndex === evt.newIndex && toParentId === fromParentId) {
+              return;
+            }
 
-        if (fromContainer !== toContainer) {
-          payload.from_order = fromOrder;
-        }
+            const toOrder = collectSubtaskOrder(toContainer);
+            const fromOrder = fromContainer === toContainer ? toOrder : collectSubtaskOrder(fromContainer);
 
-        const targetExpression = expression || 'reorderSubtasks';
-        component.call(targetExpression, missionId, payload);
-      },
-    });
+            const payload = {
+              moved_id: movedId,
+              to_parent_id: toParentId,
+              from_parent_id: fromParentId,
+              to_order: toOrder,
+            };
 
-    container.dataset.sortableReady = '1';
-    container.dataset.wireSortableReady = '1';
-    container.__sortable = sortable;
+            if (fromContainer !== toContainer) {
+              payload.from_order = fromOrder;
+            }
+
+            const targetExpression = expression || 'reorderSubtasks';
+            component.call(targetExpression, missionId, payload);
+          },
+        });
+
+        container.dataset.sortableReady = '1';
+        container.dataset.wireSortableReady = '1';
+        container.__sortable = sortable;
+      })
+      .catch((error) => {
+        console.error('Failed to initialize subtask sorting', error);
+      })
+      .finally(() => {
+        delete container.dataset.sortablePending;
+      });
   });
 }
 
