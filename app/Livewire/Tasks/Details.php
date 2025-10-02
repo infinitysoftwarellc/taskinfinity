@@ -40,6 +40,16 @@ class Details extends Component
     public array $missionTags = [];
 
     /**
+     * Conjunto de missões selecionadas simultaneamente.
+     */
+    public array $multiSelection = [];
+
+    /**
+     * Data customizada aplicada em lote às missões selecionadas.
+     */
+    public ?string $multiSelectionDate = null;
+
+    /**
      * Controle de exibição do seletor de data principal.
      */
     public bool $showDatePicker = false;
@@ -113,20 +123,8 @@ class Details extends Component
     public function loadMission(?int $missionId = null, ?int $checkpointId = null): void
     {
         if (! $missionId) {
-            $this->missionId = null;
-            $this->mission = null;
-            $this->missionTags = [];
-            $this->availableLists = [];
-            $this->showMoveListMenu = false;
-            $this->showSubtaskForm = false;
-            $this->newSubtaskTitle = '';
-            $this->newSubtaskParentId = null;
-            $this->newSubtaskParentLabel = null;
-            $this->menuDate = null;
-            $this->showDatePicker = false;
-            $this->pickerCursorDate = null;
-            $this->pickerSelectedDate = null;
-            $this->selectedSubtaskId = null;
+            $this->resetMissionState();
+            $this->multiSelection = [];
 
             return;
         }
@@ -149,15 +147,15 @@ class Details extends Component
             ->find($missionId);
 
         if (! $mission) {
-            $this->missionId = null;
-            $this->mission = null;
-            $this->missionTags = [];
+            $this->resetMissionState();
+            $this->multiSelection = [];
 
             return;
         }
 
         $timezone = $user->timezone ?? config('app.timezone');
 
+        $this->multiSelection = [];
         $this->missionId = $mission->id;
         $checkpoints = collect($mission->checkpoints ?? []);
 
@@ -219,6 +217,66 @@ class Details extends Component
             ])
             ->values()
             ->toArray();
+    }
+
+    private function resetMissionState(): void
+    {
+        $this->missionId = null;
+        $this->mission = null;
+        $this->missionTags = [];
+        $this->availableLists = [];
+        $this->showMoveListMenu = false;
+        $this->showSubtaskForm = false;
+        $this->newSubtaskTitle = '';
+        $this->newSubtaskParentId = null;
+        $this->newSubtaskParentLabel = null;
+        $this->menuDate = null;
+        $this->showDatePicker = false;
+        $this->pickerCursorDate = null;
+        $this->pickerSelectedDate = null;
+        $this->selectedSubtaskId = null;
+    }
+
+    #[On('tasks-multi-selected')]
+    public function loadMultiSelection(array $missionIds): void
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return;
+        }
+
+        $normalized = array_values(array_unique(array_map('intval', $missionIds)));
+
+        if (count($normalized) <= 1) {
+            if (count($normalized) === 1) {
+                $this->loadMission($normalized[0], null);
+            } else {
+                $this->loadMission(null, null);
+            }
+
+            return;
+        }
+
+        $validIds = Mission::query()
+            ->where('user_id', $user->id)
+            ->whereIn('id', $normalized)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (count($validIds) <= 1) {
+            if (count($validIds) === 1) {
+                $this->loadMission($validIds[0], null);
+            } else {
+                $this->loadMission(null, null);
+            }
+
+            return;
+        }
+
+        $this->resetMissionState();
+        $this->multiSelection = $validIds;
     }
 
     #[On('tasks-inline-action')]
@@ -473,13 +531,317 @@ class Details extends Component
      */
     public function render()
     {
+        $multiSelectionData = $this->multiSelectionPayload();
+
         return view('livewire.tasks.details', [
             'mission' => $this->mission,
             'missionTags' => $this->missionTags,
             'pickerCalendar' => $this->mission ? $this->buildCalendar() : null,
             'selectedSubtaskId' => $this->selectedSubtaskId,
             'maxSubtasks' => self::MAX_SUBTASKS,
+            'multiSelection' => $this->multiSelection,
+            'multiSelectionItems' => $multiSelectionData['items'],
+            'multiSelectionSummary' => $multiSelectionData['summary'],
         ]);
+    }
+
+    /**
+     * Marca todas as missões selecionadas como concluídas.
+     */
+    public function markSelectionAsDone(): void
+    {
+        $missions = $this->fetchMultiSelectionMissions();
+
+        if ($missions->count() <= 1) {
+            return;
+        }
+
+        $missions->each(function (Mission $mission): void {
+            if ($mission->status === 'done') {
+                return;
+            }
+
+            $mission->status = 'done';
+            $mission->save();
+        });
+
+        $this->refreshMultiSelection($missions);
+    }
+
+    /**
+     * Reativa todas as missões concluídas dentro da seleção atual.
+     */
+    public function markSelectionAsActive(): void
+    {
+        $missions = $this->fetchMultiSelectionMissions();
+
+        if ($missions->count() <= 1) {
+            return;
+        }
+
+        $missions->each(function (Mission $mission): void {
+            if ($mission->status === 'active') {
+                return;
+            }
+
+            $mission->status = 'active';
+            $mission->save();
+        });
+
+        $this->refreshMultiSelection($missions);
+    }
+
+    /**
+     * Alterna o estado fixado das missões selecionadas.
+     */
+    public function togglePinSelection(): void
+    {
+        $missions = $this->fetchMultiSelectionMissions();
+
+        if ($missions->count() <= 1) {
+            return;
+        }
+
+        $shouldPin = $missions->contains(fn (Mission $mission) => ! $mission->is_starred);
+
+        $missions->each(function (Mission $mission) use ($shouldPin): void {
+            $mission->is_starred = $shouldPin;
+            $mission->save();
+        });
+
+        $this->refreshMultiSelection($missions);
+    }
+
+    /**
+     * Aplica atalhos de data para todas as missões selecionadas.
+     */
+    public function applyMultiSelectionShortcut(string $shortcut): void
+    {
+        if (! in_array($shortcut, ['today', 'tomorrow', 'next7', 'clear'], true)) {
+            return;
+        }
+
+        $missions = $this->fetchMultiSelectionMissions();
+
+        if ($missions->count() <= 1) {
+            return;
+        }
+
+        $timezone = $this->userTimezone();
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+
+        $target = match ($shortcut) {
+            'today' => $today,
+            'tomorrow' => $today->addDay(),
+            'next7' => $today->addDays(7),
+            default => null,
+        };
+
+        $missions->each(function (Mission $mission) use ($target): void {
+            $mission->due_at = $target
+                ? $target->setTimezone(config('app.timezone'))
+                : null;
+            $mission->save();
+        });
+
+        $this->refreshMultiSelection($missions);
+    }
+
+    /**
+     * Define manualmente uma data de vencimento para a seleção.
+     */
+    public function applyMultiSelectionDate(): void
+    {
+        $value = $this->multiSelectionDate;
+
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $missions = $this->fetchMultiSelectionMissions();
+
+        if ($missions->count() <= 1) {
+            $this->multiSelectionDate = null;
+
+            return;
+        }
+
+        $timezone = $this->userTimezone();
+
+        try {
+            $selectedLocal = CarbonImmutable::createFromFormat('Y-m-d', $value, $timezone)->startOfDay();
+        } catch (\Throwable) {
+            $this->multiSelectionDate = null;
+
+            return;
+        }
+
+        $missions->each(function (Mission $mission) use ($selectedLocal): void {
+            $mission->due_at = $selectedLocal->setTimezone(config('app.timezone'));
+            $mission->save();
+        });
+
+        $this->multiSelectionDate = null;
+        $this->refreshMultiSelection($missions);
+    }
+
+    /**
+     * Atualiza a lista de missões após operações em lote.
+     */
+    private function refreshMultiSelection(Collection $missions): void
+    {
+        $this->dispatch('tasks-updated');
+        $this->loadMultiSelection($missions->pluck('id')->map(fn ($id) => (int) $id)->all());
+    }
+
+    /**
+     * Recupera os modelos referentes à seleção múltipla atual.
+     */
+    private function fetchMultiSelectionMissions(): Collection
+    {
+        $userId = Auth::id();
+
+        if (! $userId) {
+            return collect();
+        }
+
+        if (count($this->multiSelection) <= 1) {
+            return collect();
+        }
+
+        return Mission::query()
+            ->with('list:id,name')
+            ->withCount([
+                'checkpoints',
+                'checkpoints as checkpoints_done_count' => fn ($query) => $query->where('is_done', true),
+            ])
+            ->where('user_id', $userId)
+            ->whereIn('id', $this->multiSelection)
+            ->get();
+    }
+
+    /**
+     * Monta os dados auxiliares usados pela view em modo multisseleção.
+     */
+    private function multiSelectionPayload(): array
+    {
+        $missions = $this->fetchMultiSelectionMissions();
+
+        if ($missions->count() <= 1) {
+            return [
+                'items' => collect(),
+                'summary' => null,
+            ];
+        }
+
+        $timezone = $this->userTimezone();
+        $order = array_values($this->multiSelection);
+        $positionMap = array_flip($order);
+
+        $items = $missions
+            ->map(function (Mission $mission) use ($timezone) {
+                return [
+                    'id' => $mission->id,
+                    'title' => $mission->title,
+                    'status' => $mission->status,
+                    'is_starred' => (bool) $mission->is_starred,
+                    'priority' => (int) ($mission->priority ?? 0),
+                    'list' => $mission->list?->name,
+                    'list_id' => $mission->list_id,
+                    'due_at' => $mission->due_at ? $mission->due_at->copy()->setTimezone($timezone) : null,
+                    'checkpoints_total' => $mission->checkpoints_count ?? 0,
+                    'checkpoints_done' => $mission->checkpoints_done_count ?? 0,
+                    'updated_at' => $mission->updated_at ? $mission->updated_at->copy()->setTimezone($timezone) : null,
+                ];
+            })
+            ->sortBy(fn ($item) => $positionMap[$item['id']] ?? PHP_INT_MAX)
+            ->values();
+
+        $summary = $this->summarizeMultiSelection($items, $timezone);
+
+        return [
+            'items' => $items,
+            'summary' => $summary,
+        ];
+    }
+
+    /**
+     * Calcula indicadores agregados para a seleção múltipla.
+     */
+    private function summarizeMultiSelection(Collection $items, string $timezone): array
+    {
+        $total = $items->count();
+
+        if ($total === 0) {
+            return [
+                'total' => 0,
+                'completed' => 0,
+                'active' => 0,
+                'starred' => 0,
+                'completion_rate' => 0,
+                'with_due' => 0,
+                'overdue' => 0,
+                'due_today' => 0,
+                'due_tomorrow' => 0,
+                'lists' => [],
+                'priority' => [
+                    'high' => 0,
+                    'medium' => 0,
+                    'low' => 0,
+                    'none' => 0,
+                ],
+                'checkpoints' => [
+                    'total' => 0,
+                    'done' => 0,
+                ],
+                'earliest_due' => null,
+                'latest_due' => null,
+                'last_updated' => null,
+            ];
+        }
+
+        $completed = $items->where('status', 'done')->count();
+        $starred = $items->where('is_starred', true)->count();
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+        $tomorrow = $today->addDay();
+
+        $dueDates = $items
+            ->pluck('due_at')
+            ->filter(fn ($date) => $date instanceof CarbonInterface)
+            ->map(fn (CarbonInterface $date) => CarbonImmutable::instance($date));
+
+        return [
+            'total' => $total,
+            'completed' => $completed,
+            'active' => $total - $completed,
+            'starred' => $starred,
+            'completion_rate' => (int) round(($completed / $total) * 100),
+            'with_due' => $dueDates->count(),
+            'overdue' => $dueDates->filter(fn (CarbonImmutable $date) => $date->lessThan($today))->count(),
+            'due_today' => $dueDates->filter(fn (CarbonImmutable $date) => $date->isSameDay($today))->count(),
+            'due_tomorrow' => $dueDates->filter(fn (CarbonImmutable $date) => $date->isSameDay($tomorrow))->count(),
+            'lists' => $items
+                ->groupBy(fn ($item) => $item['list'] ?? 'Sem lista')
+                ->map(fn (Collection $group) => $group->count())
+                ->sortDesc()
+                ->toArray(),
+            'priority' => [
+                'high' => $items->where('priority', 3)->count(),
+                'medium' => $items->where('priority', 2)->count(),
+                'low' => $items->where('priority', 1)->count(),
+                'none' => $items->where('priority', 0)->count(),
+            ],
+            'checkpoints' => [
+                'total' => (int) $items->sum('checkpoints_total'),
+                'done' => (int) $items->sum('checkpoints_done'),
+            ],
+            'earliest_due' => $dueDates->min(),
+            'latest_due' => $dueDates->max(),
+            'last_updated' => $items
+                ->pluck('updated_at')
+                ->filter(fn ($date) => $date instanceof CarbonInterface)
+                ->max(),
+        ];
     }
 
     /**

@@ -10,6 +10,7 @@
     'monthAbbr' => [],
     'currentDay' => null,
     'nextDay' => null,
+    'collapsedSubtaskIds' => [],
 ])
 
 @php
@@ -29,6 +30,7 @@
     $subtaskDueDate = null;
     $subtaskDueLabel = null;
     $subtaskDueClass = 'subtask-due';
+    $isCollapsed = in_array($item['id'] ?? null, $collapsedSubtaskIds, true);
 
     if ($rawDueAt) {
         try {
@@ -78,7 +80,7 @@
             'has-children' => $hasChildren,
         ])
         @if($hasChildren)
-            aria-expanded="true"
+            aria-expanded="{{ $isCollapsed ? 'false' : 'true' }}"
         @endif
     >
         <button
@@ -89,8 +91,14 @@
         ></button>
         <div class="subtask-label">
             @if ($hasChildren)
-                <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
-                    <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                <button
+                    class="expander"
+                    type="button"
+                    title="Recolher subtarefas"
+                    aria-label="Recolher subtarefas"
+                    wire:click.stop="toggleSubtaskCollapse({{ $missionId }}, {{ $item['id'] }})"
+                >
+                    <i class="fa-solid {{ $isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down' }}" aria-hidden="true"></i>
                 </button>
             @endif
 
@@ -148,18 +156,29 @@
         </div>
     </div>
         @if ($children->isNotEmpty())
-            @foreach ($children as $child)
-                @include('livewire.tasks.partials.main-panel-subtask', [
-                    'item' => $child,
-                    'depth' => $depth + 1,
-                    'missionId' => $missionId,
-                    'selectedSubtaskId' => $selectedSubtaskId,
-                    'editingSubtaskId' => $editingSubtaskId,
-                    'maxSubtasks' => $maxSubtasks,
-                ])
-            @endforeach
-            @if (! $canAddChild)
-                <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
-            @endif
+            <div
+                class="subtask-group"
+                data-subtask-container
+                data-mission-id="{{ $missionId }}"
+                data-parent-id="{{ $item['id'] ?? '' }}"
+                @if ($isCollapsed)
+                    style="display:none;"
+                @endif
+            >
+                @foreach ($children as $child)
+                    @include('livewire.tasks.partials.main-panel-subtask', [
+                        'item' => $child,
+                        'depth' => $depth + 1,
+                        'missionId' => $missionId,
+                        'selectedSubtaskId' => $selectedSubtaskId,
+                        'editingSubtaskId' => $editingSubtaskId,
+                        'maxSubtasks' => $maxSubtasks,
+                        'collapsedSubtaskIds' => $collapsedSubtaskIds,
+                    ])
+                @endforeach
+                @if (! $canAddChild)
+                    <div class="subtasks-limit">Limite de {{ $maxSubtasks }} subtarefas atingido.</div>
+                @endif
+            </div>
         @endif
 </div>
