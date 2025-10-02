@@ -61,6 +61,16 @@ class MainPanel extends Component
     public ?int $selectedSubtaskId = null;
 
     /**
+     * IDs das missões atualmente selecionadas (suporta seleção múltipla).
+     */
+    public array $selectedMissionIds = [];
+
+    /**
+     * Última missão clicada (para cálculos com Shift).
+     */
+    public ?int $lastSelectedMissionId = null;
+
+    /**
      * Controle de edição inline de missões.
      */
     public ?int $editingMissionId = null;
@@ -79,12 +89,30 @@ class MainPanel extends Component
     public ?string $shortcut = null;
 
     /**
+     * Conjunto de missões recolhidas manualmente.
+     */
+    public array $collapsedMissionIds = [];
+
+    /**
+     * Conjunto de subtarefas recolhidas (qualquer nível).
+     */
+    public array $collapsedSubtaskIds = [];
+
+    /**
      * Sincroniza a seleção de missão/subtarefa ao receber eventos externos.
      */
     public function syncSelectedMission(?int $missionId = null, ?int $checkpointId = null): void
     {
         $this->selectedMissionId = $missionId;
         $this->selectedSubtaskId = $checkpointId;
+
+        if ($missionId) {
+            $this->selectedMissionIds = [$missionId];
+            $this->lastSelectedMissionId = $missionId;
+        } else {
+            $this->selectedMissionIds = [];
+            $this->lastSelectedMissionId = null;
+        }
     }
 
     /**
@@ -162,7 +190,9 @@ class MainPanel extends Component
 
         $this->reset(['newTaskTitle']);
 
+        $this->selectedMissionIds = [$mission->id];
         $this->selectedMissionId = $mission->id;
+        $this->lastSelectedMissionId = $mission->id;
         $this->selectedSubtaskId = null;
 
         $this->dispatch('tasks-updated');
@@ -172,7 +202,7 @@ class MainPanel extends Component
     /**
      * Define qual missão está ativa no painel e dispara eventos para detalhes.
      */
-    public function selectMission(int $missionId): void
+    public function selectMission(int $missionId, int $withShift = 0): void
     {
         $user = Auth::user();
 
@@ -193,8 +223,42 @@ class MainPanel extends Component
             return;
         }
 
+        $extendSelection = (bool) $withShift && $this->lastSelectedMissionId;
+
+        if ($extendSelection) {
+            $ordered = $this->currentMissionOrderIds($user->id);
+            $from = array_search($this->lastSelectedMissionId, $ordered, true);
+            $to = array_search($mission->id, $ordered, true);
+
+            if ($from === false || $to === false) {
+                $extendSelection = false;
+            } else {
+                $start = min($from, $to);
+                $end = max($from, $to);
+                $range = array_slice($ordered, $start, $end - $start + 1);
+                $selected = array_unique(array_merge($this->selectedMissionIds, $range));
+                $this->selectedMissionIds = array_values(array_filter(
+                    $ordered,
+                    fn ($id) => in_array($id, $selected, true)
+                ));
+            }
+        }
+
+        if (! $extendSelection) {
+            $this->selectedMissionIds = [$mission->id];
+        }
+
         $this->selectedMissionId = $mission->id;
+        $this->lastSelectedMissionId = $mission->id;
         $this->selectedSubtaskId = null;
+
+        if (count($this->selectedMissionIds) > 1) {
+            $this->cancelMissionEdit();
+            $this->dispatch('tasks-multi-selected', $this->selectedMissionIds);
+
+            return;
+        }
+
         $this->dispatch('task-selected', $mission->id, null);
 
         $this->startMissionEdit($mission->id, $mission);
@@ -235,7 +299,9 @@ class MainPanel extends Component
                 return;
             }
 
+            $this->selectedMissionIds = [$mission->id];
             $this->selectedMissionId = $mission->id;
+            $this->lastSelectedMissionId = $mission->id;
             $this->selectedSubtaskId = $checkpointId;
             $this->dispatch('task-selected', $mission->id, $checkpointId);
 
@@ -270,7 +336,9 @@ class MainPanel extends Component
             return;
         }
 
+        $this->selectedMissionIds = [$mission->id];
         $this->selectedMissionId = $mission->id;
+        $this->lastSelectedMissionId = $mission->id;
         $this->selectedSubtaskId = null;
         $this->dispatch('task-selected', $mission->id, null);
 
@@ -352,12 +420,43 @@ class MainPanel extends Component
             return;
         }
 
+        $this->selectedMissionIds = [$mission->id];
         $this->selectedMissionId = $mission->id;
+        $this->lastSelectedMissionId = $mission->id;
         $this->selectedSubtaskId = $checkpointId;
 
         $this->dispatch('task-selected', $mission->id, $checkpointId);
 
         $this->startSubtaskEdit($checkpointId);
+    }
+
+    /**
+     * Alterna o estado recolhido de uma missão específica.
+     */
+    public function toggleMissionCollapse(int $missionId): void
+    {
+        if (in_array($missionId, $this->collapsedMissionIds, true)) {
+            $this->collapsedMissionIds = array_values(array_diff($this->collapsedMissionIds, [$missionId]));
+
+            return;
+        }
+
+        $this->collapsedMissionIds[] = $missionId;
+    }
+
+    /**
+     * Alterna o estado recolhido de uma subtarefa específica.
+     */
+    public function toggleSubtaskCollapse(int $missionId, int $checkpointId): void
+    {
+        if (in_array($checkpointId, $this->collapsedSubtaskIds, true)) {
+            $this->collapsedSubtaskIds = array_values(array_diff($this->collapsedSubtaskIds, [$checkpointId]));
+
+            return;
+        }
+
+        $this->collapsedSubtaskIds[] = $checkpointId;
+        $this->collapsedMissionIds = array_values(array_diff($this->collapsedMissionIds, [$missionId]));
     }
 
     /**
@@ -394,10 +493,9 @@ class MainPanel extends Component
         $checkpoint->is_done = ! $checkpoint->is_done;
         $checkpoint->save();
 
-        if ($this->selectedMissionId !== $missionId) {
-            $this->selectedMissionId = $missionId;
-        }
-
+        $this->selectedMissionIds = [$missionId];
+        $this->selectedMissionId = $missionId;
+        $this->lastSelectedMissionId = $missionId;
         $this->selectedSubtaskId = $checkpoint->id;
 
         $this->dispatch('tasks-updated');
@@ -439,9 +537,9 @@ class MainPanel extends Component
 
         $checkpoint->delete();
 
-        if ($this->selectedMissionId !== $missionId) {
-            $this->selectedMissionId = $missionId;
-        }
+        $this->selectedMissionIds = [$missionId];
+        $this->selectedMissionId = $missionId;
+        $this->lastSelectedMissionId = $missionId;
 
         if ($this->selectedSubtaskId === $checkpointId) {
             $this->selectedSubtaskId = $parentId;
@@ -582,7 +680,9 @@ class MainPanel extends Component
         $this->editingMissionId = $mission->id;
         $this->editingMissionTitle = $mission->title;
 
+        $this->selectedMissionIds = [$mission->id];
         $this->selectedMissionId = $mission->id;
+        $this->lastSelectedMissionId = $mission->id;
         $this->selectedSubtaskId = null;
 
         $this->dispatch('tasks-updated');
@@ -798,7 +898,9 @@ class MainPanel extends Component
         }
 
         $this->dispatch('tasks-updated');
+        $this->selectedMissionIds = [$missionId];
         $this->selectedMissionId = $missionId;
+        $this->lastSelectedMissionId = $missionId;
     }
 
     /**
@@ -841,7 +943,9 @@ class MainPanel extends Component
         $this->editingSubtaskTitle = $subtask->title;
         $this->editingSubtaskMissionId = $mission->id;
 
+        $this->selectedMissionIds = [$mission->id];
         $this->selectedMissionId = $mission->id;
+        $this->lastSelectedMissionId = $mission->id;
         $this->selectedSubtaskId = $subtask->id;
 
         $this->dispatch('tasks-updated');
@@ -891,7 +995,9 @@ class MainPanel extends Component
         $this->editingSubtaskMissionId = $checkpoint->mission_id;
         $this->editingSubtaskTitle = $sibling->title;
 
+        $this->selectedMissionIds = [$checkpoint->mission_id];
         $this->selectedMissionId = $checkpoint->mission_id;
+        $this->lastSelectedMissionId = $checkpoint->mission_id;
         $this->selectedSubtaskId = $sibling->id;
 
         $this->dispatch('tasks-updated');
@@ -944,7 +1050,9 @@ class MainPanel extends Component
         $this->editingSubtaskMissionId = $checkpoint->mission_id;
         $this->editingSubtaskTitle = $child->title;
 
+        $this->selectedMissionIds = [$checkpoint->mission_id];
         $this->selectedMissionId = $checkpoint->mission_id;
+        $this->lastSelectedMissionId = $checkpoint->mission_id;
         $this->selectedSubtaskId = $child->id;
 
         $this->dispatch('tasks-updated');
@@ -1013,6 +1121,68 @@ class MainPanel extends Component
         }
 
         return $this->updateMissionDueDate($mission, $target);
+    }
+
+    /**
+     * Retorna a ordem atual das missões conforme filtros e listas ativos.
+     */
+    private function currentMissionOrderIds(int $userId): array
+    {
+        $user = Auth::user();
+        $timezone = $user?->timezone ?? config('app.timezone');
+
+        if ($this->currentListId) {
+            return Mission::query()
+                ->where('user_id', $userId)
+                ->where('list_id', $this->currentListId)
+                ->when(
+                    $this->shortcut,
+                    fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $timezone)
+                )
+                ->orderByDesc('is_starred')
+                ->orderBy('position')
+                ->orderBy('created_at')
+                ->pluck('id')
+                ->all();
+        }
+
+        $unlisted = Mission::query()
+            ->where('user_id', $userId)
+            ->whereNull('list_id')
+            ->when(
+                $this->shortcut,
+                fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $timezone)
+            )
+            ->orderByDesc('is_starred')
+            ->orderBy('position')
+            ->orderBy('created_at')
+            ->pluck('id')
+            ->all();
+
+        $lists = TaskList::query()
+            ->with(['missions' => function ($query) use ($timezone) {
+                $query->orderByDesc('is_starred')
+                    ->orderBy('position')
+                    ->orderBy('created_at');
+
+                if ($this->shortcut) {
+                    MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
+                }
+            }])
+            ->where('user_id', $userId)
+            ->whereNull('archived_at')
+            ->orderByDesc('is_pinned')
+            ->orderBy('position')
+            ->orderBy('name')
+            ->get();
+
+        $ordered = $unlisted;
+
+        foreach ($lists as $list) {
+            $ordered = array_merge($ordered, $list->missions->pluck('id')->all());
+        }
+
+        return $ordered;
     }
 
     /**
@@ -1149,8 +1319,13 @@ class MainPanel extends Component
                 'lists' => collect(),
                 'availableLists' => collect(),
                 'selectedMissionId' => null,
+                'selectedMissionIds' => [],
+                'selectedSubtaskId' => null,
                 'showListSelector' => true,
                 'listView' => false,
+                'maxSubtasks' => self::MAX_SUBTASKS,
+                'collapsedMissionIds' => [],
+                'collapsedSubtaskIds' => [],
             ]);
         }
 
@@ -1193,6 +1368,72 @@ class MainPanel extends Component
         $this->attachCheckpointTree($unlistedMissions, $timezone);
 
         $totalCount = $lists->sum(fn ($list) => $list->missions->count()) + $unlistedMissions->count();
+
+        $allMissionIdsCollection = $unlistedMissions->pluck('id')
+            ->concat($lists->flatMap(fn ($list) => $list->missions->pluck('id')))
+            ->values();
+
+        $availableMissionIds = array_map('intval', $allMissionIdsCollection->all());
+        $this->selectedMissionIds = array_values(array_map('intval', array_intersect($this->selectedMissionIds, $availableMissionIds)));
+        $this->collapsedMissionIds = array_values(array_map('intval', array_intersect($this->collapsedMissionIds, $availableMissionIds)));
+
+        if ($this->selectedMissionId && ! in_array($this->selectedMissionId, $this->selectedMissionIds, true)) {
+            $this->selectedMissionId = $this->selectedMissionIds[0] ?? null;
+        }
+
+        if (! $this->selectedMissionId && ! empty($this->selectedMissionIds)) {
+            $this->selectedMissionId = $this->selectedMissionIds[0];
+        }
+
+        $this->lastSelectedMissionId = $this->selectedMissionIds[0] ?? null;
+
+        if (empty($this->selectedMissionIds)) {
+            $this->selectedSubtaskId = null;
+        }
+
+        $allCheckpointIds = [];
+        $collectCheckpointIds = function ($nodes) use (&$collectCheckpointIds, &$allCheckpointIds) {
+            if ($nodes instanceof Collection) {
+                $nodes = $nodes->all();
+            }
+
+            if (! is_array($nodes)) {
+                return;
+            }
+
+            foreach ($nodes as $node) {
+                if (! is_array($node)) {
+                    continue;
+                }
+
+                $id = $node['id'] ?? null;
+
+                if ($id) {
+                    $allCheckpointIds[] = (int) $id;
+                }
+
+                $children = $node['children'] ?? [];
+
+                if (! empty($children)) {
+                    $collectCheckpointIds($children);
+                }
+            }
+        };
+
+        $missionsForCheckpoints = $unlistedMissions->concat($lists->flatMap(fn ($list) => $list->missions));
+
+        foreach ($missionsForCheckpoints as $missionItem) {
+            $tree = $missionItem->relationLoaded('checkpointTree')
+                ? $missionItem->getRelation('checkpointTree')
+                : collect();
+
+            $collectCheckpointIds($tree);
+        }
+
+        $this->collapsedSubtaskIds = array_values(array_map(
+            'intval',
+            array_intersect($this->collapsedSubtaskIds, array_unique($allCheckpointIds))
+        ));
 
         if ($this->selectedMissionId) {
             $ownsMission = Mission::query()
@@ -1270,10 +1511,13 @@ class MainPanel extends Component
             'lists' => $lists,
             'availableLists' => $availableLists,
             'selectedMissionId' => $this->selectedMissionId,
+            'selectedMissionIds' => $this->selectedMissionIds,
             'selectedSubtaskId' => $this->selectedSubtaskId,
             'showListSelector' => $showListSelector,
             'listView' => $this->currentListId !== null,
             'maxSubtasks' => self::MAX_SUBTASKS,
+            'collapsedMissionIds' => $this->collapsedMissionIds,
+            'collapsedSubtaskIds' => $this->collapsedSubtaskIds,
         ]);
     }
 

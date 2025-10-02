@@ -12,6 +12,7 @@
         ? ', ' . $subtaskId
         : '';
     $currentPriority = is_numeric($priority ?? null) ? (int) $priority : 0;
+    $isStarred = (bool) ($isStarred ?? false);
 @endphp
 
 <div class="ti-floating-menu" role="none">
@@ -239,7 +240,7 @@
                     @endif
                 >
                     <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
-                    <span>Fixar</span>
+                    <span>{{ $isStarred ? 'Desafixar' : 'Fixar' }}</span>
                 </button>
                 <button
                     class="ti-menu-action"

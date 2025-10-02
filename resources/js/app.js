@@ -36,8 +36,11 @@ function onCheckboxClick(event) {
 /* ────────────────────────────────────────────────────────────────── */
 function onTaskExpanderClick(event) {
   const target = event.target;
-  const exp = target.closest('.task.has-subtasks .expander');
+  const exp = target.closest('.task.has-subtasks .expander, .subtask.has-children .expander');
   if (!exp) return false;
+
+  const hasWireClick = exp.getAttributeNames?.().some((name) => name.startsWith('wire:click'));
+  if (hasWireClick) return false;
 
   event.preventDefault();
   event.stopPropagation();

@@ -56,6 +56,9 @@
                     ->concat(($lists ?? collect())->flatMap->missions)
                     ->values();
                 $maxSubtasks = $maxSubtasks ?? 7;
+                $selectedMissionIds = $selectedMissionIds ?? ($this->selectedMissionIds ?? []);
+                $collapsedMissionIds = $collapsedMissionIds ?? ($this->collapsedMissionIds ?? []);
+                $collapsedSubtaskIds = $collapsedSubtaskIds ?? ($this->collapsedSubtaskIds ?? []);
             @endphp
 
             @php
@@ -80,6 +83,7 @@
             <div class="task-list" data-sortable-tasks>
                 @forelse ($allMissions as $mission)
                     @php
+                        $isSelected = in_array($mission->id, $selectedMissionIds, true);
                         $isActive = $mission->id === $selectedMissionId;
                         $relationLoaded = method_exists($mission, 'relationLoaded') && $mission->relationLoaded('checkpointTree');
                         $subtasksRelation = $relationLoaded ? $mission->getRelation('checkpointTree') : collect();
@@ -138,6 +142,7 @@
                                 $dueLabel = $missionDueDay->format('d') . ' ' . $monthLabel;
                             }
                         }
+                        $missionCollapsed = in_array($mission->id, $collapsedMissionIds, true);
                     @endphp
 
                     <div
@@ -147,11 +152,11 @@
                         data-list-id="{{ $mission->list_id ?? '' }}"
                     >
                         <div
-                            wire:click="selectMission({{ $mission->id }})"
+                            wire:click="selectMission({{ $mission->id }}, $event.shiftKey ? 1 : 0)"
                             @class([
                                 'task',
                                 'done' => $mission->status === 'done',
-                                'is-active' => $isActive && ! $missionContainsSelectedSubtask,
+                                'is-active' => $isSelected && ! $missionContainsSelectedSubtask,
                                 'has-active-subtask' => $missionContainsSelectedSubtask,
                                 'has-subtasks' => $hasSubtasks,
                                 'priority-high' => $priority === 3,
@@ -160,20 +165,26 @@
                             ])
                             data-priority="{{ $priority }}"
                             @if($hasSubtasks)
-                                aria-expanded="true"
+                                aria-expanded="{{ $missionCollapsed ? 'false' : 'true' }}"
                             @endif
                         >
                             <button class="checkbox" aria-label="Marcar tarefa" type="button"></button>
                             <div class="task-label">
                                 @if ($hasSubtasks)
-                                    <button class="expander" type="button" title="Recolher subtarefas" aria-label="Recolher subtarefas">
-                                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                                    <button
+                                        class="expander"
+                                        type="button"
+                                        title="Recolher subtarefas"
+                                        aria-label="Recolher subtarefas"
+                                        wire:click.stop="toggleMissionCollapse({{ $mission->id }})"
+                                    >
+                                        <i class="fa-solid {{ $missionCollapsed ? 'fa-chevron-right' : 'fa-chevron-down' }}" aria-hidden="true"></i>
                                     </button>
                                 @endif
                                 <div
                                     class="title-line"
                                     @if ($editingMissionId !== $mission->id)
-                                        wire:click.stop="selectMission({{ $mission->id }})"
+                                        wire:click.stop="selectMission({{ $mission->id }}, $event.shiftKey ? 1 : 0)"
                                     @endif
                                 >
                                     @if ($editingMissionId === $mission->id)
@@ -226,16 +237,20 @@
                                     'missionId' => $mission->id,
                                     'dueDate' => $missionDueDate,
                                     'priority' => $mission->priority,
+                                    'isStarred' => (bool) $mission->is_starred,
                                 ])
                             </div>
                             {{-- Não exibimos rótulo de lista para manter apenas tarefas puras --}}
                         </div>
 
                         <div
-                            class="subtasks"
+                            @class(['subtasks'])
                             data-subtask-container
                             data-mission-id="{{ $mission->id }}"
                             data-parent-id=""
+                            @if ($missionCollapsed)
+                                style="display:none;"
+                            @endif
                         >
                             @if ($hasSubtasks)
                                 @foreach ($subtasks as $node)
@@ -250,6 +265,7 @@
                                         'monthAbbr' => $monthAbbr,
                                         'currentDay' => $today,
                                         'nextDay' => $tomorrow,
+                                        'collapsedSubtaskIds' => $collapsedSubtaskIds,
                                     ])
                                 @endforeach
                                 @if (! $canAddMissionSubtask)

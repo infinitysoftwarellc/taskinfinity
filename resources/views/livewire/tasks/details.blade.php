@@ -1,6 +1,10 @@
 {{-- This Blade view renders the livewire tasks details interface. --}}
 @php
-    $missionData = is_array($mission) ? $mission : null;
+    $multiSelectionIds = $multiSelection ?? [];
+    $isMultiSelection = !empty($multiSelectionIds);
+    $multiSummary = $multiSelectionSummary ?? null;
+    $multiItems = collect($multiSelectionItems ?? []);
+    $missionData = $isMultiSelection ? null : (is_array($mission) ? $mission : null);
     $activeSubtaskContext = $missionData['active_subtask'] ?? null;
     $isSubtaskContext = !empty($activeSubtaskContext);
     $isDoneContext = $isSubtaskContext
@@ -8,15 +12,212 @@
         : ($missionData['status'] ?? null) === 'done';
     $priorityValue = isset($missionData['priority']) ? (int) $missionData['priority'] : 0;
     $priorityLabel = $missionData['priority_label'] ?? 'Nenhuma';
+    if ($isMultiSelection) {
+        $isDoneContext = false;
+    }
 @endphp
 
 <aside @class([
     'ti-details',
     'is-done' => $isDoneContext,
     'is-subtask' => $isSubtaskContext,
+    'is-multi' => $isMultiSelection,
 ]) data-selected-subtask="{{ $selectedSubtaskId ?? '' }}"
     data-mission-id="{{ $missionData['id'] ?? '' }}">
-    @if ($missionData)
+    @if ($isMultiSelection)
+        @php
+            $multiTotal = $multiSummary['total'] ?? count($multiSelectionIds);
+            $multiCompleted = $multiSummary['completed'] ?? 0;
+            $multiActive = $multiSummary['active'] ?? max($multiTotal - $multiCompleted, 0);
+            $multiProgress = $multiSummary['completion_rate'] ?? ($multiTotal > 0 ? (int) round(($multiCompleted / $multiTotal) * 100) : 0);
+            $multiStarred = $multiSummary['starred'] ?? 0;
+            $allPinned = $multiTotal > 0 && $multiStarred === $multiTotal;
+            $listBreakdown = collect($multiSummary['lists'] ?? [])->take(3);
+            $priorityBreakdown = $multiSummary['priority'] ?? [];
+            $priorityLabel = 'Nenhuma';
+
+            if (($priorityBreakdown['high'] ?? 0) > 0) {
+                $priorityLabel = 'Alta';
+            } elseif (($priorityBreakdown['medium'] ?? 0) > 0) {
+                $priorityLabel = 'Média';
+            } elseif (($priorityBreakdown['low'] ?? 0) > 0) {
+                $priorityLabel = 'Baixa';
+            }
+
+            $checkpointTotal = $multiSummary['checkpoints']['total'] ?? 0;
+            $checkpointDone = $multiSummary['checkpoints']['done'] ?? 0;
+            $checkpointProgress = $checkpointTotal > 0 ? (int) round(($checkpointDone / max($checkpointTotal, 1)) * 100) : 0;
+            $lastUpdated = $multiSummary['last_updated'] ?? null;
+        @endphp
+        <div class="ti-details-wrapper ti-details-multi">
+            <div class="ti-multi-selection">
+                <div class="ti-multi-head">
+                    <div class="ti-multi-count">
+                        <span class="ti-multi-number">{{ $multiTotal }}</span>
+                        <span class="ti-multi-label">tarefas selecionadas</span>
+                    </div>
+                    <div class="ti-multi-progress" style="--multi-progress: {{ $multiProgress }}%">
+                        <span class="ti-multi-progress-label">Progresso</span>
+                        <div class="ti-multi-progress-bar" aria-label="{{ $multiProgress }}% concluído"></div>
+                        <span class="ti-multi-progress-value">{{ $multiProgress }}%</span>
+                    </div>
+                </div>
+
+                <div class="ti-multi-actions">
+                    <div class="ti-multi-action-group">
+                        <span class="ti-multi-group-label">Estado</span>
+                        <div class="ti-multi-action-row">
+                            <button class="ti-multi-action primary" type="button" wire:click="markSelectionAsDone"
+                                @if ($multiActive === 0) disabled @endif wire:loading.attr="disabled">
+                                <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                                <span>Concluir abertas</span>
+                            </button>
+                            <button class="ti-multi-action" type="button" wire:click="markSelectionAsActive"
+                                @if ($multiCompleted === 0) disabled @endif wire:loading.attr="disabled">
+                                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                                <span>Reativar concluídas</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="ti-multi-action-group">
+                        <span class="ti-multi-group-label">Datas rápidas</span>
+                        <div class="ti-multi-action-row">
+                            <button class="ti-multi-chip" type="button"
+                                wire:click="applyMultiSelectionShortcut('today')" wire:loading.attr="disabled">
+                                Hoje
+                            </button>
+                            <button class="ti-multi-chip" type="button"
+                                wire:click="applyMultiSelectionShortcut('tomorrow')" wire:loading.attr="disabled">
+                                Amanhã
+                            </button>
+                            <button class="ti-multi-chip" type="button"
+                                wire:click="applyMultiSelectionShortcut('next7')" wire:loading.attr="disabled">
+                                Próx. 7 dias
+                            </button>
+                            <button class="ti-multi-chip ghost" type="button"
+                                wire:click="applyMultiSelectionShortcut('clear')" wire:loading.attr="disabled">
+                                Limpar datas
+                            </button>
+                            <label class="ti-multi-chip picker">
+                                <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                                <span>Personalizar</span>
+                                <input type="date" wire:model.defer="multiSelectionDate"
+                                    wire:change="applyMultiSelectionDate" aria-label="Definir data personalizada" />
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="ti-multi-action-group">
+                        <span class="ti-multi-group-label">Organização</span>
+                        <div class="ti-multi-action-row">
+                            <button class="ti-multi-action secondary" type="button" wire:click="togglePinSelection"
+                                wire:loading.attr="disabled">
+                                <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
+                                <span>{{ $allPinned ? 'Desafixar' : 'Fixar' }} seleção</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ti-multi-stats">
+                    <div class="ti-multi-stat">
+                        <span class="ti-multi-stat-label">Concluídas</span>
+                        <strong class="ti-multi-stat-value">{{ $multiCompleted }}</strong>
+                        <span class="ti-multi-stat-hint">{{ $multiActive }} abertas</span>
+                    </div>
+                    <div class="ti-multi-stat">
+                        <span class="ti-multi-stat-label">Datas definidas</span>
+                        <strong class="ti-multi-stat-value">{{ $multiSummary['with_due'] ?? 0 }}</strong>
+                        <span class="ti-multi-stat-hint">{{ ($multiSummary['overdue'] ?? 0) }} atrasada(s)</span>
+                    </div>
+                    <div class="ti-multi-stat">
+                        <span class="ti-multi-stat-label">Prioridade máxima</span>
+                        <strong class="ti-multi-stat-value">{{ $priorityLabel }}</strong>
+                        <span class="ti-multi-stat-hint">Alta: {{ $priorityBreakdown['high'] ?? 0 }} &bull; Média: {{ $priorityBreakdown['medium'] ?? 0 }}</span>
+                    </div>
+                    <div class="ti-multi-stat">
+                        <span class="ti-multi-stat-label">Subtarefas</span>
+                        <strong class="ti-multi-stat-value">{{ $checkpointDone }} / {{ $checkpointTotal }}</strong>
+                        <span class="ti-multi-stat-hint">{{ $checkpointProgress }}% concluídas</span>
+                    </div>
+                </div>
+
+                <div class="ti-multi-lists">
+                    <h3 class="ti-multi-section-title">Listas envolvidas</h3>
+                    <div class="ti-multi-list-grid">
+                        @forelse ($listBreakdown as $listName => $count)
+                            <div class="ti-multi-list-chip">
+                                <span class="ti-multi-list-name">{{ $listName }}</span>
+                                <span class="ti-multi-list-count">{{ $count }}</span>
+                            </div>
+                        @empty
+                            <div class="ti-multi-list-chip is-empty">Sem listas atribuídas</div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="ti-multi-preview">
+                    <h3 class="ti-multi-section-title">Visão rápida</h3>
+                    <ul class="ti-multi-preview-list">
+                        @forelse ($multiItems->take(6) as $item)
+                            @php
+                                $itemDue = $item['due_at'] ?? null;
+                                $itemDueLabel = null;
+                                $itemDueClass = 'is-empty';
+
+                                if ($itemDue instanceof \Carbon\CarbonInterface) {
+                                    $itemDueLabel = $itemDue->format('d/m');
+                                    $todayLabel = now($itemDue->getTimezone())->startOfDay();
+                                    $tomorrowLabel = $todayLabel->copy()->addDay();
+
+                                    if ($itemDue->isSameDay($todayLabel)) {
+                                        $itemDueLabel = 'Hoje';
+                                        $itemDueClass = 'is-today';
+                                    } elseif ($itemDue->isSameDay($tomorrowLabel)) {
+                                        $itemDueLabel = 'Amanhã';
+                                        $itemDueClass = 'is-tomorrow';
+                                    } elseif ($itemDue->lessThan($todayLabel)) {
+                                        $itemDueClass = 'is-overdue';
+                                    } else {
+                                        $itemDueClass = 'is-upcoming';
+                                    }
+                                }
+                            @endphp
+                            <li class="ti-multi-preview-item">
+                                <div class="ti-multi-preview-main">
+                                    <span class="ti-multi-preview-title">{{ ($item['title'] ?? '') !== '' ? $item['title'] : 'Sem título' }}</span>
+                                    @if (!empty($item['list']))
+                                        <span class="ti-multi-preview-tag">{{ $item['list'] }}</span>
+                                    @endif
+                                </div>
+                                <div class="ti-multi-preview-meta">
+                                    @if ($itemDueLabel)
+                                        <span class="ti-multi-preview-date {{ $itemDueClass }}">{{ $itemDueLabel }}</span>
+                                    @else
+                                        <span class="ti-multi-preview-date is-empty">Sem data</span>
+                                    @endif
+                                    <span class="ti-multi-preview-status {{ ($item['status'] ?? '') === 'done' ? 'is-done' : '' }}">
+                                        {{ ($item['status'] ?? '') === 'done' ? 'Concluída' : 'Ativa' }}
+                                    </span>
+                                    @if (($item['priority'] ?? 0) > 0)
+                                        <span class="ti-multi-preview-priority priority-{{ $item['priority'] }}">
+                                            <i class="fa-solid fa-flag" aria-hidden="true"></i>
+                                        </span>
+                                    @endif
+                                </div>
+                            </li>
+                        @empty
+                            <li class="ti-multi-preview-empty">Seleção vazia</li>
+                        @endforelse
+                    </ul>
+                    @if ($lastUpdated instanceof \Carbon\CarbonInterface)
+                        <p class="ti-multi-updated">Última atualização: {{ $lastUpdated->diffForHumans() }}</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @elseif ($missionData)
         @php
             $activeSubtask = $missionData['active_subtask'] ?? null;
             $isSubtask = !empty($activeSubtask);
@@ -295,6 +496,7 @@
                                 'context' => 'details',
                                 'subtaskId' => $activeSubtask['id'] ?? null,
                                 'priority' => $priorityValue,
+                                'isStarred' => $mission['is_starred'] ?? false,
                             ])
                         </div>
                     </div>
