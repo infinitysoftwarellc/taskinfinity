@@ -1,6 +1,7 @@
 <?php
 
 // This routes file registers HTTP endpoints for the web section.
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Ai\AiRequestController;
 use App\Http\Controllers\Economy\EconomyWalletController;
 use App\Http\Controllers\Gamification\AbilityController;
@@ -44,9 +45,10 @@ use Laravel\Pulse\Facades\Pulse;
 Route::view('/', 'welcome');
 Route::view('/teste', 'teste');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    Route::get('dashboard', DashboardController::class)
+        ->name('dashboard');
+});
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])

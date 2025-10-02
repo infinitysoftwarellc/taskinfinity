@@ -7,7 +7,9 @@
 
         <title>{{ trim($__env->yieldContent('title', config('app.name', 'TaskInfinity'))) }}</title>
 
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @unless (app()->environment('testing'))
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endunless
         @livewireStyles
     </head>
     <body class="min-h-full bg-gradient-to-br from-zinc-100 via-white to-zinc-200 font-sans antialiased text-zinc-900">

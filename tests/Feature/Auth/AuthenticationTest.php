@@ -38,14 +38,14 @@ it('rejects invalid credentials', function () {
     $this->assertGuest();
 });
 
-it('displays the navigation shell for authenticated users', function () {
-    $user = User::factory()->create();
+it('displays the navigation shell for admin users', function () {
+    $admin = User::factory()->admin()->create();
 
-    $response = $this->actingAs($user)->get('/dashboard');
+    $response = $this->actingAs($admin)->get('/dashboard');
 
     $response
         ->assertOk()
-        ->assertSeeText(__('Dashboard'))
+        ->assertSeeText(__('Admin Dashboard'))
         ->assertSeeText(__('Tasks'));
 });
 

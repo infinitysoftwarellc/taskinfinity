@@ -2,30 +2,43 @@
 @php
     $items = [
         [
+            'label' => __('Dashboard'),
+            'href' => route('dashboard'),
+            'icon' => 'fa-solid fa-chart-line',
+            'active' => request()->routeIs('dashboard'),
+            'visible' => auth()->user()?->isAdmin(),
+        ],
+        [
             'label' => __('Tasks'),
             'href' => route('tasks.index'),
             'icon' => 'fa-solid fa-list-check',
             'active' => request()->routeIs('tasks.index'),
+            'visible' => true,
         ],
         [
             'label' => __('Pomodoro'),
             'href' => route('app.pomodoro'),
             'icon' => 'fa-solid fa-clock',
             'active' => request()->routeIs('app.pomodoro'),
+            'visible' => true,
         ],
         [
             'label' => __('Profile'),
             'href' => route('profile'),
             'icon' => 'fa-solid fa-user',
             'active' => request()->routeIs('profile'),
+            'visible' => true,
         ],
         [
             'label' => __('Configurações'),
             'href' => route('app.settings'),
             'icon' => 'fa-solid fa-gear',
             'active' => request()->routeIs('app.settings'),
+            'visible' => true,
         ],
     ];
+
+    $items = array_values(array_filter($items, fn ($item) => $item['visible'] ?? false));
 @endphp
 
 <aside class="hidden w-64 shrink-0 border-r border-zinc-200 bg-white px-4 py-6 dark:border-zinc-700 dark:bg-zinc-900 lg:block">
