@@ -1,137 +1,59 @@
-{{-- This Blade view renders the livewire settings two factor recovery codes interface. --}}
-<?php
-
-use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
-use Livewire\Attributes\Locked;
-use Livewire\Volt\Component;
-
-new class extends Component {
-    #[Locked]
-    public array $recoveryCodes = [];
-
-    /**
-     * Mount the component.
-     */
-    public function mount(): void
-    {
-        $this->loadRecoveryCodes();
-    }
-
-    /**
-     * Generate new recovery codes for the user.
-     */
-    public function regenerateRecoveryCodes(GenerateNewRecoveryCodes $generateNewRecoveryCodes): void
-    {
-        $generateNewRecoveryCodes(auth()->user());
-
-        $this->loadRecoveryCodes();
-    }
-
-    /**
-     * Load the recovery codes for the user.
-     */
-    private function loadRecoveryCodes(): void
-    {
-        $user = auth()->user();
-
-        if ($user->hasEnabledTwoFactorAuthentication() && $user->two_factor_recovery_codes) {
-            try {
-                $this->recoveryCodes = json_decode(decrypt($user->two_factor_recovery_codes), true);
-            } catch (Exception) {
-                $this->addError('recoveryCodes', 'Failed to load recovery codes');
-
-                $this->recoveryCodes = [];
-            }
-        }
-    }
-}; ?>
-
-<div
-    class="py-6 space-y-6 border shadow-sm rounded-xl border-zinc-200 dark:border-white/10"
-    wire:cloak
-    x-data="{ showRecoveryCodes: false }"
->
-    <div class="px-6 space-y-2">
-        <div class="flex items-center gap-2">
-            <flux:icon.lock-closed variant="outline" class="size-4"/>
-            <flux:heading size="lg" level="3">{{ __('2FA Recovery Codes') }}</flux:heading>
+{{-- Recovery codes section displayed when 2FA is enabled. --}}
+<div class="rounded-xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-700 dark:bg-zinc-900" x-data="{ open: false, copied: false }">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ __('Recovery Codes') }}</h3>
+            <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                {{ __('Store these codes in a safe place. Each code can be used once if you lose access to your authenticator app.') }}
+            </p>
         </div>
-        <flux:text variant="subtle">
-            {{ __('Recovery codes let you regain access if you lose your 2FA device. Store them in a secure password manager.') }}
-        </flux:text>
+
+        <div class="flex gap-2">
+            <button
+                type="button"
+                x-show="!open"
+                x-on:click="open = true"
+                class="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+                {{ __('View codes') }}
+            </button>
+            <button
+                type="button"
+                x-show="open"
+                x-on:click="open = false"
+                class="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+                {{ __('Hide codes') }}
+            </button>
+            <button
+                type="button"
+                x-show="open"
+                wire:click="regenerateRecoveryCodes"
+                class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+                {{ __('Regenerate') }}
+            </button>
+        </div>
     </div>
 
-    <div class="px-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <flux:button
-                x-show="!showRecoveryCodes"
-                icon="eye"
-                icon:variant="outline"
-                variant="primary"
-                @click="showRecoveryCodes = true;"
-                aria-expanded="false"
-                aria-controls="recovery-codes-section"
-            >
-                {{ __('View Recovery Codes') }}
-            </flux:button>
+    <div x-show="open" x-transition class="mt-4 space-y-3">
+        @error('recoveryCodes')
+            <p class="rounded-lg bg-red-100 px-3 py-2 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-200">{{ $message }}</p>
+        @enderror
 
-            <flux:button
-                x-show="showRecoveryCodes"
-                icon="eye-slash"
-                icon:variant="outline"
-                variant="primary"
-                @click="showRecoveryCodes = false"
-                aria-expanded="true"
-                aria-controls="recovery-codes-section"
-            >
-                {{ __('Hide Recovery Codes') }}
-            </flux:button>
-
-            @if (filled($recoveryCodes))
-                <flux:button
-                    x-show="showRecoveryCodes"
-                    icon="arrow-path"
-                    variant="filled"
-                    wire:click="regenerateRecoveryCodes"
-                >
-                    {{ __('Regenerate Codes') }}
-                </flux:button>
-            @endif
-        </div>
-
-        <div
-            x-show="showRecoveryCodes"
-            x-transition
-            id="recovery-codes-section"
-            class="relative overflow-hidden"
-            x-bind:aria-hidden="!showRecoveryCodes"
-        >
-            <div class="mt-3 space-y-3">
-                @error('recoveryCodes')
-                    <flux:callout variant="danger" icon="x-circle" heading="{{$message}}"/>
-                @enderror
-
-                @if (filled($recoveryCodes))
-                    <div
-                        class="grid gap-1 p-4 font-mono text-sm rounded-lg bg-zinc-100 dark:bg-white/5"
-                        role="list"
-                        aria-label="Recovery codes"
-                    >
-                        @foreach($recoveryCodes as $code)
-                            <div
-                                role="listitem"
-                                class="select-text"
-                                wire:loading.class="opacity-50 animate-pulse"
-                            >
-                                {{ $code }}
-                            </div>
-                        @endforeach
-                    </div>
-                    <flux:text variant="subtle" class="text-xs">
-                        {{ __('Each recovery code can be used once to access your account and will be removed after use. If you need more, click Regenerate Codes above.') }}
-                    </flux:text>
-                @endif
+        @if (filled($recoveryCodes))
+            <div class="grid gap-2 rounded-lg bg-white p-4 font-mono text-sm tracking-widest shadow-sm dark:bg-zinc-800">
+                @foreach ($recoveryCodes as $code)
+                    <span class="select-all">{{ $code }}</span>
+                @endforeach
             </div>
-        </div>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                {{ __('Each code can be used once. Generate a new set after using one to keep your account secure.') }}
+            </p>
+        @else
+            <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                {{ __('No recovery codes are available yet. Enable two-factor authentication to generate codes.') }}
+            </p>
+        @endif
     </div>
 </div>

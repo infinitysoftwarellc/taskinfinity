@@ -189,20 +189,14 @@ class TasksPageInteractionsTest extends TestCase
         $component->call('loadMultiSelection', [$first->id, $second->id]);
         $component->assertSet('multiSelection', [$first->id, $second->id]);
 
-        $initialItems = $component->render()->getData()['multiSelectionItems'] ?? collect();
-        $initialItems = $initialItems instanceof \Illuminate\Support\Collection
-            ? $initialItems
-            : collect($initialItems);
+        $initialItems = collect($component->get('multiSelectionItems'));
 
         $this->assertSame('Publicar release', $initialItems->firstWhere('id', $second->id)['title'] ?? null);
 
         $second->update(['title' => 'Publicar release 1.1']);
 
         $component->dispatch('tasks-updated');
-        $updatedItems = $component->render()->getData()['multiSelectionItems'] ?? collect();
-        $updatedItems = $updatedItems instanceof \Illuminate\Support\Collection
-            ? $updatedItems
-            : collect($updatedItems);
+        $updatedItems = collect($component->get('multiSelectionItems'));
 
         $this->assertSame('Publicar release 1.1', $updatedItems->firstWhere('id', $second->id)['title'] ?? null);
     }

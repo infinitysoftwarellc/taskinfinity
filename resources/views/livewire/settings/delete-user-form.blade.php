@@ -1,61 +1,68 @@
-{{-- This Blade view renders the livewire settings delete user form interface. --}}
-<?php
-
-use App\Livewire\Actions\Logout;
-use Illuminate\Support\Facades\Auth;
-use Livewire\Volt\Component;
-
-new class extends Component {
-    public string $password = '';
-
-    /**
-     * Delete the currently authenticated user.
-     */
-    public function deleteUser(Logout $logout): void
-    {
-        $this->validate([
-            'password' => ['required', 'string', 'current_password'],
-        ]);
-
-        tap(Auth::user(), $logout(...))->delete();
-
-        $this->redirect('/', navigate: true);
-    }
-}; ?>
-
-<section class="mt-10 space-y-6">
-    <div class="relative mb-5">
-        <flux:heading>{{ __('Delete account') }}</flux:heading>
-        <flux:subheading>{{ __('Delete your account and all of its resources') }}</flux:subheading>
+{{-- Delete account form displayed inside the settings area. --}}
+<div class="space-y-6">
+    <div class="space-y-1">
+        <h2 class="text-xl font-semibold text-red-600 dark:text-red-400">{{ __('Delete account') }}</h2>
+        <p class="text-sm text-zinc-600 dark:text-zinc-300">
+            {{ __('Delete your account and all of its resources') }}
+        </p>
     </div>
 
-    <flux:modal.trigger name="confirm-user-deletion">
-        <flux:button variant="danger" x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')" data-test="delete-user-button">
-            {{ __('Delete account') }}
-        </flux:button>
-    </flux:modal.trigger>
+    <button
+        type="button"
+        wire:click="confirmDeletion"
+        class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900"
+        data-test="delete-user-button"
+    >
+        {{ __('Delete account') }}
+    </button>
 
-    <flux:modal name="confirm-user-deletion" :show="$errors->isNotEmpty()" focusable class="max-w-lg">
-        <form method="POST" wire:submit="deleteUser" class="space-y-6">
-            <div>
-                <flux:heading size="lg">{{ __('Are you sure you want to delete your account?') }}</flux:heading>
+    @if ($confirmingDeletion)
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+                <form wire:submit.prevent="deleteUser" class="space-y-6">
+                    <header class="space-y-2">
+                        <h3 class="text-lg font-semibold">{{ __('Are you sure you want to delete your account?') }}</h3>
+                        <p class="text-sm text-zinc-600 dark:text-zinc-300">
+                            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
+                        </p>
+                    </header>
 
-                <flux:subheading>
-                    {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
-                </flux:subheading>
+                    <div>
+                        <label for="delete_password" class="block text-sm font-medium">
+                            {{ __('Password') }}
+                        </label>
+                        <input
+                            wire:model.defer="password"
+                            id="delete_password"
+                            name="password"
+                            type="password"
+                            autocomplete="current-password"
+                            class="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 dark:border-zinc-700 dark:bg-zinc-800"
+                        />
+                        @error('password')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            wire:click="cancelDeletion"
+                            class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                        >
+                            {{ __('Cancel') }}
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            data-test="confirm-delete-user-button"
+                        >
+                            {{ __('Delete account') }}
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <flux:input wire:model="password" :label="__('Password')" type="password" />
-
-            <div class="flex justify-end space-x-2 rtl:space-x-reverse">
-                <flux:modal.close>
-                    <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
-                </flux:modal.close>
-
-                <flux:button variant="danger" type="submit" data-test="confirm-delete-user-button">
-                    {{ __('Delete account') }}
-                </flux:button>
-            </div>
-        </form>
-    </flux:modal>
-</section>
+        </div>
+    @endif
+</div>

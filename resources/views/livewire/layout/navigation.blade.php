@@ -1,30 +1,53 @@
-{{-- This Blade view renders the livewire layout navigation interface. --}}
-<?php
+{{-- Navigation rail displayed on authenticated pages. --}}
+@php
+    $userName = auth()->user()?->name ?? 'User';
+    $initials = mb_strtoupper(mb_substr($userName, 0, 2));
+@endphp
 
-use App\Livewire\Actions\Logout;
-use Livewire\Volt\Component;
+<aside class="hidden w-16 shrink-0 flex-col items-center gap-3 border-r border-zinc-200 bg-white px-2 py-6 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 lg:flex">
+    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white">
+        <span class="text-sm font-semibold">{{ $initials }}</span>
+    </div>
 
-new class extends Component {
-    /**
-     * Log the current user out of the application.
-     */
-    public function logout(Logout $logout): void
-    {
-        $logout();
+<nav class="flex flex-col items-center gap-2 text-lg" aria-label="Primary">
+    @foreach ([
+        ['icon' => 'fa-list-check', 'label' => __('All tasks')],
+        ['icon' => 'fa-sun', 'label' => __('Today')],
+        ['icon' => 'fa-calendar-days', 'label' => __('Next 7 days')],
+        ['icon' => 'fa-inbox', 'label' => __('Inbox')],
+        ['icon' => 'fa-chart-pie', 'label' => __('Summary')],
+    ] as $item)
+        <button
+            type="button"
+            class="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+            title="{{ $item['label'] }}"
+        >
+            <i class="fa-solid {{ $item['icon'] }}" aria-hidden="true"></i>
+            <span class="sr-only">{{ $item['label'] }}</span>
+        </button>
+    @endforeach
+</nav>
 
-        $this->redirect('/', navigate: true);
-    }
-}; ?>
-<div>
-        <aside class="rail">
-        <div class="avatar" title="Você"></div>
-        <button class="btn" title="All"><i class="fa-solid fa-list-check" aria-hidden="true"></i></button>
-        <button class="btn" title="Today"><i class="fa-solid fa-sun" aria-hidden="true"></i></button>
-        <button class="btn" title="7 Days"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
-        <button class="btn" title="Inbox"><i class="fa-solid fa-inbox" aria-hidden="true"></i></button>
-        <button class="btn" title="Summary"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></button>
-        <div class="spacer"></div>
-        <button class="btn" title="Settings"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>
-    </aside>
+<div class="mt-auto flex flex-col items-center gap-2">
+    <a
+        href="{{ route('app.settings') }}"
+        wire:navigate
+        class="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+        title="{{ __('Settings') }}"
+    >
+        <i class="fa-solid fa-gear" aria-hidden="true"></i>
+        <span class="sr-only">{{ __('Settings') }}</span>
+    </a>
+    <form wire:submit.prevent="logout" class="w-full">
+        @csrf
+        <button
+            type="submit"
+            class="flex h-10 w-full items-center justify-center rounded-lg text-red-500 transition hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40"
+            title="{{ __('Logout') }}"
+        >
+            <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
+            <span class="sr-only">{{ __('Logout') }}</span>
+        </button>
+    </form>
 </div>
-
+</aside>

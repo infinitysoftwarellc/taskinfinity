@@ -2,17 +2,19 @@
 
 namespace App\Livewire\Tasks\Modals;
 
+use App\Livewire\Support\InteractsWithNotifications;
 use App\Livewire\Tasks\MainPanel;
 use App\Models\Checkpoint;
 use App\Models\Mission;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
-use LivewireUI\Modal\ModalComponent;
-use WireUi\Traits\WireUiActions;
+use Livewire\Component;
 
-class SubtaskEditor extends ModalComponent
+class SubtaskEditor extends Component
 {
-    use WireUiActions;
+    use InteractsWithNotifications;
+
+    public bool $open = true;
 
     public int $missionId;
 
@@ -40,14 +42,10 @@ class SubtaskEditor extends ModalComponent
         return view('livewire.tasks.modals.subtask-editor');
     }
 
-    public static function closeModalOnClickAway(): bool
+    public function closeModal(): void
     {
-        return true;
-    }
-
-    public static function modalMaxWidth(): string
-    {
-        return 'md';
+        $this->open = false;
+        $this->dispatch('subtask-editor-closed');
     }
 
     public function save(): void

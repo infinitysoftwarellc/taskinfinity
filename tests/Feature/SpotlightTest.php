@@ -9,7 +9,7 @@ use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\User;
 use Illuminate\Support\Facades\Config;
-use LivewireUI\Spotlight\SpotlightSearchResult;
+use App\Support\Spotlight\SearchResult;
 
 beforeEach(function (): void {
     Config::set('scout.driver', 'database');
@@ -48,7 +48,7 @@ test('task spotlight search only returns missions owned by the authenticated use
 
     expect($results)
         ->toHaveCount(1)
-        ->and($results[0])->toBeInstanceOf(SpotlightSearchResult::class)
+        ->and($results[0])->toBeInstanceOf(SearchResult::class)
         ->and($results[0]->getId())->toBe((string) $ownedTask->getKey());
 });
 
@@ -76,6 +76,6 @@ test('project spotlight search respects user ownership', function () {
 
     expect($results)
         ->toHaveCount(1)
-        ->and($results[0])->toBeInstanceOf(SpotlightSearchResult::class)
+        ->and($results[0])->toBeInstanceOf(SearchResult::class)
         ->and($results[0]->getId())->toBe((string) $ownedProject->getKey());
 });
