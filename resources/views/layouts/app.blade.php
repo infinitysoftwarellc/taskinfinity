@@ -7,6 +7,8 @@
 
         <title>{{ trim($__env->yieldContent('title', config('app.name', 'TaskInfinity'))) }}</title>
 
+        <script src="https://kit.fontawesome.com/c9cfb44e99.js" crossorigin="anonymous"></script>
+
         @unless (app()->environment('testing'))
             @vite(['resources/css/app.css', 'resources/js/app.js'])
         @endunless
