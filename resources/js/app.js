@@ -1155,6 +1155,108 @@ function setupDetailsKeyboard() {
   });
 }
 
+function shouldIgnoreHotkey(event) {
+  const target = event?.target;
+  if (!target) {
+    return false;
+  }
+
+  const tag = target.tagName;
+  return (
+    target.isContentEditable === true ||
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT'
+  );
+}
+
+function focusNewTaskInput() {
+  const input = document.querySelector('.main .add-input');
+  if (!input) {
+    return false;
+  }
+
+  if (typeof input.focus === 'function') {
+    input.focus({ preventScroll: false });
+  }
+
+  return true;
+}
+
+function callSidebarAction(method, ...args) {
+  const sidebarRoot = document.querySelector('.sidebar');
+  const component = findLivewireComponent(sidebarRoot);
+  if (!component) {
+    return false;
+  }
+
+  component.call(method, ...args);
+
+  return true;
+}
+
+function callDetailsAction(method, ...args) {
+  const detailsRoot = document.querySelector('.ti-details');
+  const component = findLivewireComponent(detailsRoot);
+  if (!component) {
+    return false;
+  }
+
+  component.call(method, ...args);
+
+  return true;
+}
+
+function setupTaskHotkeys() {
+  if (document.__ti_hotkeys_wired) return;
+  document.__ti_hotkeys_wired = true;
+
+  const hasTasksLayout = () => document.querySelector('.app .main');
+
+  hotkeys('n', (event) => {
+    if (!hasTasksLayout() || shouldIgnoreHotkey(event)) {
+      return;
+    }
+
+    if (focusNewTaskInput()) {
+      event.preventDefault();
+    }
+  });
+
+  hotkeys('shift+l,ctrl+shift+l', (event) => {
+    if (!hasTasksLayout() || shouldIgnoreHotkey(event)) {
+      return;
+    }
+
+    const handled = callSidebarAction('openCreateModal', 'list');
+    if (handled) {
+      event.preventDefault();
+    }
+  });
+
+  hotkeys('shift+t,ctrl+shift+t', (event) => {
+    if (!hasTasksLayout() || shouldIgnoreHotkey(event)) {
+      return;
+    }
+
+    const handled = callSidebarAction('openTagModal');
+    if (handled) {
+      event.preventDefault();
+    }
+  });
+
+  hotkeys('shift+s,ctrl+shift+s', (event) => {
+    if (!hasTasksLayout() || shouldIgnoreHotkey(event)) {
+      return;
+    }
+
+    const handled = callDetailsAction('openSubtaskForm');
+    if (handled) {
+      event.preventDefault();
+    }
+  });
+}
+
 /* ────────────────────────────────────────────────────────────────── */
 /* BOOT: DOM pronto                                                   */
 /* ────────────────────────────────────────────────────────────────── */
@@ -1169,6 +1271,7 @@ function boot(root = document) {
   setupSortableSubtasks(root);
   setupFocusListeners();
   setupDetailsKeyboard();
+  setupTaskHotkeys();
 }
 
 window.tiBoot = boot;
