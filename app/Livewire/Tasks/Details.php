@@ -733,6 +733,89 @@ class Details extends Component
     }
 
     /**
+     * Aplica atalhos de data às subtarefas exibidas no painel de detalhes.
+     */
+    public function applySubtaskShortcut(int $checkpointId, string $shortcut): void
+    {
+        if (! $this->missionId) {
+            return;
+        }
+
+        $checkpoint = Checkpoint::query()
+            ->where('mission_id', $this->missionId)
+            ->where('id', $checkpointId)
+            ->first();
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        $timezone = $this->userTimezone();
+
+        if ($shortcut === 'clear') {
+            $checkpoint->due_at = null;
+            $checkpoint->save();
+
+            $this->loadMission($this->missionId, $checkpointId);
+            $this->dispatch('tasks-updated');
+
+            return;
+        }
+
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+
+        $target = match ($shortcut) {
+            'today' => $today,
+            'tomorrow' => $today->addDay(),
+            'next7' => $today->addDays(7),
+            default => null,
+        };
+
+        if (! $target) {
+            return;
+        }
+
+        $checkpoint->due_at = $target->setTimezone(config('app.timezone'));
+        $checkpoint->save();
+
+        $this->loadMission($this->missionId, $checkpointId);
+        $this->dispatch('tasks-updated');
+    }
+
+    /**
+     * Define manualmente a data de uma subtarefa específica.
+     */
+    public function selectSubtaskDueDate(int $checkpointId, ?string $value): void
+    {
+        if (! $this->missionId || ! $value) {
+            return;
+        }
+
+        $timezone = $this->userTimezone();
+
+        try {
+            $selectedLocal = CarbonImmutable::createFromFormat('Y-m-d', $value, $timezone);
+        } catch (\Throwable) {
+            return;
+        }
+
+        $checkpoint = Checkpoint::query()
+            ->where('mission_id', $this->missionId)
+            ->where('id', $checkpointId)
+            ->first();
+
+        if (! $checkpoint) {
+            return;
+        }
+
+        $checkpoint->due_at = $selectedLocal->setTimezone(config('app.timezone'));
+        $checkpoint->save();
+
+        $this->loadMission($this->missionId, $checkpointId);
+        $this->dispatch('tasks-updated');
+    }
+
+    /**
      * Abre ou fecha o menu de mover missão entre listas.
      */
     public function toggleMoveListMenu(): void

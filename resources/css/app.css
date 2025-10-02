@@ -1061,6 +1061,22 @@ body {
     color: #f4f6ff;
     word-break: break-word;
 }
+.task-pin {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(122, 162, 255, 0.16);
+    color: rgba(122, 162, 255, 0.95);
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+.task-pin i {
+    font-size: 11px;
+    transform: rotate(35deg);
+}
 .inline-input {
     width: 100%;
     padding: 4px 8px;
@@ -1093,10 +1109,16 @@ body {
     position: relative;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(124, 139, 210, 0.35);
+    background: rgba(16, 21, 34, 0.72);
     cursor: pointer;
     color: inherit;
     font: inherit;
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
 }
 .task-date-button input[type="date"] {
     position: absolute;
@@ -1105,6 +1127,21 @@ body {
     cursor: pointer;
     border: none;
     background: transparent;
+}
+.task-date-button:hover,
+.task-date-button:focus-within {
+    border-color: rgba(122, 162, 255, 0.6);
+    box-shadow: 0 0 0 1px rgba(122, 162, 255, 0.18);
+    background: rgba(20, 26, 41, 0.92);
+}
+.task-date-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.task-date-label {
+    font-size: 12px;
+    font-weight: 600;
 }
 .task-menu {
     display: flex;
@@ -1125,12 +1162,36 @@ body {
 .task-due.is-empty {
     color: rgba(207, 216, 255, 0.55);
 }
+.task-due.is-today,
+.subtask-due.is-today {
+    color: #32d58b;
+}
+.task-due.is-tomorrow,
+.subtask-due.is-tomorrow {
+    color: #ffa14f;
+}
 .task-due.is-overdue {
     color: #f87171;
 }
 .task-due i,
 .subtask-due i {
     font-size: 13px;
+}
+.subtask-due {
+    font-size: 11px;
+    font-weight: 600;
+    color: #dfe4ff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+    white-space: nowrap;
+}
+.subtask-due.is-empty {
+    color: rgba(207, 216, 255, 0.55);
+}
+.subtask-due.is-overdue {
+    color: #f87171;
 }
 .task .meta {
     color: rgba(207, 216, 255, 0.75);
@@ -1168,19 +1229,20 @@ body {
 }
 
 .subtasks {
-    padding: 12px 18px 18px 60px;
+    padding: 8px 16px 16px 36px;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
     border-top: none;
 }
 .subtasks .subtask {
     display: grid;
-    grid-template-columns: 24px minmax(0, 1fr) 32px;
+    grid-template-columns: 24px minmax(0, 1fr) max-content 32px;
     align-items: center;
-    padding: 5px 5px;
-    margin-left: calc(var(--subtask-depth, 0) * 16px);
-    border-radius: 5px;
+    column-gap: 12px;
+    padding: 6px 8px;
+    margin-left: calc(var(--subtask-depth, 0) * 14px);
+    border-radius: 6px;
     transition: background .15s ease, box-shadow .15s ease;
     cursor: pointer;
 }
@@ -1228,6 +1290,48 @@ body {
     justify-content: flex-end;
     align-items: center;
 }
+.subtask-date {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.subtask-date-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(124, 139, 210, 0.3);
+    background: rgba(16, 21, 34, 0.6);
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    min-width: 44px;
+}
+.subtask-date-button input[type="date"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+}
+.subtask-date-button:hover,
+.subtask-date-button:focus-within {
+    border-color: rgba(122, 162, 255, 0.55);
+    background: rgba(20, 26, 41, 0.85);
+    box-shadow: 0 0 0 1px rgba(122, 162, 255, 0.16);
+}
+.subtask-date-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.subtask-date-label {
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
 .subtasks .subtask .inline-input {
     font-size: 13px;
     font-weight: 600;
@@ -1250,6 +1354,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.08em;
     padding-left: 4px;
+    display: none;
 }
 
 .subtasks-empty {
@@ -1753,30 +1858,34 @@ body.ti-inline-menu-open {
 }
 .ti-menu-icon-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+    gap: 10px;
 }
 .ti-menu-icon {
-    display: flex;
-    flex-direction: column;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(17, 20, 33, .9);
-    border: 1px solid rgba(30, 36, 58, .8);
-    border-radius: 10px;
-    padding: 8px 6px;
-    font: 600 11px/1.2 'Inter', ui-sans-serif;
+    justify-content: center;
+    background: rgba(17, 20, 33, .88);
+    border: 1px solid rgba(30, 36, 58, .75);
+    border-radius: 14px;
+    height: 48px;
+    padding: 0;
     color: #d7dcf7;
     cursor: pointer;
     transition: .15s ease;
     text-align: center;
 }
-.ti-menu-icon i { width: 18px; height: 18px; }
+.ti-menu-icon i { width: 18px; height: 18px; font-size: 16px; }
 .ti-menu-icon span { pointer-events: none; }
 .ti-menu-icon:hover {
-    background: rgba(122, 162, 255, .12);
+    background: rgba(122, 162, 255, .16);
     border-color: rgba(122, 162, 255, .45);
     color: #ffffff;
+}
+.ti-menu-icon:focus-visible {
+    outline: none;
+    border-color: rgba(122, 162, 255, .6);
+    box-shadow: 0 0 0 1px rgba(122, 162, 255, .25);
 }
 .ti-menu-icon.is-picker { position: relative; }
 .ti-menu-date-input {
@@ -1787,36 +1896,40 @@ body.ti-inline-menu-open {
 }
 .ti-menu-flag-list {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(4, minmax(56px, 1fr));
+    gap: 10px;
 }
 .ti-menu-flag {
-    display: flex;
-    flex-direction: column;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(17, 20, 33, .9);
-    border: 1px solid rgba(30, 36, 58, .8);
-    border-radius: 10px;
-    padding: 8px 6px;
-    font: 600 11px/1.2 'Inter', ui-sans-serif;
+    justify-content: center;
+    background: rgba(17, 20, 33, .88);
+    border: 1px solid rgba(30, 36, 58, .75);
+    border-radius: 14px;
+    height: 48px;
+    padding: 0;
     color: #d7dcf7;
     cursor: pointer;
     transition: .15s ease;
     text-align: center;
 }
-.ti-menu-flag i { width: 18px; height: 18px; }
+.ti-menu-flag i { width: 18px; height: 18px; font-size: 16px; }
 .ti-menu-flag span { pointer-events: none; }
 .ti-menu-flag:hover {
-    background: rgba(122, 162, 255, .12);
+    background: rgba(122, 162, 255, .16);
     border-color: rgba(122, 162, 255, .45);
     color: #ffffff;
 }
-.ti-menu-flag.is-active {
-    background: rgba(122, 162, 255, .18);
+.ti-menu-flag:focus-visible {
+    outline: none;
     border-color: rgba(122, 162, 255, .6);
+    box-shadow: 0 0 0 1px rgba(122, 162, 255, .25);
+}
+.ti-menu-flag.is-active {
+    background: rgba(122, 162, 255, .22);
+    border-color: rgba(122, 162, 255, .65);
     color: #ffffff;
-    box-shadow: inset 0 0 0 1px rgba(122, 162, 255, .25);
+    box-shadow: 0 0 0 1px rgba(122, 162, 255, .28);
 }
 .ti-menu-flag.is-high i { color: #ff5a64; }
 .ti-menu-flag.is-medium i { color: #ffa14f; }

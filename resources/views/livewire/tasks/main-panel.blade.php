@@ -192,15 +192,24 @@
                                             {{ $mission->title ?: 'Sem título' }}
                                         </span>
                                     @endif
+
+                                    @if ($mission->is_starred)
+                                        <span class="task-pin" aria-label="Tarefa fixada" title="Tarefa fixada">
+                                            <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                             <div class="task-date">
                                 <label class="task-date-button" title="Alterar data da tarefa">
-                                    <span class="{{ $mission->due_at ? $dueClass : 'task-due is-empty' }}">
+                                    <span @class([
+                                        'task-date-chip',
+                                        $dueLabel ? $dueClass : 'task-due is-empty',
+                                    ])>
+                                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
                                         @if ($dueLabel)
-                                            {{ $dueLabel }}
+                                            <span class="task-date-label">{{ $dueLabel }}</span>
                                         @else
-                                            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
                                             <span class="sr-only">Definir data</span>
                                         @endif
                                     </span>
@@ -237,6 +246,10 @@
                                         'selectedSubtaskId' => $selectedSubtaskId,
                                         'editingSubtaskId' => $editingSubtaskId,
                                         'maxSubtasks' => $maxSubtasks,
+                                        'userTimezone' => $userTimezone,
+                                        'monthAbbr' => $monthAbbr,
+                                        'currentDay' => $today,
+                                        'nextDay' => $tomorrow,
                                     ])
                                 @endforeach
                                 @if (! $canAddMissionSubtask)

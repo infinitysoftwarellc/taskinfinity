@@ -6,6 +6,10 @@
     'selectedSubtaskId' => null,
     'editingSubtaskId' => null,
     'maxSubtasks' => 7,
+    'userTimezone' => null,
+    'monthAbbr' => [],
+    'currentDay' => null,
+    'nextDay' => null,
 ])
 
 @php
@@ -17,6 +21,42 @@
     $childrenCount = $children->count();
     $hasChildren = $childrenCount > 0;
     $canAddChild = $childrenCount < $maxSubtasks;
+    $timezone = $userTimezone ?: config('app.timezone');
+    $monthLabels = $monthAbbr ?: [];
+    $today = $currentDay instanceof \Illuminate\Support\Carbon ? $currentDay->copy()->startOfDay() : \Illuminate\Support\Carbon::now($timezone)->startOfDay();
+    $tomorrow = $nextDay instanceof \Illuminate\Support\Carbon ? $nextDay->copy()->startOfDay() : $today->copy()->addDay();
+    $rawDueAt = $item['due_at'] ?? null;
+    $subtaskDueDate = null;
+    $subtaskDueLabel = null;
+    $subtaskDueClass = 'subtask-due';
+
+    if ($rawDueAt) {
+        try {
+            $dueDate = \Illuminate\Support\Carbon::parse($rawDueAt)->setTimezone($timezone);
+            $subtaskDueDate = $dueDate->format('Y-m-d');
+            $dueDay = $dueDate->copy()->startOfDay();
+
+            if ($dueDay->equalTo($today)) {
+                $subtaskDueLabel = 'Hoje';
+                $subtaskDueClass .= ' is-today';
+            } elseif ($dueDay->equalTo($tomorrow)) {
+                $subtaskDueLabel = 'Amanhã';
+                $subtaskDueClass .= ' is-tomorrow';
+            } else {
+                $monthKey = (int) $dueDay->format('n');
+                $monthLabel = $monthLabels[$monthKey] ?? $dueDay->format('M');
+                $subtaskDueLabel = $dueDay->format('d') . ' ' . $monthLabel;
+
+                if ($dueDay->lessThan($today)) {
+                    $subtaskDueClass .= ' is-overdue';
+                }
+            }
+        } catch (\Throwable $e) {
+            $subtaskDueDate = null;
+            $subtaskDueLabel = null;
+            $subtaskDueClass = 'subtask-due is-empty';
+        }
+    }
 @endphp
 
 <div
@@ -78,11 +118,32 @@
                 @endif
             </div>
         </div>
+        <div class="subtask-date">
+            <label class="subtask-date-button" title="Alterar data da subtarefa">
+                <span @class([
+                    'subtask-date-chip',
+                    $subtaskDueLabel ? $subtaskDueClass : 'subtask-due is-empty',
+                ])>
+                    <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                    @if ($subtaskDueLabel)
+                        <span class="subtask-date-label">{{ $subtaskDueLabel }}</span>
+                    @else
+                        <span class="sr-only">Definir data</span>
+                    @endif
+                </span>
+                <input
+                    type="date"
+                    value="{{ $subtaskDueDate }}"
+                    wire:change="runInlineAction({{ $missionId }}, 'set-date', $event.target.value, {{ $item['id'] }})"
+                >
+            </label>
+        </div>
         <div class="subtask-menu" wire:click.stop>
             @include('livewire.tasks.partials.inline-menu', [
                 'context' => 'subtask',
                 'missionId' => $missionId,
                 'subtaskId' => $item['id'] ?? null,
+                'dueDate' => $subtaskDueDate,
             ])
         </div>
     </div>
