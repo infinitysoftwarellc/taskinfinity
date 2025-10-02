@@ -285,3 +285,24 @@ Organize tarefas, foque com Pomodoro e use IA para gerar subtarefas e resumos. S
 ---
 
 > **Próximo passo**: posso transformar este documento em um **brief de design** (wireframes por página + cópia de UI), ou gerar o **texto pronto da landing/CodeCanyon** com variações de título e bullets.
+
+---
+
+## Diretriz obrigatória de bibliotecas front‑end
+
+Para manter consistência e qualidade da UX, **toda lógica nova ou refatorada envolvendo requisições HTTP, geração de IDs, ordenação/drag & drop, busca, datas, atalhos de teclado, foco, popovers/tooltips, animações, upload/anexos, formulários, offline/cache, virtualização de listas, clipboard ou edição de texto** deve ser implementada utilizando as bibliotecas abaixo:
+
+* HTTP & UX otimista: `axios`, `nanoid`.
+* Listas, drag & drop e ordenação: `sortablejs`, `fuse.js`.
+* Datas e formatação: `dayjs` (com plugins necessários).
+* Atalhos de teclado e foco: `hotkeys-js`, `focus-trap`.
+* Popovers, menus e tooltips: `@floating-ui/dom`, `tippy.js`.
+* Animações: `animejs`.
+* Upload & anexos: `@uppy/core`, `@uppy/dashboard`.
+* Formulários e validação: `just-validate`.
+* Offline & desempenho: `idb-keyval` ou `localforage`, `lodash.debounce`, `lodash.throttle`.
+* Virtualização de listas: `virtual-list`, `clusterize.js`.
+* Clipboard e utilidades: `clipboard`.
+* Editor de texto: `@editorjs/editorjs`.
+
+> **Importante**: qualquer funcionalidade existente que não utilize essas bibliotecas deve ser migrada progressivamente para elas durante refatorações.

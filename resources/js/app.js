@@ -1,6 +1,11 @@
 import Alpine from 'alpinejs';
 import autoAnimate from '@formkit/auto-animate';
 import Sortable from 'sortablejs';
+import axios from 'axios';
+import { nanoid } from 'nanoid';
+import Fuse from 'fuse.js';
+import hotkeys from 'hotkeys-js';
+import { createFocusTrap } from 'focus-trap';
 import {
   autoUpdate,
   computePosition as floatingComputePosition,
@@ -8,6 +13,8 @@ import {
   offset,
   shift,
 } from '@floating-ui/dom';
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -15,6 +22,17 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/pt-br';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
+import * as anime from 'animejs';
+import Uppy from '@uppy/core';
+import Dashboard from '@uppy/dashboard';
+import JustValidate from 'just-validate';
+import * as idbKeyval from 'idb-keyval';
+import localforage from 'localforage';
+import debounce from 'lodash.debounce';
+import throttle from 'lodash.throttle';
+import Clusterize from 'clusterize.js';
+import ClipboardJS from 'clipboard';
+import EditorJS from '@editorjs/editorjs';
 
 import './pomodoro';
 
@@ -27,6 +45,36 @@ window.dayjs = dayjs;
 window.flatpickr = flatpickr;
 window.Sortable = Sortable;
 window.autoAnimate = autoAnimate;
+window.axios = axios;
+window.tippy = tippy;
+
+window.tiLibs = {
+  axios,
+  nanoid,
+  Fuse,
+  hotkeys,
+  createFocusTrap,
+  tippy,
+  anime,
+  Uppy,
+  UppyDashboard: Dashboard,
+  JustValidate,
+  idbKeyval,
+  localforage,
+  debounce,
+  throttle,
+  Clusterize,
+  ClipboardJS,
+  EditorJS,
+  loadVirtualList: async () => {
+    const module = await import('virtual-list/vlist.js');
+    return module?.default ?? module;
+  },
+};
+
+document.addEventListener('alpine:init', () => {
+  hotkeys.filter = () => true;
+});
 
 function autoAnimatePlugin(Alpine) {
   Alpine.directive('auto-animate', (el, { expression }, { effect, evaluateLater, cleanup }) => {
