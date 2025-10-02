@@ -24,11 +24,15 @@
     @stack('styles')
 </head>
 
-<body>
-    <main>
+<body x-data="{}" x-init="window.tiBoot?.($el)">
+    <main data-auto-animate>
         {{ $slot }}
     </main>
+    <x-notifications />
+    @stack('modals')
+    @livewire('wire-elements-modal')
     @livewireScripts
+    @wireUiScripts
     @stack('scripts')
 </body>
 
