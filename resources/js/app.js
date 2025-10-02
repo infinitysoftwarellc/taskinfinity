@@ -1,6 +1,5 @@
 import Alpine from 'alpinejs';
 import autoAnimate from '@formkit/auto-animate';
-import autoAnimatePlugin from '@formkit/auto-animate/alpine';
 import Sortable from 'sortablejs';
 import {
   autoUpdate,
@@ -26,6 +25,53 @@ window.dayjs = dayjs;
 window.flatpickr = flatpickr;
 window.Sortable = Sortable;
 window.autoAnimate = autoAnimate;
+
+function autoAnimatePlugin(Alpine) {
+  Alpine.directive('auto-animate', (el, { expression }, { effect, evaluateLater, cleanup }) => {
+    let controller;
+    let hasEvaluated = false;
+    let lastValue;
+
+    const start = (value) => {
+      if (controller?.destroy) {
+        controller.destroy();
+      }
+
+      controller = null;
+
+      if (value === false) {
+        return;
+      }
+
+      const config = typeof value === 'function' || (value && typeof value === 'object') ? value : undefined;
+      controller = autoAnimate(el, config);
+    };
+
+    if (expression) {
+      const evaluate = evaluateLater(expression);
+      effect(() => {
+        evaluate((value) => {
+          if (hasEvaluated && value === lastValue) {
+            return;
+          }
+
+          hasEvaluated = true;
+          lastValue = value;
+          start(value);
+        });
+      });
+    } else {
+      start();
+    }
+
+    cleanup(() => {
+      if (controller?.destroy) {
+        controller.destroy();
+      }
+      controller = null;
+    });
+  });
+}
 
 const defaultFloatingMiddleware = [offset(8), flip(), shift({ padding: 8 })];
 
