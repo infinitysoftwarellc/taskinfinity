@@ -32,9 +32,11 @@ use App\Http\Controllers\Tasks\MissionController;
 use App\Http\Controllers\Tasks\TaskListController;
 use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
+use Laravel\Pulse\Facades\Pulse;
 
 Route::view('/', 'welcome');
 Route::view('/teste', 'teste');
@@ -46,6 +48,8 @@ Route::view('dashboard', 'dashboard')
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
+
+Pulse::ignoreRoutes();
 
 require __DIR__.'/auth.php';
 
@@ -114,6 +118,12 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('user-abilities', UserAbilityController::class)->except(['create', 'edit']);
     Route::resource('user-achievements', UserAchievementController::class)->except(['create', 'edit']);
+
+    Route::get('admin/pulse', function () {
+        Gate::authorize('viewPulse');
+
+        return view('pulse::dashboard');
+    })->middleware('verified')->name('pulse');
 
     Route::get('player-state', [PlayerStateController::class, 'show']);
     Route::put('player-state', [PlayerStateController::class, 'update']);

@@ -1,6 +1,232 @@
+import Alpine from 'alpinejs';
+import autoAnimate from '@formkit/auto-animate';
+import autoAnimatePlugin from '@formkit/auto-animate/alpine';
 import Sortable from 'sortablejs';
+import {
+  autoUpdate,
+  computePosition as floatingComputePosition,
+  flip,
+  offset,
+  shift,
+} from '@floating-ui/dom';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.css';
 
 import './pomodoro';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(relativeTime);
+
+window.dayjs = dayjs;
+window.flatpickr = flatpickr;
+window.Sortable = Sortable;
+window.autoAnimate = autoAnimate;
+
+const defaultFloatingMiddleware = [offset(8), flip(), shift({ padding: 8 })];
+
+function computeFloatingPosition(reference, floating, options = {}) {
+  const { middleware = defaultFloatingMiddleware, placement = 'bottom-start', strategy = 'fixed', ...rest } = options;
+
+  return floatingComputePosition(reference, floating, {
+    middleware,
+    placement,
+    strategy,
+    ...rest,
+  });
+}
+
+window.tiFloating = {
+  autoUpdate,
+  computePosition: computeFloatingPosition,
+  middleware: {
+    offset,
+    flip,
+    shift,
+  },
+};
+
+function parseFlatpickrOptions(element) {
+  const options = {};
+
+  const raw = element.dataset.flatpickrOptions;
+  if (raw) {
+    try {
+      Object.assign(options, JSON.parse(raw));
+    } catch (error) {
+      console.warn('Invalid data-flatpickr-options JSON', error);
+    }
+  }
+
+  if (element.dataset.flatpickrEnableTime) {
+    options.enableTime = element.dataset.flatpickrEnableTime !== 'false';
+  }
+
+  if (element.dataset.flatpickrDateFormat) {
+    options.dateFormat = element.dataset.flatpickrDateFormat;
+  }
+
+  if (element.dataset.flatpickrAltFormat) {
+    options.altInput = true;
+    options.altFormat = element.dataset.flatpickrAltFormat;
+  }
+
+  if (element.dataset.flatpickrDefaultHour) {
+    const hour = parseInt(element.dataset.flatpickrDefaultHour, 10);
+    if (!Number.isNaN(hour)) {
+      options.defaultHour = hour;
+    }
+  }
+
+  if (element.dataset.flatpickrDefaultMinute) {
+    const minute = parseInt(element.dataset.flatpickrDefaultMinute, 10);
+    if (!Number.isNaN(minute)) {
+      options.defaultMinute = minute;
+    }
+  }
+
+  return options;
+}
+
+function initFlatpickrs(root = document) {
+  const elements = [];
+
+  if (root.matches?.('[data-flatpickr]:not([data-flatpickr-ready])')) {
+    elements.push(root);
+  }
+
+  if (root.querySelectorAll) {
+    elements.push(...root.querySelectorAll('[data-flatpickr]:not([data-flatpickr-ready])'));
+  }
+
+  elements.forEach((element) => {
+    if (element._flatpickr) {
+      element._flatpickr.destroy();
+    }
+
+    const options = parseFlatpickrOptions(element);
+
+    const instance = flatpickr(element, options);
+    element.dataset.flatpickrReady = '1';
+    element._flatpickr = instance;
+  });
+}
+
+window.tiInitFlatpickr = initFlatpickrs;
+window.tiInitAutoAnimate = initAutoAnimateElements;
+
+function initAutoAnimateElements(root = document) {
+  const elements = [];
+
+  if (root.matches?.('[data-auto-animate]:not([data-auto-animate-ready])')) {
+    elements.push(root);
+  }
+
+  if (root.querySelectorAll) {
+    elements.push(...root.querySelectorAll('[data-auto-animate]:not([data-auto-animate-ready])'));
+  }
+
+  elements.forEach((element) => {
+    autoAnimate(element);
+    element.dataset.autoAnimateReady = '1';
+  });
+}
+
+function normalizeSortableOptions(rawOptions) {
+  if (!rawOptions) {
+    return {};
+  }
+
+  try {
+    const parsed = typeof rawOptions === 'string' ? JSON.parse(rawOptions) : rawOptions;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    console.warn('Invalid wire:sortable options JSON', error);
+    return {};
+  }
+}
+
+function initWireSortable(root = document) {
+  if (!window.Livewire) {
+    return;
+  }
+
+  const containers = [];
+
+  if (root.matches?.('[wire\\:sortable]:not([data-wire-sortable-ready])')) {
+    containers.push(root);
+  }
+
+  if (root.querySelectorAll) {
+    containers.push(...root.querySelectorAll('[wire\\:sortable]:not([data-wire-sortable-ready])'));
+  }
+
+  containers.forEach((container) => {
+    const component = findLivewireComponent(container);
+    if (!component) {
+      return;
+    }
+
+    const expression = container.getAttribute('wire:sortable');
+    const handle = container.dataset.sortableHandle || container.getAttribute('data-sortable-handle');
+    const options = {
+      animation: 150,
+      draggable: '[wire\\:sortable\\.item]',
+      handle: handle || undefined,
+      onEnd: () => {
+        const order = Array.from(container.querySelectorAll('[wire\\:sortable\\.item]'))
+          .map((item) => item.getAttribute('wire:sortable.item'))
+          .filter((value) => value !== null && value !== undefined && value !== '');
+
+        if (!order.length) {
+          return;
+        }
+
+        if (expression) {
+          component.call(expression, order);
+        } else {
+          const eventName = container.dataset.sortableEvent || 'sortable-updated';
+          component.dispatch(eventName, { order });
+        }
+      },
+    };
+
+    Object.assign(options, normalizeSortableOptions(container.dataset.sortableOptions));
+
+    if (container.__wireSortableInstance) {
+      container.__wireSortableInstance.destroy();
+    }
+
+    container.__wireSortableInstance = new Sortable(container, options);
+    container.dataset.wireSortableReady = '1';
+  });
+}
+
+window.tiInitWireSortable = initWireSortable;
+
+Alpine.plugin(autoAnimatePlugin);
+
+document.addEventListener('alpine:init', () => {
+  Alpine.magic('dayjs', () => dayjs);
+  Alpine.magic('floating', () => window.tiFloating);
+  Alpine.magic('flatpickr', (el) => (options = {}) => {
+    if (el._flatpickr) {
+      el._flatpickr.destroy();
+    }
+
+    const instance = flatpickr(el, { ...parseFlatpickrOptions(el), ...options });
+    el.dataset.flatpickrReady = '1';
+    el._flatpickr = instance;
+    return instance;
+  });
+});
+
+window.Alpine = Alpine;
+Alpine.start();
 
 // ---- IMPORTS PADRÃO DO SEU PROJETO (mantenha os que precisar)
 
@@ -564,6 +790,9 @@ function setupDetailsKeyboard() {
 /* BOOT: DOM pronto                                                   */
 /* ────────────────────────────────────────────────────────────────── */
 function boot(root = document) {
+  initFlatpickrs(root);
+  initAutoAnimateElements(root);
+  initWireSortable(root);
   setupDelegatedClick(); // 2) um único listener que sobrevive a trocas
   setupInputs(root);     // 3) inputs que criam itens dinamicamente
   setupSortableTasks(root);
@@ -571,6 +800,8 @@ function boot(root = document) {
   setupFocusListeners();
   setupDetailsKeyboard();
 }
+
+window.tiBoot = boot;
 
 /* DOMContentLoaded (primeiro carregamento) */
 document.addEventListener('DOMContentLoaded', () => boot(document));

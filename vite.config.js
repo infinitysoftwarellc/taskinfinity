@@ -8,4 +8,7 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    optimizeDeps: {
+        include: ['alpinejs', '@formkit/auto-animate', '@floating-ui/dom', 'dayjs', 'flatpickr'],
+    },
 });
