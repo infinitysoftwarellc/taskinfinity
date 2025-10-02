@@ -26,6 +26,8 @@
             @endif
         </div>
 
+        <livewire:layout.modal-stack />
+
         @stack('modals')
         @livewireScripts
         @stack('scripts')

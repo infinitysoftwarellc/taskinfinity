@@ -28,11 +28,14 @@ class SubtaskEditor extends Component
 
     public int $maxSubtasks;
 
-    public function mount(int $missionId, ?int $parentId = null): void
+    public ?string $modalKey = null;
+
+    public function mount(int $missionId, ?int $parentId = null, ?string $modalKey = null): void
     {
         $this->missionId = $missionId;
         $this->parentId = $parentId;
         $this->maxSubtasks = MainPanel::MAX_SUBTASKS;
+        $this->modalKey = $modalKey;
 
         $this->hydrateParents();
     }
@@ -46,6 +49,11 @@ class SubtaskEditor extends Component
     {
         $this->open = false;
         $this->dispatch('subtask-editor-closed');
+        if ($this->modalKey) {
+            $this->dispatch('closeModal', $this->modalKey);
+        } else {
+            $this->dispatch('closeModal');
+        }
     }
 
     public function save(): void
@@ -104,10 +112,9 @@ class SubtaskEditor extends Component
 
         $this->notification()->success('Subtarefa criada', 'A subtarefa foi adicionada com sucesso.');
 
-        $this->closeModal();
-
         $this->dispatch('tasks-updated');
         $this->dispatch('task-selected', $mission->id, $checkpoint->id);
+        $this->closeModal();
     }
 
     private function hydrateParents(): void
