@@ -146,7 +146,9 @@
 
         {{ $slot }}
 
-        <livewire:spotlight />
+        @if (config('services.spotlight'))
+            <livewire:spotlight />
+        @endif
         @fluxScripts
     </body>
 </html>
