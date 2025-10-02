@@ -7,6 +7,7 @@ use App\Models\Mission;
 use App\Models\TaskList;
 use App\Support\MissionShortcutFilter;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -1509,52 +1510,101 @@ class MainPanel extends Component
         }
 
         $timezone = $user->timezone ?? config('app.timezone');
+        $lists = collect();
+        $unlistedMissions = collect();
+        $missionIds = [];
+        $checkpointIds = [];
+        $totalCount = 0;
 
-        $lists = TaskList::query()
-            ->with([
-                'missions' => function ($query) use ($timezone) {
-                    $query->orderByDesc('is_starred')
-                        ->orderBy('position')
-                        ->orderBy('created_at');
+        $primaryGroupTitle = $this->shortcut ? $this->labelForShortcut($this->shortcut) : 'All';
+        $showListSelector = $this->currentListId === null;
 
-                    if ($this->shortcut) {
-                        MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
-                    }
-                },
-                'missions.checkpoints' => fn ($query) => $query->orderBy('position')->orderBy('created_at'),
-            ])
-            ->where('user_id', $user->id)
-            ->whereNull('archived_at')
-            ->orderByDesc('is_pinned')
-            ->orderBy('position')
-            ->orderBy('name')
-            ->get();
+        if ($this->currentListId !== null) {
+            $activeListQuery = TaskList::query()
+                ->where('user_id', $user->id)
+                ->whereNull('archived_at')
+                ->with([
+                    'missions' => function (Builder $query) use ($timezone) {
+                        $this->configureMissionRelation($query, $timezone);
+                    },
+                    'missions.checkpoints' => function (Builder $query) {
+                        $this->configureCheckpointRelation($query);
+                    },
+                ]);
 
-        $unlistedMissions = Mission::query()
-            ->where('user_id', $user->id)
-            ->whereNull('list_id')
-            ->orderByDesc('is_starred')
-            ->orderBy('position')
-            ->orderBy('created_at')
-            ->with(['checkpoints' => fn ($query) => $query->orderBy('position')->orderBy('created_at')])
-            ->when($this->shortcut, fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $timezone))
-            ->get();
+            $activeList = $activeListQuery->find($this->currentListId);
 
-        $lists->each(function ($list) use ($timezone) {
-            $this->attachCheckpointTree($list->missions, $timezone);
-        });
+            if ($activeList) {
+                $lists = collect([$activeList]);
+                $totalCount = $activeList->missions->count();
+                $primaryGroupTitle = $activeList->name;
+                $showListSelector = false;
+            } else {
+                $this->currentListId = null;
+                $showListSelector = true;
+            }
+        }
 
-        $this->attachCheckpointTree($unlistedMissions, $timezone);
+        if ($this->currentListId === null) {
+            $lists = TaskList::query()
+                ->where('user_id', $user->id)
+                ->whereNull('archived_at')
+                ->orderByDesc('is_pinned')
+                ->orderBy('position')
+                ->orderBy('name')
+                ->with([
+                    'missions' => function (Builder $query) use ($timezone) {
+                        $this->configureMissionRelation($query, $timezone);
+                    },
+                    'missions.checkpoints' => function (Builder $query) {
+                        $this->configureCheckpointRelation($query);
+                    },
+                ])
+                ->get();
 
-        $totalCount = $lists->sum(fn ($list) => $list->missions->count()) + $unlistedMissions->count();
+            $unlistedQuery = Mission::query()
+                ->where('user_id', $user->id)
+                ->whereNull('list_id')
+                ->with([
+                    'checkpoints' => function (Builder $query) {
+                        $this->configureCheckpointRelation($query);
+                    },
+                ]);
 
-        $allMissionIdsCollection = $unlistedMissions->pluck('id')
-            ->concat($lists->flatMap(fn ($list) => $list->missions->pluck('id')))
-            ->values();
+            $this->configureMissionRelation($unlistedQuery, $timezone);
 
-        $availableMissionIds = array_map('intval', $allMissionIdsCollection->all());
-        $this->selectedMissionIds = array_values(array_map('intval', array_intersect($this->selectedMissionIds, $availableMissionIds)));
-        $this->collapsedMissionIds = array_values(array_map('intval', array_intersect($this->collapsedMissionIds, $availableMissionIds)));
+            $unlistedMissions = $unlistedQuery->get();
+
+            $totalCount = $lists->sum(fn ($list) => $list->missions->count()) + $unlistedMissions->count();
+            $primaryGroupTitle = $this->shortcut ? $this->labelForShortcut($this->shortcut) : 'All';
+        }
+
+        foreach ($lists as $list) {
+            foreach ($list->missions as $mission) {
+                $missionIds[] = (int) $mission->id;
+            }
+
+            $this->attachCheckpointTree($list->missions, $timezone, $checkpointIds);
+        }
+
+        foreach ($unlistedMissions as $mission) {
+            $missionIds[] = (int) $mission->id;
+        }
+
+        $this->attachCheckpointTree($unlistedMissions, $timezone, $checkpointIds);
+
+        $missionIds = array_values(array_unique($missionIds));
+        $checkpointIds = array_values(array_unique($checkpointIds));
+
+        $this->selectedMissionIds = array_values(array_map(
+            'intval',
+            array_intersect($this->selectedMissionIds, $missionIds)
+        ));
+
+        $this->collapsedMissionIds = array_values(array_map(
+            'intval',
+            array_intersect($this->collapsedMissionIds, $missionIds)
+        ));
 
         if ($this->selectedMissionId && ! in_array($this->selectedMissionId, $this->selectedMissionIds, true)) {
             $this->selectedMissionId = $this->selectedMissionIds[0] ?? null;
@@ -1570,118 +1620,21 @@ class MainPanel extends Component
             $this->selectedSubtaskId = null;
         }
 
-        $allCheckpointIds = [];
-        $collectCheckpointIds = function ($nodes) use (&$collectCheckpointIds, &$allCheckpointIds) {
-            if ($nodes instanceof Collection) {
-                $nodes = $nodes->all();
-            }
-
-            if (! is_array($nodes)) {
-                return;
-            }
-
-            foreach ($nodes as $node) {
-                if (! is_array($node)) {
-                    continue;
-                }
-
-                $id = $node['id'] ?? null;
-
-                if ($id) {
-                    $allCheckpointIds[] = (int) $id;
-                }
-
-                $children = $node['children'] ?? [];
-
-                if (! empty($children)) {
-                    $collectCheckpointIds($children);
-                }
-            }
-        };
-
-        $missionsForCheckpoints = $unlistedMissions->concat($lists->flatMap(fn ($list) => $list->missions));
-
-        foreach ($missionsForCheckpoints as $missionItem) {
-            $tree = $missionItem->relationLoaded('checkpointTree')
-                ? $missionItem->getRelation('checkpointTree')
-                : collect();
-
-            $collectCheckpointIds($tree);
-        }
-
         $this->collapsedSubtaskIds = array_values(array_map(
             'intval',
-            array_intersect($this->collapsedSubtaskIds, array_unique($allCheckpointIds))
+            array_intersect($this->collapsedSubtaskIds, $checkpointIds)
         ));
 
-        if ($this->selectedMissionId) {
-            $ownsMission = Mission::query()
-                ->where('user_id', $user->id)
-                ->when($this->currentListId, fn ($query) => $query->where('list_id', $this->currentListId))
-                ->when($this->shortcut, fn ($query) => MissionShortcutFilter::apply($query, $this->shortcut, $timezone))
-                ->where('id', $this->selectedMissionId)
-                ->exists();
-
-            if (! $ownsMission) {
-                $this->selectedMissionId = null;
-                $this->selectedSubtaskId = null;
-            }
+        if ($this->selectedMissionId && ! in_array($this->selectedMissionId, $missionIds, true)) {
+            $this->selectedMissionId = null;
+            $this->selectedSubtaskId = null;
         }
 
-        if ($this->selectedSubtaskId !== null) {
-            $hasSubtask = Checkpoint::query()
-                ->where('id', $this->selectedSubtaskId)
-                ->whereHas('mission', fn ($query) => $query->where('user_id', $user->id))
-                ->exists();
-
-            if (! $hasSubtask) {
-                $this->selectedSubtaskId = null;
-            }
+        if ($this->selectedSubtaskId !== null && ! in_array($this->selectedSubtaskId, $checkpointIds, true)) {
+            $this->selectedSubtaskId = null;
         }
 
-        $primaryGroupTitle = $this->shortcut ? $this->labelForShortcut($this->shortcut) : 'All';
-        $showListSelector = $this->currentListId === null;
-
-        if ($this->currentListId) {
-            $activeList = TaskList::query()
-                ->with([
-                    'missions' => function ($query) use ($timezone) {
-                        $query->orderByDesc('is_starred')
-                            ->orderBy('position')
-                            ->orderBy('created_at');
-
-                        if ($this->shortcut) {
-                            MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
-                        }
-                    },
-                    'missions.checkpoints' => fn ($query) => $query->orderBy('position')->orderBy('created_at'),
-                ])
-                ->where('user_id', $user->id)
-                ->whereNull('archived_at')
-                ->find($this->currentListId);
-
-            if ($activeList) {
-                $this->attachCheckpointTree($activeList->missions, $timezone);
-
-                $lists = collect([$activeList]);
-                $unlistedMissions = collect();
-                $totalCount = $activeList->missions->count();
-                $primaryGroupTitle = $activeList->name;
-            } else {
-                $this->currentListId = null;
-                $showListSelector = true;
-            }
-        }
-
-        if ($showListSelector) {
-            $primaryGroupTitle = $this->shortcut ? $this->labelForShortcut($this->shortcut) : 'All';
-        }
-
-        $availableLists = TaskList::query()
-            ->where('user_id', $user->id)
-            ->whereNull('archived_at')
-            ->orderBy('name')
-            ->get();
+        $availableLists = $this->resolveAvailableLists($user->id);
 
         $this->persistCollapseState();
 
@@ -1700,6 +1653,38 @@ class MainPanel extends Component
             'collapsedMissionIds' => $this->collapsedMissionIds,
             'collapsedSubtaskIds' => $this->collapsedSubtaskIds,
         ]);
+    }
+
+    private function configureMissionRelation(Builder $query, string $timezone): void
+    {
+        $query->orderByDesc('is_starred')
+            ->orderBy('position')
+            ->orderBy('created_at');
+
+        if ($this->shortcut) {
+            MissionShortcutFilter::apply($query, $this->shortcut, $timezone);
+        }
+    }
+
+    private function configureCheckpointRelation(Builder $query): void
+    {
+        $query->orderBy('position')->orderBy('created_at');
+    }
+
+    private function resolveAvailableLists(int $userId): Collection
+    {
+        $cacheKey = sprintf('tasks:list-options:%d', $userId);
+
+        return Cache::remember(
+            $cacheKey,
+            now()->addMinutes(2),
+            static fn () => TaskList::query()
+                ->select(['id', 'name'])
+                ->where('user_id', $userId)
+                ->whereNull('archived_at')
+                ->orderBy('name')
+                ->get()
+        );
     }
 
     /**
@@ -1826,10 +1811,10 @@ class MainPanel extends Component
     /**
      * Anexa a árvore de subtarefas a cada missão retornada para a view.
      */
-    private function attachCheckpointTree(Collection $missions, string $timezone): void
+    private function attachCheckpointTree(Collection $missions, string $timezone, array &$collectedCheckpointIds): void
     {
-        $missions->each(function ($mission) use ($timezone) {
-            $tree = $this->buildCheckpointTree(collect($mission->checkpoints ?? []), $timezone);
+        $missions->each(function ($mission) use ($timezone, &$collectedCheckpointIds) {
+            $tree = $this->buildCheckpointTree(collect($mission->checkpoints ?? []), $timezone, $collectedCheckpointIds);
             $mission->setRelation('checkpointTree', collect($tree));
         });
     }
@@ -1837,7 +1822,7 @@ class MainPanel extends Component
     /**
      * Gera a estrutura hierárquica usada pela lista principal.
      */
-    private function buildCheckpointTree(Collection $checkpoints, string $timezone): array
+    private function buildCheckpointTree(Collection $checkpoints, string $timezone, array &$collectedCheckpointIds): array
     {
         if ($checkpoints->isEmpty()) {
             return [];
@@ -1851,17 +1836,19 @@ class MainPanel extends Component
             return $parentId === null ? '__root__' : (string) $parentId;
         });
 
-        return $this->buildCheckpointBranch($grouped, null, 0, $timezone);
+        return $this->buildCheckpointBranch($grouped, null, 0, $timezone, $collectedCheckpointIds);
     }
 
     /**
      * Percorre recursivamente os checkpoints agrupados para montar nós filhos.
      */
-    private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth, string $timezone): array
+    private function buildCheckpointBranch(Collection $grouped, ?int $parentId, int $depth, string $timezone, array &$collectedCheckpointIds): array
     {
         $key = $parentId === null ? '__root__' : (string) $parentId;
 
-        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth, $parentId, $timezone) {
+        return $grouped->get($key, collect())->map(function ($checkpoint) use ($grouped, $depth, $parentId, $timezone, &$collectedCheckpointIds) {
+            $collectedCheckpointIds[] = (int) $checkpoint->id;
+
             return [
                 'id' => $checkpoint->id,
                 'mission_id' => $checkpoint->mission_id,
@@ -1872,7 +1859,7 @@ class MainPanel extends Component
                 'due_at' => $checkpoint->due_at?->copy()->setTimezone($timezone)?->format('c'),
                 'children' => $depth >= 6
                     ? []
-                    : $this->buildCheckpointBranch($grouped, $checkpoint->id, $depth + 1, $timezone),
+                    : $this->buildCheckpointBranch($grouped, $checkpoint->id, $depth + 1, $timezone, $collectedCheckpointIds),
             ];
         })->values()->toArray();
     }
